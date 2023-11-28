@@ -1,0 +1,207 @@
+\documentclass[10]{article}
+
+% standard packages
+
+% A more pleasant font
+\usepackage[T1]{fontenc} % use postscript type 1 fonts
+\usepackage{textcomp} % use symbols in TS1 encoding
+\usepackage{mathptmx,helvet,courier} % use nice, standard fonts for roman, sans and monospace respectively
+
+% Improves the text layout
+\usepackage{microtype}
+
+\usepackage{lscape}
+\usepackage{fancyhdr}
+\usepackage{epsfig}
+\usepackage{subfigure}
+\usepackage{url}
+\usepackage{graphics}
+\usepackage{enumerate}
+\usepackage{ifthen}
+\usepackage{float}
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily}
+% \usepackage[strings]{underscore}
+% \usepackage{underscore}
+\usepackage[bookmarks=true,bookmarksnumbered=true,pdfborder={0 0 0}]{hyperref}
+
+\lstset{
+  literate={\_}{}{0\discretionary{\_}{}{\_}}%
+}
+
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+
+\DeclareUrlCommand\email{}
+
+\pagestyle{fancy}
+\rhead{}
+
+\newfloat{listing}{tbp}{lol}
+\floatname{listing}{Listing}
+
+\begin{document}
+\title{DNNNNR0: OOTA Execution is Provably Vacuous}
+
+\newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
+
+\author{
+Paul E.~McKenney\\\email{paulmck@kernel.org} \and
+The Indefatigible TBD
+}
+\date{November 27, 2023 (Pre-Tokyo)}
+\maketitle{}
+
+Audience: SG1
+
+\begin{abstract}
+	The out-of-thin-air (OOTA) and read-from-untaken-branch (RFUB)
+	properties of the specification of \co{memory_order_relaxed}
+	have resulted in considerable consternation over the years.
+	Many argue that RFUB should be allowed.
+	In addition, there are no known instances of full-blown OOTA
+	behavior in real C++ implementations.
+
+	This paper goes further, providing an informal proof that OOTA
+	cannot occur in real C++ programs running in the real world.
+\end{abstract}
+
+\section{Background}
+\label{sec:Background}
+
+\subsection{Brief OOTA Overview}
+\label{sec:Brief OOTA Overview}
+
+OOTA occurs when a pair of threads loads from each others' stores,
+but where each thread's store depends on the value returned by that
+thread's load.
+
+@@@ diagram and explanation @@@
+
+Note that C++ implementations are permitted to evaluate to OOTA values
+in cases involving undefined behavior, such as use of uninitialized
+objects.
+However, these situations do not involve OOTA cycles, but rather user
+errors and other issues that can lead to unpredictable output.
+This paper focuses instead on OOTA cycles.
+
+The result of an OOTA cycle can be any value.
+
+\subsection{Prior Work}
+\label{sec:Prior Work}
+
+Early executable C++ memory models~\cite{MarkBatty2011cppmem}
+correctly flagged executions involving OOTA.
+P0442R0 (``Out-of-Thin-Air Execution is Vacuous'')~\cite{PaulEMcKenney2016OOTA}
+provided a decision procedure for classifying behaviors as permitted
+misordering on the one hand or disallowed OOTA on the other, using
+a perturbation method based on the insight that all OOTA behaviors are
+fixed-point computations.
+
+@@@ list of work attempting to avoid OOTA.
+
+All this work focused on either identifying OOTA or on how C++
+implementations could avoid it.
+Except that no one has proposed a viable C++ implementation that results
+in OOTA.
+
+This paper therefore drops the question of how OOTA can be avoided and
+instead focuses on proving that OOTA cannot occur.
+
+\subsection{Real-World Constraints}
+\label{sec:Real-World Constraints}
+
+The speed of light is finite and atoms are of non-zero size.
+These laws of physics mean that if one thread loads the value
+stored by some other thread, that load must have occurred later
+in global time than did the store.
+
+Although accesses to atomic objects are not observable behavior,\footnote{
+	Working Draft, Standard for Programming Language C++
+	\co{[intro.abstract]}.}
+in practice, any thread's store to a global variable must be as if the
+correct value was actually stored.
+In contrast, in C, atomic operations are volatile and thus observable
+behavior, while in Rust atomic operations currently cannot be volatile.
+
+\subsection{How to Form an OOTA Cycle?}
+\label{sec:How to Form an OOTA Cycle?}
+
+An OOTA cycle consists of loads from other threads' stores combined
+with stores whose addresses or values depend on the value returned
+by the same thread's prior load.
+Courtesy of the laws of physics, a given store must execute earlier
+in global time than any load from that stored-to object that returns
+the value stored.
+
+Therefore, any OOTA cycle must have arcs that go backwards in global
+time, and the only arcs that can possibly do so are those arcs that
+lie entirely with a given thread.
+This in turn requires that a store that depends on an earlier load
+be executed earlier in time than that load.
+The only two ways that this can happen are when the implementation:
+
+\begin{enumerate}
+\item	Is able to determing (prove) the location and value of the store.
+\item	Guesses the location and value of the store and has some means
+	to take corrective action should any guess prove incorrect.
+\end{enumerate}
+
+\subsubsection{Proof}
+\label{sec:Proof}
+
+Implementation can sometimes prove the location and value of a given
+store.
+For example, if the value loaded is multiplied by zero, the result
+is known to be zero, so that the store can proceed prior to the load.
+But in this case, there is no perturbation of the value returned from
+the load that can affect the value stored.
+Therefore, by P0442R0, that store cannot possibly take part in an
+OOTA cycle.
+
+\subsubsection{Guess}
+\label{sec:Guess}
+
+Hardware speculative execution is commonplace, and permits the
+hardware to guess at values, squashing the speculation if any
+of the guesses prove incorrect.
+But in this case, a given store is not committed until all guesses that
+this store depends on have been confirmed, an no uncommitted store
+is visible to any other thread.
+Therefore, hardware speculation cannot result in OOTA cycles.
+@@@ cite hardware manuals @@@
+This same constraint applies to software, which might use compare-and-swap
+loops or hardware transactional memory to confirm guesses.
+
+Either way, the need to wait for guesses to be confirmed before committing
+stores prevents those stores from becoming visible prior to the
+completion of any loads that those stores depend on.
+
+\subsubsection{What About Flattening?}
+\label{sec:What About Flattening?}
+
+The concept of flattening multiple threads into a single thread is
+tantalizing, especially given the large cache-miss penalties inherent
+to large multicore systems, which can have thousands of CPUs.
+One might object to the whole concept of flattening as a compiler
+optimization given the difficulty inherent in avoiding deadlocks
+and other hazards.
+
+But for the purposes of OOTA cycles, the flattening situation is
+much simpler.
+Any fully flattened program will be single threaded, which implies
+that all of its atomic operations will be sequentially consistent,
+which in turn guarantees that OOTA cycles cannot form.
+
+\section{Conclusion}
+\label{sec:Conclusion}
+
+Therefore, correct C++ implementations cannot produce OOTA cycles.
+
+% \section{History}
+% \label{sec:History}
+
+\bibliographystyle{plain}
+\bibliography{bib/RCU,bib/WFS,bib/hw,bib/os,bib/parallelsys,bib/patterns,bib/perfmeas,bib/refs,bib/syncrefs,bib/search,bib/swtools,bib/realtime,bib/TM,bib/standards,bib/memorymodel.bib}
+
+\end{document}
