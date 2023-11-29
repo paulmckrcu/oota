@@ -41,7 +41,7 @@
 \floatname{listing}{Listing}
 
 \begin{document}
-\title{DNNNNR0: OOTA Execution is Provably Vacuous}
+\title{D3064R0: OOTA Execution is Provably Vacuous}
 
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
@@ -75,6 +75,9 @@ Audience: SG1
 
 \section{Background}
 \label{sec:Background}
+
+This section provides a brief overview of the OOTA problem followed
+by an equally brief summary of prior work in this area.
 
 \subsection{Brief OOTA Overview}
 \label{sec:Brief OOTA Overview}
@@ -133,6 +136,10 @@ behaviors of the program be appropriately preserved.
 \subsection{Prior Work}
 \label{sec:Prior Work}
 
+All OOTA workers owe a debt to the foundational work in the infamous
+``Causality Test Cases''.\footnote{
+	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
+
 Some executable C++ memory models correctly flagged executions involving
 OOTA~\cite{JadeAlglave2014HerdingCats}.\footnote{
 	Others cleverly avoid this issue by forbidding atomic
@@ -140,7 +147,7 @@ OOTA~\cite{JadeAlglave2014HerdingCats}.\footnote{
 % @@@ Better herd7 C11 citation?
 However, because these models are atemporal, they cannot reject
 OOTA executions other than by flagging the OOTA value as arbitrary
-(which they in fact do).
+(which some in fact do).
 
 P0442R0 (``Out-of-Thin-Air Execution is Vacuous'')~\cite{PaulEMcKenney2016OOTA}
 provided a decision procedure for classifying behaviors as permitted
@@ -384,7 +391,7 @@ operation.
 Therefore, cycles cannot possibly form in a flattened program,
 which in turn implies that OOTA cycles cannot form.
 
-\section{Correct Implementations Cannot Form OOTA Cycles}
+\subsection{Correct Implementations Cannot Form OOTA Cycles}
 \label{sec:Correct Implementations Cannot Form OOTA Cycles}
 
 This section has shown that an implementation that correctly
