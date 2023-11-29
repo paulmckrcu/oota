@@ -47,6 +47,8 @@
 
 \author{
 Paul E.~McKenney\\\email{paulmck@kernel.org} \and
+Michael Wong\\\email{fraggamuffin@gmail.com} \and
+Maged Michael\\\email{maged.michael@gmail.com} \and
 The Indefatigible TBD
 }
 \date{November 27, 2023 (Pre-Tokyo)}
@@ -112,7 +114,9 @@ a prior load returns a value used in that computation.
 Listing~\ref{lst:OOTA Cycle}
 shows an OOTA cycle, where the \co{\{\{\{} on line~5 begins a set of
 threads, the \co{|||} on line~8 separates a pair of threads, and
-the \co{\}\}\}} on line~9 ends a set of threads.
+the \co{\}\}\}} on line~9 ends a set of threads.\footnote{
+	This is pseudocode in the format of CPPMEM,
+	which does not permit writes from non-local variables.}
 Lines~6 and~7 do a relaxed copy from \co{x} to \co{y}, and
 lines~8 and~9 to a relaxed copy from \co{y} to \co{x}.
 Even though both \co{x} and \co{y} are initialized to zero on
@@ -120,6 +124,31 @@ lines~2 and~3, respectively, according to the mathematical core
 of the C++ memory model, the only constraint on the final values
 of \co{x} and \co{y} is that they be equal.
 Counterintuitivily, their final values could be any member of their type.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 int main() {
+ 2   atomic_int x = 0;
+ 3   atomic_int y = 0;
+ 4   volatile int r1;
+ 5   volatile int r2;
+ 6   {{{ { r1 = x.load(memory_order_relaxed);
+ 7         if (r1 == 1)
+ 8           y.store(1, memory_order_relaxed);
+ 9         else
+10           y.store(r1, memory_order_relaxed); }
+11   ||| { r2=y.load(memory_order_relaxed);
+12         x.store(r2,memory_order_relaxed); }  }}}
+13   }}};
+14   return 0;
+15 }
+\end{verbatim}
+\caption{OOTA Cycle Based on Conditionals}
+\label{lst:OOTA Cycle Based on Conditionals}
+\end{listing}
+
+A similar effect can be achieved using conditional statements, as
+shown in Listing~\ref{lst:OOTA Cycle Based on Conditionals}.
 
 Note that C++ implementations are permitted to evaluate to a more
 general notion of OOTA values in cases involving unspecified or undefined
@@ -182,13 +211,17 @@ instead focuses on proving that OOTA cannot occur.
 Real-world constraints are imposed by the standard, which have been
 considered in prior work, and by the laws of physics, which have
 not.
+Additional constraints are imposed by hardware architecture and
+design, which have been partially accounted for in the standard,
+one limitation being that accurate and executable formal descriptions
+of hardware memory models did not appear until after the standard
+was released.
 
 \subsection{Constraints of the Standard}
 \label{sec:Constraints of the Standard}
 
-Because C++ volatile atomics constitute observable behavior,\footnote{
-	Working Draft, Standard for Programming Language C++
-	\co{[intro.abstract]}.}
+Because C++ volatile atomics constitute observable
+behavior~\cite[\co{intro.abstract}]{ThomasKoeppe2022N4910},
 they must be executed in strict accordance with the rules of the abstract
 machine.
 This means that any C++ volatile atomic operation involving a store
@@ -301,6 +334,50 @@ Current memory models do not capture these temporal constraints,
 which makes it more difficult for them to efficiently rule out
 OOTA behavior.
 
+\subsection{Hardware Architecture and Design}
+\label{sec:Hardware Architecture and Design}
+
+Heavily used CPU families now have accurate and executable formal
+memory models, but even more important, there is much more clarity
+on exactly what hardware will and will not do in the course of
+speculative execution.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 int foo(int i) {
+ 2   atomic_int x = 0;
+ 3   int y[3];
+ 4   volatile int r1;
+ 5   {{{ { y[i].store(42, memory_order_relaxed);
+ 6         x.store(1, memory_order_relaxed); }
+ 7   ||| r1 = x.load(memory_order_relaxed);
+ 8   }}};
+ 9   return 0;
+10 }
+\end{verbatim}
+\caption{Speculated Store and Non-Speculated Load}
+\label{lst:Speculated Store and Non-Speculated Load}
+\end{listing}
+
+For example, in Listing~\ref{lst:Speculated Store and Non-Speculated Load},
+suppose that the storage for \co{x} is located immediately before that
+for \co{a[]}.
+Suppose further that hardware speculation incorrectly guesses the value
+of \co{i} to be -1, so that the speculated store of 42 on line~5 uses
+the address of \co{x}.\footnote{
+	Yes, \co{y[-1]} is undefined behavior, but the CPU neither knows
+	nor cares.}
+Then line~7 can cause the final value of \co{r1} to be 42, when
+by the rules of the C++ abstract machine the value must instead be
+either zero or one.
+
+Therefore, non-speculative loads are prohibited from loading values from
+a speculative stores.
+
+In addition, in order to avoid hardware-based OOTA, a value stored
+speculatively will not be exposed to loads from threads other than the
+one executing that store.
+
 \section{How to Form an OOTA Cycle?}
 \label{sec:How to Form an OOTA Cycle?}
 
@@ -391,6 +468,50 @@ operation.
 Therefore, cycles cannot possibly form in a flattened program,
 which in turn implies that OOTA cycles cannot form.
 
+\subsection{Illustrative Examples}
+\label{sec:Illustrative Examples}
+
+This section works through OOTA examples, showing the effects of
+the constraints called out in this paper.
+
+\subsubsection{OOTA Cycle}
+\label{sec:OOTA Cycle}
+
+Listing~\ref{lst:OOTA Cycle}
+shows the canonical example of an OOTA cycle.
+Because values from speculative stores cannot be visible to other threads,
+line~7 cannot be committed until after line~6 completes.
+Similarly, line~9 cannot be committed until after line~8 completes.
+
+Because values stored take non-zero time to propagate from one thread
+to another, no cycle can form, and thus no OOTA cycle can form.
+
+\subsubsection{OOTA Cycle Based on Conditionals}
+\label{sec:OOTA Cycle Based on Conditionals}
+
+Listing~\ref{lst:OOTA Cycle Based on Conditionals}
+shows an if-condition-based example of an OOTA cycle.
+Because values from speculative stores cannot be visible to other threads,
+lines~8 and~10 cannot be committed until after the load in line~6 completes
+and the conditional on line~7 is evaluated non-speculatively.
+Similarly, line~12 cannot be committed until after line~11 completes.
+
+Because values stored take non-zero time to propagate from one thread
+to another, no cycle can form, and thus no OOTA cycle can form.
+
+Note that if both legs of the \co{if} statement spanning lines~7-10,
+the compiler would be within its rights to hoist the store out of
+that \co{if} statement.
+However, in this case, the two stores on lines~8 and~10 are storing
+distinct values, preventing the compiler from hoisting.
+
+Note also that some architectures provide conditional-move instructions,
+which allows line~7 to avoid emitting a conditional branch.
+However, such architectures would still treat a store of the
+target of the conditional-move instructions as speculative until
+such time as the conditional moves (and any loads that they depend
+on) complete.
+
 \subsection{Correct Implementations Cannot Form OOTA Cycles}
 \label{sec:Correct Implementations Cannot Form OOTA Cycles}
 
@@ -405,6 +526,14 @@ This paper has added temporal reasoning to OOTA analysis of the C++
 memory model.
 This work shows that correct C++ implementations are inherently incapable
 of producing OOTA cycles.
+
+\section{Acknowledgments}
+\label{sec:Acknowledgments}
+
+We are grateful to David Goldblatt for his careful review of an early
+draft of this paper.
+Nonetheless, all errors and omissions in this paper are the sole property
+of the authors.
 
 % \section{History}
 % \label{sec:History}
