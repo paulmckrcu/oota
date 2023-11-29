@@ -55,15 +55,22 @@ The Indefatigible TBD
 Audience: SG1
 
 \begin{abstract}
-	The out-of-thin-air (OOTA) and read-from-untaken-branch (RFUB)
-	properties of the specification of \co{memory_order_relaxed}
-	have resulted in considerable consternation over the years.
-	Many argue that RFUB should be allowed.
-	In addition, there are no known instances of full-blown OOTA
+	The out-of-thin-air (OOTA) properties of the specification
+	of \co{memory_order_relaxed} have resulted in considerable
+	consternation over the years.
+	Attempts to create memory models that rule out OOTA behaviors
+	have either been non-executable, complex, or unloved by compiler
+	writers.
+	But at the same time, there are no known instances of OOTA
 	behavior in real C++ implementations.
 
-	This paper goes further, providing an informal proof that OOTA
-	cannot occur in real C++ programs running in the real world.
+	This paper goes further, adding temporal constraints from
+	long-standing laws of physics, thereby providing an informal
+	proof that OOTA cannot occur in correctly constructed C++
+	programs running on real-world systems.
+	In other words, a correct C++ implementation necessarily
+	preserves the semantic dependencies that prevent OOTA
+	cycles from forming.
 \end{abstract}
 
 \section{Background}
@@ -72,83 +79,256 @@ Audience: SG1
 \subsection{Brief OOTA Overview}
 \label{sec:Brief OOTA Overview}
 
-OOTA occurs when a pair of threads loads from each others' stores,
+OOTA occurs when a group of threads load from each others' stores,
 but where each thread's store depends on the value returned by that
 thread's load.
+A given out-of-thin-air value passes around the resulting cycle.
+Because there is a cycle, on a real system, at least one of the links
+must be counter-temporal, that is, either a load returns a value before
+that value is stored, or a store's address or value is computed before
+a prior load returns a value used in that computation.
 
-@@@ diagram and explanation @@@
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 int main() {
+ 2   atomic_int x=0;
+ 3   atomic_int y=0;
+ 4   int r1;
+ 5   int r2;
+ 6   {{{ { r1=x.load(memory_order_relaxed);
+ 7         y.store(r1,memory_order_relaxed); }
+ 8   ||| { r2=y.load(memory_order_relaxed);
+ 9         x.store(r2,memory_order_relaxed); }  }}}
+10   return 0;
+11 }
+\end{verbatim}
+\caption{OOTA Cycle}
+\label{lst:OOTA Cycle}
+\end{listing}
 
-Note that C++ implementations are permitted to evaluate to OOTA values
-in cases involving undefined behavior, such as use of uninitialized
-objects.
+Listing~\ref{lst:OOTA Cycle}
+shows an OOTA cycle, where the \co{\{\{\{} on line~5 begins a set of
+threads, the \co{|||} on line~8 separates a pair of threads, and
+the \co{\}\}\}} on line~9 ends a set of threads.
+Lines~6 and~7 do a relaxed copy from \co{x} to \co{y}, and
+lines~8 and~9 to a relaxed copy from \co{y} to \co{x}.
+Even though both \co{x} and \co{y} are initialized to zero on
+lines~2 and~3, respectively, according to the mathematical core
+of the C++ memory model, the only constraint on the final values
+of \co{x} and \co{y} is that they be equal.
+Counterintuitivily, their final values could be any member of their type.
+
+Note that C++ implementations are permitted to evaluate to a more
+general notion of OOTA values in cases involving unspecified or undefined
+behavior, such as use of uninitialized objects.
 However, these situations do not involve OOTA cycles, but rather user
-errors and other issues that can lead to unpredictable output.
+errors and other issues that can lead to unfriendly optimizations that
+in turn result in unpredictable output.
 This paper focuses instead on OOTA cycles.
 
-The result of an OOTA cycle can be any value.
+C++ implementations may of course avail themselves of the as-if rule.
+However, correct use of the as-if rule requires that the observable
+behaviors of the program be appropriately preserved.
 
 \subsection{Prior Work}
 \label{sec:Prior Work}
 
-Early executable C++ memory models~\cite{MarkBatty2011cppmem}
-correctly flagged executions involving OOTA.
+Some executable C++ memory models correctly flagged executions involving
+OOTA~\cite{JadeAlglave2014HerdingCats}.\footnote{
+	Others cleverly avoid this issue by forbidding atomic
+	stores of non-constant values~\cite{MarkBatty2011cppmem}.}
+% @@@ Better herd7 C11 citation?
+However, because these models are atemporal, they cannot reject
+OOTA executions other than by flagging the OOTA value as arbitrary
+(which they in fact do).
+
 P0442R0 (``Out-of-Thin-Air Execution is Vacuous'')~\cite{PaulEMcKenney2016OOTA}
 provided a decision procedure for classifying behaviors as permitted
 misordering on the one hand or disallowed OOTA on the other, using
 a perturbation method based on the insight that all OOTA behaviors are
 fixed-point computations.
 
-@@@ list of work attempting to avoid OOTA.
+Some workers recommend avoiding OOTA by ordering prior relaxed
+loads before subsequent relaxed
+stores~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352},
+but this requires real instructions be executed, consuming real
+time and real electrical power to solve a strictly theoretical
+problem.
+
+Other workers recommend various procedures to identify and avoid OOTA
+cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA},
+but none of these have been looked upon favorably by compiler implementers.
 
 All this work focused on either identifying OOTA or on how C++
 implementations could avoid it.
-Except that no one has proposed a viable C++ implementation that results
-in OOTA.
+None of this work applied real-world temporal constraints to the OOTA
+problem.
+Which might explain why no known real-world C++ implementation results
+in OOTA executions.
 
 This paper therefore drops the question of how OOTA can be avoided and
 instead focuses on proving that OOTA cannot occur.
 
-\subsection{Real-World Constraints}
+\section{Real-World Constraints}
 \label{sec:Real-World Constraints}
 
-The speed of light is finite and atoms are of non-zero size.
+Real-world constraints are imposed by the standard, which have been
+considered in prior work, and by the laws of physics, which have
+not.
+
+\subsection{Constraints of the Standard}
+\label{sec:Constraints of the Standard}
+
+Because C++ volatile atomics constitute observable behavior,\footnote{
+	Working Draft, Standard for Programming Language C++
+	\co{[intro.abstract]}.}
+they must be executed in strict accordance with the rules of the abstract
+machine.
+This means that any C++ volatile atomic operation involving a store
+must execute as if all loads whose return values are used to compute
+that store's address or value have already returned.
+OOTA afficienados will recognize this as a special case of ordering
+relaxed loads before relaxed stores, albeit one not requiring
+expensive memory-fence instructions on weakly ordered architectures.
+
+Although non-volatile accesses to atomic objects are not observable behavior,
+they are still subject to the memory model.
+In particular, implementations cannot:
+
+\begin{enumerate}
+\item	Invent atomic stores.
+\item	Duplicate atomic stores.
+\end{enumerate}
+
+\paragraph{Invented Atomic Stores}
+
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 int main() {
+ 2   atomic_int x = 2;
+ 3   volatile int r1;
+ 4   {{{ { x.store(42, memory_order_relaxed); // invented store
+ 5         x.store(3, memory_order_relaxed); }
+ 6   ||| r1 = x.load(memory_order_relaxed);
+ 7   }}};
+ 8   return 0;
+ 9 }
+\end{verbatim}
+\caption{CPPMEM Invented Store}
+\label{lst:CPPMEM Invented Store}
+\end{listing}
+
+The reason that atomic stores cannot be invented is that doing so can
+introduce new (and almost certainly undesireable) behaviors.
+To see this, consider Listing~\ref{lst:CPPMEM Invented Store},
+a CPPMEM\footnote{
+	\url{http://svr-pes20-cppmem.cl.cam.ac.uk/cppmem/index.html}.}
+litmus test that demonstrates such a behavior.
+Without line~4, only the values~2 and~3 can be stored to \co{r1}.
+With that line, the additional value~42 can also be stored to \co{r1}.
+The compiler is therefore forbidded from inventing that store of 42
+unless it can prove that doing so does not negatively affect the
+program's observable behaviors, independently of OOTA cycles.
+For example, the implementation might be able to prove that there
+are no other accesses to \co{x} at the time of the invented store.
+
+\paragraph{Duplicated Atomic Stores}
+
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 int main() {
+ 2   atomic_int x = 0;
+ 3   volatile int r1;
+ 4   {{{ { x.store(1, memory_order_relaxed); // duplicated store
+ 5         x.store(1, memory_order_relaxed); }
+ 6   ||| { r1 = x.load(memory_order_relaxed);
+ 7         x.store(2, memory_order_relaxed); }
+ 8   }}};
+ 9   return 0;
+10 }
+\end{verbatim}
+\caption{CPPMEM Duplicated Store}
+\label{lst:CPPMEM Duplicated Store}
+\end{listing}
+
+Duplicating atomic stores can also introduce new and undesireable
+behaviors.
+To see this, consider Listing~\ref{lst:CPPMEM Duplicated Store}, a CPPMEM
+litmus test that demonstrates such a behavior.
+Without line~4, if the final value of \co{r1} is 1, then the final value
+of \co{x} must be 2.
+With that line, the final value of \co{x} can be 1 even when the
+final value of \co{r1} is 1.
+The compiler is therefore forbidded from duplicating that store of 1
+unless it can prove that doing so does not negatively affect the
+program's observable behaviors, independently of OOTA cycles.
+Again, the implementation might be able to prove that there
+are no other accesses to \co{x} at the time of the invented store.
+
+\paragraph{Omitted Atomic Stores}
+In contrast, an implementation is permitted to omit atomic stores
+under less restricted circumstances.
+For example, a pair of back-to-back stores to \co{x} might always be
+executed such that no other thread accesses \co{x} during the time
+between those two stores.
+This means that, short of inspecting the assembly code, the user has no
+way of proving that the store was in fact omitted.
+The user can always resort to volatile atomic stores or inline
+assembly\footnote{
+	For example, by placing the Linux-kernel \co{barrier()} macro
+	between the two stores.
+	This macro is an empty GCC \co{asm} that specifies the \co{memory}
+	clobber.}
+to prevent the compiler from omitting a store.
+However, omitting a store cannot create an OOTA cycle.
+
+\subsection{Laws of Physics}
+\label{sec:Laws of Physics}
+
+The speed of light is finite~\cite{OleRoemer1671SpeedOfLight}
+and atoms are of non-zero size~\cite{JeanBaptistePerrin1923AtomSize}.
 These laws of physics mean that if one thread loads the value
 stored by some other thread, that load must have occurred later
 in global time than did the store.
+Current memory models do not capture these temporal constraints,
+which makes it more difficult for them to efficiently rule out
+OOTA behavior.
 
-Although accesses to atomic objects are not observable behavior,\footnote{
-	Working Draft, Standard for Programming Language C++
-	\co{[intro.abstract]}.}
-in practice, any thread's store to a global variable must be as if the
-correct value was actually stored.
-In contrast, in C, atomic operations are volatile and thus observable
-behavior, while in Rust atomic operations currently cannot be volatile.
-
-\subsection{How to Form an OOTA Cycle?}
+\section{How to Form an OOTA Cycle?}
 \label{sec:How to Form an OOTA Cycle?}
 
-An OOTA cycle consists of loads from other threads' stores combined
-with stores whose addresses or values depend on the value returned
-by the same thread's prior load.
+Rather than look at how to prevent an implementation from forming
+an OOTA cycle, this section instead looks at how to form one.
+This will lead to the conclusion that a correct C++ implementation
+cannot form an OOTA cycle.
+
+Again, an OOTA cycle consists of loads from other threads' stores where
+a given store's address or value depends on the value returned by
+the corresponding thread's prior load.
 Courtesy of the laws of physics, a given store must execute earlier
 in global time than any load from that stored-to object that returns
 the value stored.
 
-Therefore, any OOTA cycle must have arcs that go backwards in global
-time, and the only arcs that can possibly do so are those arcs that
-lie entirely with a given thread.
+And again, an OOTA cycle must have at least one link that goes backwards
+in time.
+The only possible candidate counter-temporal links so are those
+confined to a given thread.
 This in turn requires that a store that depends on an earlier load
 be executed earlier in time than that load.
-The only two ways that this can happen are when the implementation:
+The two ways that this can happen are when the implementation:
 
 \begin{enumerate}
-\item	Is able to determing (prove) the location and value of the store.
+\item	Is able to determine (prove) the location and value of the store.
 \item	Guesses the location and value of the store and has some means
 	to take corrective action should any guess prove incorrect.
 \end{enumerate}
 
-\subsubsection{Proof}
-\label{sec:Proof}
+Each of these possibilities is discussed in the next sections.
+followed by a section on the possibility of flattening a multithreaded
+program into a single thread.
+
+\subsection{Implementation Proves Value}
+\label{sec:Implementation Proves Value}
 
 Implementation can sometimes prove the location and value of a given
 store.
@@ -159,17 +339,18 @@ the load that can affect the value stored.
 Therefore, by P0442R0, that store cannot possibly take part in an
 OOTA cycle.
 
-\subsubsection{Guess}
-\label{sec:Guess}
+\subsection{Implementation Guesses at Value}
+\label{sec:Implementation Guesses at Value}
 
 Hardware speculative execution is commonplace, and permits the
 hardware to guess at values, squashing the speculation if any
 of the guesses prove incorrect.
 But in this case, a given store is not committed until all guesses that
-this store depends on have been confirmed, an no uncommitted store
+this store depends on have been confirmed, and thus no uncommitted store
 is visible to any other thread.
-Therefore, hardware speculation cannot result in OOTA cycles.
-@@@ cite hardware manuals @@@
+Therefore, hardware speculation cannot result in OOTA cycles, and
+by design, even on weakly ordered
+systems~\cite{ARMv7A:2010,ARMv8A:2017,PowerISA2.07-2013}.
 This same constraint applies to software, which might use compare-and-swap
 loops or hardware transactional memory to confirm guesses.
 
@@ -177,26 +358,46 @@ Either way, the need to wait for guesses to be confirmed before committing
 stores prevents those stores from becoming visible prior to the
 completion of any loads that those stores depend on.
 
-\subsubsection{What About Flattening?}
-\label{sec:What About Flattening?}
+\subsection{But What About Flattening?}
+\label{sec:But What About Flattening?}
 
 The concept of flattening multiple threads into a single thread is
 tantalizing, especially given the large cache-miss penalties inherent
-to large multicore systems, which can have thousands of CPUs.
+to large multicore systems, which can have many sockets containing
+thousands of CPUs.
 One might object to the whole concept of flattening as a compiler
 optimization given the difficulty inherent in avoiding deadlocks
 and other hazards.
+Nevertheless, it is only reasonable to ask whether flattening can
+result in OOTA cycles.
+As we will see, the answer is ``no''.
 
 But for the purposes of OOTA cycles, the flattening situation is
 much simpler.
-Any fully flattened program will be single threaded, which implies
-that all of its atomic operations will be sequentially consistent,
-which in turn guarantees that OOTA cycles cannot form.
+Any fully flattened program will be single threaded, which implies that
+each of its atomic load operations will return the last value stored to
+that same object in sequenced-before order (or the initial value if there
+is no such store).
+Thus, any sequence of loads and stores must have a first operation and
+a last operation, and the last operation cannot affect the first
+operation.
+Therefore, cycles cannot possibly form in a flattened program,
+which in turn implies that OOTA cycles cannot form.
+
+\section{Correct Implementations Cannot Form OOTA Cycles}
+\label{sec:Correct Implementations Cannot Form OOTA Cycles}
+
+This section has shown that an implementation that correctly
+handles the memory model, observable behavior, and the as-if rule
+cannot form OOTA cycles.
 
 \section{Conclusion}
 \label{sec:Conclusion}
 
-Therefore, correct C++ implementations cannot produce OOTA cycles.
+This paper has added temporal reasoning to OOTA analysis of the C++
+memory model.
+This work shows that correct C++ implementations are inherently incapable
+of producing OOTA cycles.
 
 % \section{History}
 % \label{sec:History}
