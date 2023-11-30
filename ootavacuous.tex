@@ -362,9 +362,18 @@ and atoms are of non-zero size~\cite{JeanBaptistePerrin1923AtomSize}.
 These laws of physics mean that if one thread loads the value
 stored by some other thread, that load must have occurred later
 in global time than did the store.
-Current memory models do not capture these temporal constraints,
-which makes it more difficult for them to efficiently rule out
-OOTA behavior.
+In other words, the reads-from relation is temporal in nature.
+
+In contrast, the C++11 modification-order relation is atemporal.
+This means that the store that executed earlier in global time
+might appear later in the stored-to object's modification
+order~\cite{McKenney20xxParallelProgramming}.
+The atemporal nature of C++11 modification order is due to the hardware
+store-buffer optimizations used by modern multicore systems.
+
+Current programming-language abstract machines  do not capture these
+temporal constraints, which makes it more difficult for them to
+efficiently rule out OOTA behavior.
 
 \subsection{Hardware Architecture and Design}
 \label{sec:Hardware Architecture and Design}
@@ -421,9 +430,10 @@ cannot form an OOTA cycle.
 Again, an OOTA cycle consists of loads from other threads' stores where
 a given store's address or value depends on the value returned by
 the corresponding thread's prior load.
-Courtesy of the laws of physics, a given store must execute earlier
-in global time than any load from that stored-to object that returns
-the value stored.
+All of the links from ont thread to the next are reads-from links, which
+are temporal in nature, that is, a given store must execute earlier in
+global time than any load from that stored-to object that returns the
+value stored.
 
 And again, an OOTA cycle must have at least one link that goes backwards
 in time.
