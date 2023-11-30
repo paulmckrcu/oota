@@ -205,6 +205,38 @@ in OOTA executions.
 This paper therefore drops the question of how OOTA can be avoided and
 instead focuses on proving that OOTA cannot occur.
 
+\subsection{OOTA Definition}
+\label{sec:OOTA Definition}
+
+Prior work defines ``OOTA cycle'' by example, without a precise
+definition.
+Sometimes ``causal cycle'' is used as if it was a definition, but
+without a clear decision process for what does and does not
+constitute a causal cycle..
+P0442R0 defines an OOTA cycle as a fixed-point computation that is
+sensitive to perturbations, which makes perfect sense to that paper's
+authors, but has left others unsatisfied.
+
+We could follow this long-established tradition of proposing
+solutions to the OOTA problem without a definition of this problem.
+However, we (perhaps foolishly) felt the need to provide a clear
+definition.
+
+An OOTA cycle (also known as a causal cycle) is a cycle in the
+memory-model sense involving the load-buffering (LB) pattern.
+Within each thread in the cycle, the value stored depends on
+the value loaded.
+This dependency might be a data dependency
+(see Listing~\ref{lst:OOTA Cycle})
+or it might be a control dependency
+(see Listing~\ref{lst:OOTA Cycle Based on Conditionals}).\footnote{
+	Sufficiently motivated readers should have no problem constructing
+	examples involving address dependencies.}
+There must be at least two distinct values such that if a given load
+returns a given value, that value forces the cycle to execute so as to
+cause the corresponding store's value to be equal to that given value, and
+for that store to occur early enough for the load to return that value.
+
 \section{Real-World Constraints}
 \label{sec:Real-World Constraints}
 
