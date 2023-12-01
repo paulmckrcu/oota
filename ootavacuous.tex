@@ -257,6 +257,161 @@ one limitation being that accurate and executable formal descriptions
 of hardware memory models did not appear until after the standard
 was released.
 
+The following sections discuss these constraints, starting with the
+laws of physics, continuing with hardware constraints, and ending
+with constraints imposed by the standard.
+
+\subsection{Laws of Physics}
+\label{sec:Laws of Physics}
+
+Evidence to date suggests that the universe is
+causal~\cite{Plato360BC-causality},
+the speed of light is finite~\cite{OleRoemer1671SpeedOfLight}, and
+atoms are of non-zero size~\cite{JeanBaptistePerrin1923AtomSize}.
+These fundamental laws of physics are empirical in nature, but
+are backed by a great many observations extending back to a time
+preceding electronic computers, let alone computer languages that
+support concurrency.
+
+The relationship between these three laws of physics and OOTA
+cycles is described in the following sections.
+
+\subsubsection{Causality}
+\label{sec:Causality}
+
+Plato's ``Timaeus'' notwithstanding, there has been much recent debate
+as to whether the universe is in fact causal with cause necessarily
+preceding effect.
+However, no one has managed to construct a real time-travel machine
+or any other apparatus that might result in effect preceding cause,
+as discussed at length in the Wikipedia article on retrocausality and
+its many references.\footnote{
+	\url{https://en.wikipedia.org/wiki/Retrocausality}.}
+
+This paper will therefore assume that effect cannot precede cause in
+any real-world computing system.
+
+\subsubsection{Finite Speed of Light}
+\label{sec:Finite Speed of Light}
+
+If the speed of light was infinite, then information could be transmitted
+at infinite speed, arriving at any destination, no matter how remote,
+in zero time.
+This situation would permit a load to return the value stored by some
+other thread at the exact instant that the store executed, which
+would in turn remove propagation delay as a factor preventing
+causal loops such as OOTA cycles from forming.
+
+However, all macroscopic measurements to date have shown the speed of
+light to be finite, thus preventing causal loops based on infinite-speed
+propagation of information.
+
+This paper will therefore assume that the speed of light is finite, and
+thus the maximum speed at which information can propagate is also finite.
+
+\subsubsection{Non-Zero Sized Atoms}
+\label{sec:Non-Zero Sized Atoms}
+
+If atoms were of zero size, a zero-sized computer might be constructed.
+In such a computer, even give finite speed of light, information could
+propagate among computing elements in zero time.
+This situation would also permit a load to return the value stored by
+some other thread at the exact instant that the store executed, which
+would again in turn remove propagation delay as a factor preventing
+causal loops such as OOTA cycles from forming.
+
+However, there has to date been no successful attempt to construct a
+zero-sized computing device capable of running non-trivial C++ programs.
+
+This paper will therefore assume that any computing device capable of
+running C++ will be of non-zero size.
+
+\subsubsection{Laws of Physics: Consequences}
+\label{sec:Laws of Physics: Consequences}
+
+These three laws of physics mean that if one thread loads the value
+stored by some other thread, that load must have occurred later
+in global time than did the store.
+In other words, the reads-from relation is temporal in nature.
+
+In contrast, the C++11 modification-order relation is atemporal,
+because computing systems can and observably do determine the
+modification order of a set of concurrent stores long after the fact.
+This means that the store that executed earlier in global time
+might appear later in the stored-to object's modification
+order~\cite{McKenney20xxParallelProgramming}.
+The atemporal nature of C++11 modification order is due to the hardware
+store-buffer optimizations used by modern multicore systems.
+
+This atemporality is also why cycles are not considered to have
+OOTA cycles when at least one link from one thread to the next
+involves both threads storing to the same object.
+Similarly, cycles having at least link where one thread loads from an
+object and the next thread stores to that object are also not considered
+to be OOTA cycles.
+
+Current programming-language abstract machines do not capture these
+temporal constraints, which makes it more difficult for them to
+efficiently rule out OOTA behavior.
+
+\subsection{Hardware Architecture and Design}
+\label{sec:Hardware Architecture and Design}
+
+In happy contrast to the situation at the start of the C++11 memory-model
+effort, heavily used CPU families now have accurate and executable formal
+memory models, all of which prohibit the causal cycles required to form
+OOTA cycles.
+Even more important, there is clarity on exactly what hardware can and
+can not do in the course of speculative execution.
+Finally, computation is based on instructions, and instructions require
+finite time to execute, even when executed speculatively.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 int foo(int i) {
+ 2   atomic_int x = 0;
+ 3   int y[3];
+ 4   volatile int r1;
+ 5   {{{ { y[i].store(42, memory_order_relaxed);
+ 6         x.store(1, memory_order_relaxed); }
+ 7   ||| r1 = x.load(memory_order_relaxed);
+ 8   }}};
+ 9   return 0;
+10 }
+\end{verbatim}
+\caption{Speculated Store and Non-Speculated Load}
+\label{lst:Speculated Store and Non-Speculated Load}
+\end{listing}
+
+For example, in Listing~\ref{lst:Speculated Store and Non-Speculated Load},
+suppose that the storage for \co{x} is located immediately before that
+for \co{a[]}.
+Suppose further that hardware speculation incorrectly guesses the value
+of \co{i} to be -1, so that the speculated store of 42 on line~5 uses
+the address of \co{x}.\footnote{
+	Yes, \co{y[-1]} is undefined behavior, but the CPU neither knows
+	nor cares, nor should it.}
+Then line~7 can cause the final value of \co{r1} to be 42, when
+by the rules of the C++ abstract machine the value must instead be
+either zero or one.
+
+Therefore, non-speculative loads are prohibited from loading values from
+speculative stores.
+
+As a special case of this prohibitino, a value stored speculatively must
+not be exposed to non-speculative loads from other threads.
+In the further special case of multiple hardware threads sharing a core,
+one might imagine speculation involving multiple threads.
+However, in this case, any squashing of speculation must squash the
+full extent of that speculation, across all of the hardware threads
+that were involved.
+
+Finally, the prohibition of hardware OOTA applies within a single
+multi-threaded core as well as between cores.
+This means that for any set of speculative accesses to be committed,
+all loads in that set must have been confirmed by corresponding
+non-speculative stores.
+
 \subsection{Constraints of the Standard}
 \label{sec:Constraints of the Standard}
 
@@ -299,7 +454,7 @@ In particular, implementations cannot:
 \end{listing}
 
 The reason that atomic stores cannot be invented is that doing so can
-introduce new (and almost certainly undesireable) behaviors.
+introduce new (and almost certainly undesirable) behaviors.
 To see this, consider Listing~\ref{lst:CPPMEM Invented Store},
 a CPPMEM\footnote{
 	\url{http://svr-pes20-cppmem.cl.cam.ac.uk/cppmem/index.html}.}
@@ -361,78 +516,6 @@ assembly\footnote{
 	clobber.}
 to prevent the compiler from omitting a store.
 However, omitting a store cannot create an OOTA cycle.
-
-\subsection{Laws of Physics}
-\label{sec:Laws of Physics}
-
-The speed of light is finite~\cite{OleRoemer1671SpeedOfLight}
-and atoms are of non-zero size~\cite{JeanBaptistePerrin1923AtomSize}.
-These laws of physics mean that if one thread loads the value
-stored by some other thread, that load must have occurred later
-in global time than did the store.
-In other words, the reads-from relation is temporal in nature.
-
-In contrast, the C++11 modification-order relation is atemporal.
-This means that the store that executed earlier in global time
-might appear later in the stored-to object's modification
-order~\cite{McKenney20xxParallelProgramming}.
-The atemporal nature of C++11 modification order is due to the hardware
-store-buffer optimizations used by modern multicore systems.
-
-This atemporality is also why cycles are not considered to have
-OOTA cycles when at least one link from one thread to the next
-involves both threads storing to the same object.
-Similarly, cycles having at least link where one thread loads from an
-object and the next thread stores to that object are also not considered
-to be OOTA cycles.
-
-Current programming-language abstract machines do not capture these
-temporal constraints, which makes it more difficult for them to
-efficiently rule out OOTA behavior.
-
-\subsection{Hardware Architecture and Design}
-\label{sec:Hardware Architecture and Design}
-
-Heavily used CPU families now have accurate and executable formal
-memory models, but even more important, there is much more clarity
-on exactly what hardware will and will not do in the course of
-speculative execution.
-
-\begin{listing}[tbp]
-\begin{verbatim}
- 1 int foo(int i) {
- 2   atomic_int x = 0;
- 3   int y[3];
- 4   volatile int r1;
- 5   {{{ { y[i].store(42, memory_order_relaxed);
- 6         x.store(1, memory_order_relaxed); }
- 7   ||| r1 = x.load(memory_order_relaxed);
- 8   }}};
- 9   return 0;
-10 }
-\end{verbatim}
-\caption{Speculated Store and Non-Speculated Load}
-\label{lst:Speculated Store and Non-Speculated Load}
-\end{listing}
-
-For example, in Listing~\ref{lst:Speculated Store and Non-Speculated Load},
-suppose that the storage for \co{x} is located immediately before that
-for \co{a[]}.
-Suppose further that hardware speculation incorrectly guesses the value
-of \co{i} to be -1, so that the speculated store of 42 on line~5 uses
-the address of \co{x}.\footnote{
-	Yes, \co{y[-1]} is undefined behavior, but the CPU neither knows
-	nor cares.}
-Then line~7 can cause the final value of \co{r1} to be 42, when
-by the rules of the C++ abstract machine the value must instead be
-either zero or one.
-
-Therefore, non-speculative loads are prohibited from loading values from
-a speculative stores.
-
-In addition, in order to avoid hardware-based OOTA, a value stored
-speculatively will not be exposed to loads from threads other than the
-one executing that store.
 
 \section{How to Form an OOTA Cycle?}
 \label{sec:How to Form an OOTA Cycle?}
@@ -576,8 +659,8 @@ This section has shown that an implementation that correctly
 handles the memory model, observable behavior, and the as-if rule
 cannot form OOTA cycles.
 
-\section{Wording}
-\label{sec:Wording}
+\section{Suggested Changes to Wording}
+\label{sec:Suggested Changes to Wording}
 
 Add the following note in \co{[atomics.order]} after 33.5.4p9:
 
@@ -661,12 +744,13 @@ of the authors.
 
 % @@@ Inter-CPU speculation if inter-CPU squashing of speculation.
 
-% Done:
+% Done as of November 30, 2023:
 % David Goldblatt
-% Boqun Feng?
+% Boqun Feng, Uladzislau Rezki, Neeraj Upadhyay, Joel Fernandes, and
+%	Frederic Weisbecker (RCU proteges)
 % Michael Wong
 % Maged Michael
-% John Wickerson: Thank you.  Peter Sewell?  Mark Batty? Other TFWM authors?
+% John Wickerson: Thank you.  OK for Peter Sewell, Mark Batty, etc.
 % Akira Yokosawa: Professional courtesy, perfbook memory models.
 % Dan Kelley, Alexei Starovoitov, Mykola Lysenko: FYI.  OOTA dropped
 % Alan Jeffrey: Fixed-point insight P0422R0.  Reached out via LinkedIn.
