@@ -214,7 +214,7 @@ Prior work defines ``OOTA cycle'' by example, without a precise
 definition.
 Sometimes ``causal cycle'' is used as if it was a definition, but
 without a clear decision process for what does and does not
-constitute a causal cycle..
+constitute a causal cycle.
 P0442R0 defines an OOTA cycle as a fixed-point computation that is
 destroyed by perturbations, which makes perfect sense to that paper's
 authors, but has left others unsatisfied.
@@ -428,11 +428,11 @@ expensive memory-fence instructions on weakly ordered architectures.
 
 Although non-volatile accesses to atomic objects are not observable behavior,
 they are still subject to the memory model.
-In particular, implementations cannot:
+In particular, implementations must not behave as if they have:
 
 \begin{enumerate}
-\item	Invent atomic stores.
-\item	Duplicate atomic stores.
+\item	Invented atomic stores.
+\item	Duplicated atomic stores.
 \end{enumerate}
 
 \paragraph{Invented Atomic Stores}
