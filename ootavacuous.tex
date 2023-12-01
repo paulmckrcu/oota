@@ -613,14 +613,20 @@ memory model.
 This work shows that correct C++ implementations are inherently incapable
 of producing OOTA cycles.
 
+Therefore, if your C++ implementation produces OOTA cycles, you have
+bugs that would be considered bugs even if OOTA cycles were allowed.
+And you need to fix those bugs, regardless of whether they are in your
+compiler, your hardware, or your alternative universe.
+
 \section{Acknowledgments}
 \label{sec:Acknowledgments}
 
-We are grateful to David Goldblatt for his careful review of an early
-draft of this paper and to John Wikerson for asking Paul for a rant and
-taking the proffered rant seriously.
-We also owe David Goldblatt a debt of gratitude for his having asked
-an insightful question at the right time.
+We are grateful to David Goldblatt and Jade Alglave for their careful
+review of an early draft of this paper and to John Wikerson for asking
+Paul for a rant and taking the proffered rant seriously.
+We also owe David Goldblatt a debt of gratitude for his having asked an
+insightful question at the right time, and for his ``Deathstation 9000''
+demonic CPU.
 Nonetheless, all errors and omissions in this paper are the sole property
 of the authors.
 
@@ -650,12 +656,14 @@ of the authors.
 % Luke Geeson: Whatever...  Review.
 % Ori Lahav: Prior OOTA.
 % Viktor Vafeiadis:  Prior OOTA.
+% Derek Dreyer: Prior OOTA.
 % Brian Demsky: Prior OOTA.
 
 % @@@ Inter-CPU speculation if inter-CPU squashing of speculation.
 
 % Done:
 % David Goldblatt
+% Boqun Feng?
 % Michael Wong
 % Maged Michael
 % John Wickerson: Thank you.  Peter Sewell?  Mark Batty? Other TFWM authors?
