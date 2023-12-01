@@ -454,7 +454,8 @@ In particular, implementations cannot:
 \end{listing}
 
 The reason that atomic stores cannot be invented is that doing so can
-introduce new (and almost certainly undesirable) behaviors.
+introduce new (and almost certainly undesirable) behaviors that are
+forbidden by the abstract machine.
 To see this, consider Listing~\ref{lst:CPPMEM Invented Store},
 a CPPMEM\footnote{
 	\url{http://svr-pes20-cppmem.cl.cam.ac.uk/cppmem/index.html}.}
