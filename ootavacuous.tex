@@ -67,10 +67,12 @@ Audience: SG1
 	behavior in real C++ implementations.
 
 	This paper goes further, adding temporal constraints from
-	long-standing laws of physics, thereby providing an informal
+	long-standing laws of physics and constraints on hardware
+	architecture and design, thereby providing an informal
 	proof that OOTA cannot occur in correctly constructed C++
 	programs running on real-world systems.
-	In other words, a correct C++ implementation necessarily
+
+	The result is that a correct C++ implementation necessarily
 	preserves the semantic dependencies that prevent OOTA
 	cycles from forming.
 \end{abstract}
@@ -214,16 +216,22 @@ Sometimes ``causal cycle'' is used as if it was a definition, but
 without a clear decision process for what does and does not
 constitute a causal cycle..
 P0442R0 defines an OOTA cycle as a fixed-point computation that is
-sensitive to perturbations, which makes perfect sense to that paper's
+destroyed by perturbations, which makes perfect sense to that paper's
 authors, but has left others unsatisfied.
 
 We could follow this long-established tradition of proposing
 solutions to the OOTA problem without a definition of this problem.
 However, we (perhaps foolishly) felt the need to provide a clear
-definition.
+definition, which is a more detailed version of the wording in 33.5.4p8
+(\co{[atomics.order]}):
 
-An OOTA cycle (also known as a causal cycle) is a cycle in the
-memory-model sense involving the load-buffering (LB) pattern.
+\begin{quote}
+	Implementations should ensure that no “out-of-thin-air” values
+	are computed that circularly depend on their own computation.
+\end{quote}
+
+We therefore define an OOTA cycle (also known as a causal cycle) as a
+cycle in the memory-model sense involving the load-buffering (LB) pattern.
 Within each thread in the cycle, the value stored depends on
 the value loaded.
 This dependency might be a data dependency
@@ -371,7 +379,14 @@ order~\cite{McKenney20xxParallelProgramming}.
 The atemporal nature of C++11 modification order is due to the hardware
 store-buffer optimizations used by modern multicore systems.
 
-Current programming-language abstract machines  do not capture these
+This atemporality is also why cycles are not considered to have
+OOTA cycles when at least one link from one thread to the next
+involves both threads storing to the same object.
+Similarly, cycles having at least link where one thread loads from an
+object and the next thread stores to that object are also not considered
+to be OOTA cycles.
+
+Current programming-language abstract machines do not capture these
 temporal constraints, which makes it more difficult for them to
 efficiently rule out OOTA behavior.
 
@@ -561,6 +576,35 @@ This section has shown that an implementation that correctly
 handles the memory model, observable behavior, and the as-if rule
 cannot form OOTA cycles.
 
+\section{Wording}
+\label{sec:Wording}
+
+Add the following note in \co{[atomics.order]} after 33.5.4p9:
+
+\begin{quote}
+	[ \emph{Note:} Implementations that respect the following
+	constraints are incapable of computing out-of-thin-air value
+	that depend circularly on their own computation:
+
+	\begin{itemize}
+	\item	Correctly implement the C++ abstract machine, and
+	\item	Run on correctly implemented hardware
+		(specifically, hardware that forbids non-speculative
+		loads from returning values from speculative stores
+		and that forbids exposing values from speculative
+		stores to other threads), and
+	\item	Reside in a universe having a finite speed of light
+		and atomic matter.
+	\end{itemize}
+
+	All three constraints are subject to the as-if rule.
+	For example, those creating an alternate universe in which
+	C++ implementations are to run correctly should ensure
+	that their universe behaves as if the speed of light was
+	finite and the nature of matter was atomic.
+	--- \emph{end note} ]
+\end{quote}
+
 \section{Conclusion}
 \label{sec:Conclusion}
 
@@ -573,9 +617,59 @@ of producing OOTA cycles.
 \label{sec:Acknowledgments}
 
 We are grateful to David Goldblatt for his careful review of an early
-draft of this paper.
+draft of this paper and to John Wikerson for asking Paul for a rant and
+taking the proffered rant seriously.
+We also owe David Goldblatt a debt of gratitude for his having asked
+an insightful question at the right time.
 Nonetheless, all errors and omissions in this paper are the sole property
 of the authors.
+
+% To do:
+% Luc Maranget: Memory models.
+% Richard Gristenthwaite: ARM hardware.
+% Mark Rutland: ARM memory ordering.
+% Will Deacon: ARM hardware, C++, and OOTA.
+% Greg Kroah-Hartman and Linus Torvalds: FYI, trouble being caused.
+% Christoph Hellwig: Why slow on BPF memory model.
+% Miguel Ojeda: LKMM and Rust.
+% Alice Ryhl: LKMM and Rust.
+% Ralf Jung: Rust.
+% Catalin Marinas: ARM and formal methods (qspinlock).
+% Segher Boessenkool:  GCC.
+% Dan Lustig: NVIDIA memory ordering.
+% Andrea Parri: Memory models, RISC-V hardware.
+% Jonas Oberhauser: Memory models.
+% Hernan Ponce de Leon: Memory models.
+% Palmer Dabbelt: RISC-V hardware.
+% Ali Sezgin: P0422R0.
+% Tony Tye: P0422R0.
+% Other memory-model maintainers, including Peter Zijlstra.
+% Derek Williams: PowerPC hardware.
+% Hans Boehm: Skeptic, memory models, OOTA.  Suggestions for others?
+% Olivier Giroux: Skeptic, memory models, NVIDIA.
+% Luke Geeson: Whatever...  Review.
+% Ori Lahav: Prior OOTA.
+% Viktor Vafeiadis:  Prior OOTA.
+% Brian Demsky: Prior OOTA.
+
+% @@@ Inter-CPU speculation if inter-CPU squashing of speculation.
+
+% Done:
+% David Goldblatt
+% Michael Wong
+% Maged Michael
+% John Wickerson: Thank you.  Peter Sewell?  Mark Batty? Other TFWM authors?
+% Akira Yokosawa: Professional courtesy, perfbook memory models.
+% Dan Kelley, Alexei Starovoitov, Mykola Lysenko: FYI.  OOTA dropped
+% Alan Jeffrey: Fixed-point insight P0422R0.  Reached out via LinkedIn.
+% Jade Alglave: C++ herd model?  Memory models and variety of hardware.
+% Alan Stern: Memory models, mathematical logic, and variety of hardware.
+
+
+% \appendix
+
+% \section{Demonstration of OOTA-Cycle Definition}
+% \label{app:Demonstration of OOTA-Cycle Definition}
 
 % \section{History}
 % \label{sec:History}
