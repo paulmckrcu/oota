@@ -72,9 +72,11 @@ Audience: SG1
 	proof that OOTA cannot occur in correctly constructed C++
 	programs running on real-world systems.
 
-	The result is that a correct C++ implementation necessarily
-	preserves the semantic dependencies that prevent OOTA
-	cycles from forming.
+	The result is that a correct per-execution-path C++ implementation
+	necessarily preserves the semantic dependencies that prevent
+	OOTA cycles from forming.
+	Implementations that undertake complex cross-thread analysis
+	still need to be careful.
 \end{abstract}
 
 \section{Background}
@@ -231,7 +233,8 @@ definition, which is a more detailed version of the wording in 33.5.4p8
 \end{quote}
 
 We therefore define an OOTA cycle (also known as a causal cycle) as a
-cycle in the memory-model sense involving the load-buffering (LB) pattern.
+cycle in the memory-model sense involving only reads-from links, that
+is, the value stored in on thread being read by the next thread.
 Within each thread in the cycle, the value stored depends on
 the value loaded.
 This dependency might be a data dependency
@@ -240,7 +243,7 @@ or it might be a control dependency
 (see Listing~\ref{lst:OOTA Cycle Based on Conditionals}).\footnote{
 	Sufficiently motivated readers should have no problem constructing
 	examples involving address dependencies.}
-There must be at least two distinct values such that if a given load
+@@@ There must be at least two distinct values such that if a given load
 returns a given value, that value forces the cycle to execute so as to
 cause the corresponding store's value to be equal to that given value, and
 for that store to occur early enough for the load to return that value.
@@ -415,19 +418,19 @@ non-speculative stores.
 \subsection{Constraints of the Standard}
 \label{sec:Constraints of the Standard}
 
-Because C++ volatile atomics constitute observable
+Because volatile atomics constitute observable
 behavior~\cite[\co{intro.abstract}]{ThomasKoeppe2022N4910},
 they must be executed in strict accordance with the rules of the abstract
 machine.
-This means that any C++ volatile atomic operation involving a store
+This means that any volatile atomic operation involving a store
 must execute as if all loads whose return values are used to compute
 that store's address or value have already returned.
 OOTA afficienados will recognize this as a special case of ordering
 relaxed loads before relaxed stores, albeit one not requiring
 expensive memory-fence instructions on weakly ordered architectures.
 
-Although non-volatile accesses to atomic objects are not observable behavior,
-they are still subject to the memory model.
+Although C++ non-volatile accesses to atomic objects are not observable
+behavior, they are still subject to the memory model.
 In particular, implementations must not behave as if the source code has
 additional:
 
@@ -435,6 +438,9 @@ additional:
 \item	Invented atomic stores.
 \item	Duplicated atomic stores.
 \end{enumerate}
+
+The discussion of these two constraints is followed by a discussion of
+when redundant atomic stores may safely be omitted.
 
 \paragraph{Invented Atomic Stores}
 
@@ -502,22 +508,25 @@ program's observable behaviors, independently of OOTA cycles.
 Again, the implementation might be able to prove that there
 are no other accesses to \co{x} at the time of the invented store.
 
-\paragraph{Omitted Atomic Stores}
-In contrast, an implementation is permitted to omit atomic stores
-under less restricted circumstances.
-For example, a pair of back-to-back stores to \co{x} might always be
-executed such that no other thread accesses \co{x} during the time
-between those two stores.
+\paragraph{Omitted Redundant Atomic Stores}
+In contrast, a pair of back-to-back non-volatile atomic stores to \co{x}
+might always be executed such that no other thread accesses \co{x}
+during the time between those two stores.
 This means that, short of inspecting the assembly code, the user has no
-way of proving that the store was in fact omitted.
-The user can always resort to volatile atomic stores or inline
-assembly\footnote{
+way of proving that the C++ implementation acted as if that store was
+omitted from the source code.
+In cases where this is undesirable, the user can resort to volatile
+atomic stores or to inline assembly\footnote{
 	For example, by placing the Linux-kernel \co{barrier()} macro
 	between the two stores.
 	This macro is an empty GCC \co{asm} that specifies the \co{memory}
 	clobber.}
 to prevent the compiler from omitting a store.
-However, omitting a store cannot create an OOTA cycle.
+However, acting as if such a redundant store was omitted from the source
+code cannot create an OOTA cycle.
+After all, the implementation is already within its as-if rights to
+assume that the first of a back-to-back pair of non-volatile relaxed
+atomic stores was omitted from the source code.
 
 \section{How to Form an OOTA Cycle?}
 \label{sec:How to Form an OOTA Cycle?}
@@ -706,9 +715,9 @@ compiler, your hardware, or your alternative universe.
 \section{Acknowledgments}
 \label{sec:Acknowledgments}
 
-We are grateful to David Goldblatt and Jade Alglave for their careful
-review of an early draft of this paper and to John Wikerson for asking
-Paul for a rant and taking the proffered rant seriously.
+We are grateful to David Goldblatt, Jade Alglave, and Alan Stern for their
+careful review of an early draft of this paper and to John Wikerson for
+asking Paul for a rant and taking the proffered rant seriously.
 We also owe David Goldblatt a debt of gratitude for his having asked an
 insightful question at the right time, and for his ``Deathstation 9000''
 demonic CPU.
