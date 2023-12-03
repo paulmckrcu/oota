@@ -783,7 +783,9 @@ of the authors.
 Listing~\ref{lst:Causality Test Case 1}
 shows causality test case 1, for which the \co{r1 == r2 == 1} result
 is to be allowed.
-However, the herd7 tool does not find this litmus test's OOTA cycle.
+However, the herd7 tool does not find this litmus test's cycle, presumably
+because this tool does not do the deep inter-thread compiler analysis
+required to find it.
 
 \begin{listing}[tbp]
 \begin{verbatim}
@@ -799,7 +801,7 @@ However, the herd7 tool does not find this litmus test's OOTA cycle.
 Listing~\ref{lst:Causality Test Case 2}
 shows causality test case 2, for which the \co{r1 == r2 == r3 == 1} result
 is to be allowed.
-The herd7 tool finds this OOTA cycle.
+The herd7 tool finds this cycle, and does not flag it as an OOTA cycle.
 
 \begin{listing}[tbp]
 \begin{verbatim}
@@ -815,7 +817,7 @@ The herd7 tool finds this OOTA cycle.
 Listing~\ref{lst:Causality Test Case 3}
 shows causality test case 3, for which the \co{r1 == r2 == r3 == 1} result
 is to be allowed.
-The herd7 tool finds this OOTA cycle.
+The herd7 tool finds this cycle, and does not flag it as an OOTA cycle.
 
 \begin{listing}[tbp]
 \begin{verbatim}
@@ -831,7 +833,7 @@ The herd7 tool finds this OOTA cycle.
 Listing~\ref{lst:Causality Test Case 4}
 shows causality test case 4, for which the \co{r1 == r2 == 1} result
 is to be forbidden.
-The herd7 tool finds this OOTA cycle, but flags it as such using \co{S08}.
+The herd7 tool finds this OOTA cycle, and flags it as such using \co{S8}.
 
 \begin{listing}[tbp]
 \begin{verbatim}
@@ -847,7 +849,7 @@ The herd7 tool finds this OOTA cycle, but flags it as such using \co{S08}.
 Listing~\ref{lst:Causality Test Case 5}
 shows causality test case 5, for which the \co{r1 == r2 == 1 && r3 == 0}
 result is to be forbidden.
-The herd7 tool finds this OOTA cycle, but flags it as such using \co{S08}.
+The herd7 tool finds this OOTA cycle, and flags it as such using \co{S8}.
 
 \begin{listing}[tbp]
 \begin{verbatim}
@@ -855,6 +857,56 @@ The herd7 tool finds this OOTA cycle, but flags it as such using \co{S08}.
 \end{verbatim}
 \caption{Causality Test Case 5}
 \label{lst:Causality Test Case 5}
+\end{listing}
+
+\subsubsection{Causality Test Case 6}
+\label{app:Causality Test Case 6}
+
+Listing~\ref{lst:Causality Test Case 6}
+shows causality test case 6, for which the \co{r1 == r2 == 1}
+result is to be allowed.
+The herd7 tool finds this cycle, and does not flag it as an OOTA cycle.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+@@ DisplayLitmus litmus/oota-causality-6.litmus @@
+\end{verbatim}
+\caption{Causality Test Case 6}
+\label{lst:Causality Test Case 6}
+\end{listing}
+
+\subsubsection{Causality Test Case 7}
+\label{app:Causality Test Case 7}
+
+Listing~\ref{lst:Causality Test Case 7}
+shows causality test case 7, for which the \co{r1 == r2 == r3 == 1}
+result is to be allowed.
+The herd7 tool finds this cycle, and does not flag it as an OOTA cycle.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+@@ DisplayLitmus litmus/oota-causality-7.litmus @@
+\end{verbatim}
+\caption{Causality Test Case 7}
+\label{lst:Causality Test Case 7}
+\end{listing}
+
+\subsubsection{Causality Test Case 8}
+\label{app:Causality Test Case 8}
+
+Listing~\ref{lst:Causality Test Case 8}
+shows causality test case 8, for which the \co{r1 == r2 == 1}
+result is to be allowed.
+The herd7 tool does not find this cycle, but when \co{r2} is explicitly
+initialized to the constant \co{1}, it does find the cycle and refrains
+from flagging it as an OOTA cycle.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+@@ DisplayLitmus litmus/oota-causality-8.litmus @@
+\end{verbatim}
+\caption{Causality Test Case 8}
+\label{lst:Causality Test Case 8}
 \end{listing}
 
 \subsection{Additional Litmus Tests}
