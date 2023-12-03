@@ -515,18 +515,18 @@ during the time between those two stores.
 This means that, short of inspecting the assembly code, the user has no
 way of proving that the C++ implementation acted as if that store was
 omitted from the source code.
-In cases where this is undesirable, the user can resort to volatile
-atomic stores or to inline assembly\footnote{
+In cases where this omission is undesirable, the user can resort to
+volatile atomic stores or to inline assembly\footnote{
 	For example, by placing the Linux-kernel \co{barrier()} macro
 	between the two stores.
 	This macro is an empty GCC \co{asm} that specifies the \co{memory}
 	clobber.}
 to prevent the compiler from omitting a store.
 However, acting as if such a redundant store was omitted from the source
-code cannot create an OOTA cycle.
-After all, the implementation is already within its as-if rights to
-assume that the first of a back-to-back pair of non-volatile relaxed
-atomic stores was omitted from the source code.
+code cannot create an OOTA cycle because any valid execution (OOTA or not)
+of the program with the first of a back-to-back pair of non-volatile
+relaxed atomic stores omitted is essentially a valid execution of the
+program with the store present.
 
 \section{How to Form an OOTA Cycle?}
 \label{sec:How to Form an OOTA Cycle?}
