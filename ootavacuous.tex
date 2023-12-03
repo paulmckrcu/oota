@@ -787,24 +787,7 @@ However, the herd7 tool does not find this litmus test's OOTA cycle.
 
 \begin{listing}[tbp]
 \begin{verbatim}
- 1 C oota-causality-1
- 2 {
- 3   [x] = 0;
- 4   [y] = 0;
- 5 }
- 6
- 7 P0(volatile atomic_int *x, volatile atomic_int *y) {
- 8   int r1 = atomic_load_explicit(x, memory_order_relaxed);
- 9   if (r1 >= 0)
-10     atomic_store_explicit(y, 1, memory_order_relaxed);
-11 }
-12
-13 P1(volatile atomic_int *x, volatile atomic_int *y) {
-14   int r2 = atomic_load_explicit(y, memory_order_relaxed);
-15   atomic_store_explicit(x, r1, memory_order_relaxed);
-16 }
-17
-18 exists(0:r1=1 /\ 1:r2=1)
+@@ DisplayLitmus litmus/oota-causality-1.litmus @@
 \end{verbatim}
 \caption{Causality Test Case 1}
 \label{lst:Causality Test Case 1}
@@ -820,25 +803,7 @@ The herd7 tool finds this OOTA cycle.
 
 \begin{listing}[tbp]
 \begin{verbatim}
- 1 C oota-causality-2
- 2 {
- 3   [x] = 0;
- 4   [y] = 0;
- 5 }
- 6
- 7 P0(volatile atomic_int *x, volatile atomic_int *y) {
- 8   int r1 = atomic_load_explicit(x, memory_order_relaxed);
- 9   int r2 = atomic_load_explicit(x, memory_order_relaxed);
-10   if (r1 == r2)
-11     atomic_store_explicit(y, 1, memory_order_relaxed);
-12 }
-13
-14 P1(volatile atomic_int *x, volatile atomic_int *y) {
-15   int r3 = atomic_load_explicit(y, memory_order_relaxed);
-16   atomic_store_explicit(x, r3, memory_order_relaxed);
-17 }
-18
-19 exists(0:r1=1 /\ 0:r2=1 /\ 1:r3=1)
+@@ DisplayLitmus litmus/oota-causality-2.litmus @@
 \end{verbatim}
 \caption{Causality Test Case 2}
 \label{lst:Causality Test Case 2}
@@ -854,29 +819,7 @@ The herd7 tool finds this OOTA cycle.
 
 \begin{listing}[tbp]
 \begin{verbatim}
- 1 C oota-causality-3
- 2 {
- 3   [x] = 0;
- 4   [y] = 0;
- 5 }
- 6
- 7 P0(volatile atomic_int *x, volatile atomic_int *y) {
- 8   int r1 = atomic_load_explicit(x, memory_order_relaxed);
- 9   int r2 = atomic_load_explicit(x, memory_order_relaxed);
-10   if (r1 == r2)
-11     atomic_store_explicit(y, 1, memory_order_relaxed);
-12 }
-13
-14 P1(volatile atomic_int *x, volatile atomic_int *y) {
-15   int r3 = atomic_load_explicit(y, memory_order_relaxed);
-16   atomic_store_explicit(x, r3, memory_order_relaxed);
-17 }
-18
-19 P2(volatile atomic_int *x, volatile atomic_int *y) {
-20   atomic_store_explicit(x, 2, memory_order_relaxed);
-21 }
-22
-23 exists(0:r1=1 /\ 0:r2=1 /\ 1:r3=1)
+@@ DisplayLitmus litmus/oota-causality-3.litmus @@
 \end{verbatim}
 \caption{Causality Test Case 3}
 \label{lst:Causality Test Case 3}
@@ -892,23 +835,7 @@ The herd7 tool finds this OOTA cycle, but flags it as such using \co{S08}.
 
 \begin{listing}[tbp]
 \begin{verbatim}
- 1 C oota-causality-4
- 2 {
- 3   [x] = 0;
- 4   [y] = 0;
- 5 }
- 6
- 7 P0(atomic_int *x, atomic_int *y) {
- 8   int r1 = atomic_load_explicit(x, memory_order_relaxed);
- 9   atomic_store_explicit(y, r1, memory_order_relaxed);
-10 }
-11
-12 P1(atomic_int *x, atomic_int *y) {
-13   int r2 = atomic_load_explicit(y, memory_order_relaxed);
-14   atomic_store_explicit(x, r2, memory_order_relaxed);
-15 }
-16
-17 exists(0:r1=1 /\ 1:r2=1)
+@@ DisplayLitmus litmus/oota-causality-4.litmus @@
 \end{verbatim}
 \caption{Causality Test Case 4}
 \label{lst:Causality Test Case 4}
