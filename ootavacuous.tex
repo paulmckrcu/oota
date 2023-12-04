@@ -788,9 +788,7 @@ because this tool does not do the deep inter-thread compiler analysis
 required to find it.
 
 \begin{listing}[tbp]
-\begin{verbatim}
-@@ DisplayLitmus litmus/oota-causality-1.litmus @@
-\end{verbatim}
+@@ DisplayRunLitmus litmus/oota-causality-1.litmus @@
 \caption{Causality Test Case 1}
 \label{lst:Causality Test Case 1}
 \end{listing}
@@ -804,9 +802,7 @@ is to be allowed.
 The herd7 tool finds this cycle, and does not flag it as an OOTA cycle.
 
 \begin{listing}[tbp]
-\begin{verbatim}
-@@ DisplayLitmus litmus/oota-causality-2.litmus @@
-\end{verbatim}
+@@ DisplayRunLitmus litmus/oota-causality-2.litmus @@
 \caption{Causality Test Case 2}
 \label{lst:Causality Test Case 2}
 \end{listing}
@@ -820,9 +816,7 @@ is to be allowed.
 The herd7 tool finds this cycle, and does not flag it as an OOTA cycle.
 
 \begin{listing}[tbp]
-\begin{verbatim}
-@@ DisplayLitmus litmus/oota-causality-3.litmus @@
-\end{verbatim}
+@@ DisplayRunLitmus litmus/oota-causality-3.litmus @@
 \caption{Causality Test Case 3}
 \label{lst:Causality Test Case 3}
 \end{listing}
@@ -836,9 +830,7 @@ is to be forbidden.
 The herd7 tool finds this OOTA cycle, and flags it as such using \co{S8}.
 
 \begin{listing}[tbp]
-\begin{verbatim}
-@@ DisplayLitmus litmus/oota-causality-4.litmus @@
-\end{verbatim}
+@@ DisplayRunLitmus litmus/oota-causality-4.litmus @@
 \caption{Causality Test Case 4}
 \label{lst:Causality Test Case 4}
 \end{listing}
@@ -852,9 +844,7 @@ result is to be forbidden.
 The herd7 tool finds this OOTA cycle, and flags it as such using \co{S8}.
 
 \begin{listing}[tbp]
-\begin{verbatim}
-@@ DisplayLitmus litmus/oota-causality-5.litmus @@
-\end{verbatim}
+@@ DisplayRunLitmus litmus/oota-causality-5.litmus @@
 \caption{Causality Test Case 5}
 \label{lst:Causality Test Case 5}
 \end{listing}
@@ -868,9 +858,7 @@ result is to be allowed.
 The herd7 tool finds this cycle, and does not flag it as an OOTA cycle.
 
 \begin{listing}[tbp]
-\begin{verbatim}
-@@ DisplayLitmus litmus/oota-causality-6.litmus @@
-\end{verbatim}
+@@ DisplayRunLitmus litmus/oota-causality-6.litmus @@
 \caption{Causality Test Case 6}
 \label{lst:Causality Test Case 6}
 \end{listing}
@@ -884,9 +872,7 @@ result is to be allowed.
 The herd7 tool finds this cycle, and does not flag it as an OOTA cycle.
 
 \begin{listing}[tbp]
-\begin{verbatim}
-@@ DisplayLitmus litmus/oota-causality-7.litmus @@
-\end{verbatim}
+@@ DisplayRunLitmus litmus/oota-causality-7.litmus @@
 \caption{Causality Test Case 7}
 \label{lst:Causality Test Case 7}
 \end{listing}
@@ -902,9 +888,7 @@ initialized to the constant \co{1}, it does find the cycle and refrains
 from flagging it as an OOTA cycle.
 
 \begin{listing}[tbp]
-\begin{verbatim}
-@@ DisplayLitmus litmus/oota-causality-8.litmus @@
-\end{verbatim}
+@@ DisplayRunLitmus litmus/oota-causality-8.litmus @@
 \caption{Causality Test Case 8}
 \label{lst:Causality Test Case 8}
 \end{listing}
@@ -920,9 +904,7 @@ initialized to the constant \co{1}, it does find the cycle and refrains
 from flagging it as an OOTA cycle.
 
 \begin{listing}[tbp]
-\begin{verbatim}
-@@ DisplayLitmus litmus/oota-causality-9.litmus @@
-\end{verbatim}
+@@ DisplayRunLitmus litmus/oota-causality-9.litmus @@
 \caption{Causality Test Case 9}
 \label{lst:Causality Test Case 9}
 \end{listing}
@@ -938,9 +920,7 @@ initialized to the constant \co{1}, it does find the cycle and refrains
 from flagging it as an OOTA cycle.
 
 \begin{listing}[tbp]
-\begin{verbatim}
-@@ DisplayLitmus litmus/oota-causality-9a.litmus @@
-\end{verbatim}
+@@ DisplayRunLitmus litmus/oota-causality-9a.litmus @@
 \caption{Causality Test Case 9a}
 \label{lst:Causality Test Case 9a}
 \end{listing}
@@ -955,9 +935,7 @@ The herd7 tool nevertheless reports this result and does not flag it as
 an OOTA cycle.
 
 \begin{listing}[tbp]
-\begin{verbatim}
-@@ DisplayLitmus litmus/oota-causality-10.litmus @@
-\end{verbatim}
+@@ DisplayRunLitmus litmus/oota-causality-10.litmus @@
 \caption{Causality Test Case 10}
 \label{lst:Causality Test Case 10}
 \end{listing}
@@ -977,9 +955,7 @@ line~17 to store 21 to \co{y} and line~22 to store 21 to \co{z},
 thus justifying the values initially loaded by lines~9 and~10.
 
 \begin{listing}[tbp]
-\begin{verbatim}
-@@ DisplayLitmus litmus/oota-non-lb.litmus @@
-\end{verbatim}
+@@ DisplayRunLitmus litmus/oota-non-lb.litmus @@
 \caption{Non-LB Litmus Test}
 \label{lst:Non-LB Litmus Test}
 \end{listing}
@@ -988,9 +964,7 @@ thus justifying the values initially loaded by lines~9 and~10.
 \label{app:Multi-Cycle Litmus Tests}
 
 \begin{listing}[tbp]
-\begin{verbatim}
-@@ DisplayLitmus litmus/oota-two-source.litmus @@
-\end{verbatim}
+@@ DisplayRunLitmus litmus/oota-two-source.litmus @@
 \caption{Multi-Cycle Litmus Test}
 \label{lst:Multi-Cycle Litmus Test}
 \end{listing}
