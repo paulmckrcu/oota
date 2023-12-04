@@ -945,6 +945,23 @@ from flagging it as an OOTA cycle.
 \label{lst:Causality Test Case 9a}
 \end{listing}
 
+\subsubsection{Causality Test Case 10}
+\label{app:Causality Test Case 10}
+
+Listing~\ref{lst:Causality Test Case 10}
+shows causality test case 10, for which the \co{r1 == r2 == 1 && r3 == 0}
+result is to be forbidden.
+The herd7 tool nevertheless reports this result and does not flag it as
+an OOTA cycle.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+@@ DisplayLitmus litmus/oota-causality-10.litmus @@
+\end{verbatim}
+\caption{Causality Test Case 10}
+\label{lst:Causality Test Case 10}
+\end{listing}
+
 \subsection{Additional Litmus Tests}
 \label{app:Additional Litmus Tests}
 
