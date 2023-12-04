@@ -909,6 +909,42 @@ from flagging it as an OOTA cycle.
 \label{lst:Causality Test Case 8}
 \end{listing}
 
+\subsubsection{Causality Test Case 9}
+\label{app:Causality Test Case 9}
+
+Listing~\ref{lst:Causality Test Case 9}
+shows causality test case 9, for which the \co{r1 == r2 == 1}
+result is to be allowed.
+The herd7 tool does not find this cycle, but when \co{r2} is explicitly
+initialized to the constant \co{1}, it does find the cycle and refrains
+from flagging it as an OOTA cycle.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+@@ DisplayLitmus litmus/oota-causality-9.litmus @@
+\end{verbatim}
+\caption{Causality Test Case 9}
+\label{lst:Causality Test Case 9}
+\end{listing}
+
+\subsubsection{Causality Test Case 9a}
+\label{app:Causality Test Case 9a}
+
+Listing~\ref{lst:Causality Test Case 9a}
+shows causality test case 9a, for which the \co{r1 == r2 == 1}
+result is to be allowed.
+The herd7 tool does not find this cycle, but when \co{r2} is explicitly
+initialized to the constant \co{1}, it does find the cycle and refrains
+from flagging it as an OOTA cycle.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+@@ DisplayLitmus litmus/oota-causality-9a.litmus @@
+\end{verbatim}
+\caption{Causality Test Case 9a}
+\label{lst:Causality Test Case 9a}
+\end{listing}
+
 \subsection{Additional Litmus Tests}
 \label{app:Additional Litmus Tests}
 
