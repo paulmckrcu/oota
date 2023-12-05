@@ -70,3 +70,4 @@ pdflatex ootavacuous-flat.tex
 bibtex ootavacuous-flat.aux
 pdflatex ootavacuous-flat.tex
 pdflatex ootavacuous-flat.tex
+cp ootavacuous-flat.pdf ootavacuous.pdf

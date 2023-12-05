@@ -512,10 +512,10 @@ are no other accesses to \co{x} at the time of the invented store.
 In contrast, a pair of back-to-back non-volatile atomic stores to \co{x}
 might always be executed such that no other thread accesses \co{x}
 during the time between those two stores.
-This means that, short of inspecting the assembly code, the user has no
-way of proving that the C++ implementation acted as if that store was
-omitted from the source code.
-In cases where this omission is undesirable, the user can resort to
+This means that, if the implementation acted as if the store was omitted
+from the source, the user would have no way to prove that fact short of
+inspecting the assembly code.
+In cases where such omissions are undesirable, the user can resort to
 volatile atomic stores or to inline assembly\footnote{
 	For example, by placing the Linux-kernel \co{barrier()} macro
 	between the two stores.
