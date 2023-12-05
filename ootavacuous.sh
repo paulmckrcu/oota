@@ -15,7 +15,7 @@
 T="`mktemp -d ${TMPDIR-/tmp}/ootavacuous.sh.XXXXXX`"
 trap 'rm -rf $T' 0
 
-awk -v q="'" -v dq='"' -v bs='\\' < ootavacuous.tex '
+awk -v sq="'" -v dq='"' -v bs='\\' < ootavacuous.tex '
 BEGIN {
 	print "cat << " sq "___EOF___" sq;
 	print "% Automatically built, do not edit";
@@ -25,7 +25,7 @@ BEGIN {
 /^@@ DisplayLitmus .* @@$/ {
 	path = $3;
 	print "___EOF___";
-	print "grep -v " q "^[( ]" bs "*" q " < " path " | c2latex.sh";
+	print "grep -v " sq "^[( ]" bs "*" sq " < " path " | c2latex.sh";
 	print "cat << " sq "___EOF___" sq;
 	next;
 }
@@ -36,7 +36,7 @@ BEGIN {
 	print bs "scriptsize";
 	print bs "begin{verbatim}";
 	print "___EOF___";
-	print "grep -v " q "^[( ]" bs "*" q " < " path " | c2latex.sh";
+	print "grep -v " sq "^[( ]" bs "*" sq " < " path " | c2latex.sh";
 	print "cat << " sq "___EOF___" sq;
 	print bs "end{verbatim}";
 	print "";
@@ -54,7 +54,7 @@ BEGIN {
 	path = $3;
 	print sq "___EOF___" sq;
 	print "herd7 -c11 " path " | c2latex.sh ";
-	print "cat << ___EOF___";
+	print "cat << " sq "___EOF___" sq;
 	next;
 }
 
