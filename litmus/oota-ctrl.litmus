@@ -20,4 +20,4 @@ P1(atomic_int *x, atomic_int *y) {
 		atomic_store_explicit(y, r1, memory_order_relaxed);
 }
 
-exists(x=42 /\ y=42)
+exists(0:r0=42 /\ 1:r1=42)

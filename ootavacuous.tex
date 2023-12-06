@@ -98,61 +98,43 @@ that value is stored, or a store's address or value is computed before
 a prior load returns a value used in that computation.
 
 \begin{listing}[tbp]
-\begin{verbatim}
- 1 int main() {
- 2   atomic_int x=0;
- 3   atomic_int y=0;
- 4   int r1;
- 5   int r2;
- 6   {{{ { r1=x.load(memory_order_relaxed);
- 7         y.store(r1,memory_order_relaxed); }
- 8   ||| { r2=y.load(memory_order_relaxed);
- 9         x.store(r2,memory_order_relaxed); }  }}}
-10   return 0;
-11 }
-\end{verbatim}
+@@ DisplayLitmus litmus/oota-ctrl.litmus @@
 \caption{OOTA Cycle}
 \label{lst:OOTA Cycle}
 \end{listing}
 
 Listing~\ref{lst:OOTA Cycle}
-shows an OOTA cycle, where the \co{\{\{\{} on line~5 begins a set of
-threads, the \co{|||} on line~8 separates a pair of threads, and
-the \co{\}\}\}} on line~9 ends a set of threads.\footnote{
-	This is pseudocode in the format of CPPMEM,
-	which does not permit writes from non-local variables.}
-Lines~6 and~7 do a relaxed copy from \co{x} to \co{y}, and
-lines~8 and~9 to a relaxed copy from \co{y} to \co{x}.
-Even though both \co{x} and \co{y} are initialized to zero on
-lines~2 and~3, respectively, according to the mathematical core
-of the C++ memory model, the only constraint on the final values
-of \co{x} and \co{y} is that they be equal.
-Counterintuitivily, their final values could be any member of their type.
+shows an OOTA cycle.
+The first line identifies it as a C-language litmus test and gives it
+a name.
+Lines~2-5 initialize variables, in this case setting the initial
+values of the global shared variables \co{x} and \co{y} to zero.
+Lines~7-13 define the first process, \co{P0()}, and lines~15-21
+define the second process, \co{P1()}.
+The arguments to both \co{P0()} and \co{P1()} specify which of
+the global shared variables each process may access.
+In this case, both processes may access both \co{x} and \co{y}.
+The body of each process specifies a limited subset of C++ code,
+which also happens to be a somewhat less limited subset of C code.
+
+Finally, line~23 specifies an \co{exists} clause, which gives a
+condition to check for the final value of the specified local
+variables.
+The \co{0:} prefix specifies a variable local to \co{P0()} and
+the \co{1:} prefix specifies a variable local to \co{P1()}.
+The \co{/\\} specifies a boolean AND, and the \co{=} specifies
+an equality comparison.
 
 \begin{listing}[tbp]
-\begin{verbatim}
- 1 int main() {
- 2   atomic_int x = 0;
- 3   atomic_int y = 0;
- 4   volatile int r1;
- 5   volatile int r2;
- 6   {{{ { r1 = x.load(memory_order_relaxed);
- 7         if (r1 == 1)
- 8           y.store(1, memory_order_relaxed);
- 9         else
-10           y.store(r1, memory_order_relaxed); }
-11   ||| { r2=y.load(memory_order_relaxed);
-12         x.store(r2,memory_order_relaxed); }  }}}
-13   }}};
-14   return 0;
-15 }
-\end{verbatim}
-\caption{OOTA Cycle Based on Conditionals}
-\label{lst:OOTA Cycle Based on Conditionals}
+@@ RunLitmus litmus/oota-ctrl.litmus @@
+\caption{OOTA Cycle, \co{herd7} Output}
+\label{lst:OOTA Cycle, herd7 Output}
 \end{listing}
 
-A similar effect can be achieved using conditional statements, as
-shown in Listing~\ref{lst:OOTA Cycle Based on Conditionals}.
+Line~4 of the corresponding output of the \co{herd7} tool shows the
+counterintuitive outcome where both processes load the value 42.
+As we will see, this outcome is not possible in real-world implementations
+due to physical constraints of which \co{herd7} is (by design) unaware.
 
 Note that C++ implementations are permitted to evaluate to a more
 general notion of OOTA values in cases involving unspecified or undefined
@@ -161,10 +143,6 @@ However, these situations do not involve OOTA cycles, but rather user
 errors and other issues that can lead to unfriendly optimizations that
 in turn result in unpredictable output.
 This paper focuses instead on OOTA cycles.
-
-C++ implementations may of course avail themselves of the as-if rule.
-However, correct use of the as-if rule requires that the observable
-behaviors of the program be appropriately preserved.
 
 \subsection{Prior Work}
 \label{sec:Prior Work}
@@ -249,10 +227,11 @@ cycle in the memory-model sense involving only reads-from links, that
 is, the value stored in on thread being read by the next thread.
 Within each thread in the cycle, the value stored depends on
 the value loaded.
-This dependency might be a data dependency
+This dependency might be a control dependency
 (see Listing~\ref{lst:OOTA Cycle})
-or it might be a control dependency
-(see Listing~\ref{lst:OOTA Cycle Based on Conditionals}).\footnote{
+or it might be a data dependency
+(see Listing~\ref{lst:Causality Test Case 4} on
+page~\pageref{lst:Causality Test Case 4}).\footnote{
 	Sufficiently motivated readers should have no problem constructing
 	examples involving address dependencies.}
 @@@ There must be at least two distinct values such that if a given load
@@ -423,6 +402,29 @@ one might imagine speculation involving multiple threads.
 However, in this case, any squashing of speculation must squash the
 full extent of that speculation, across all of the hardware threads
 that were involved.
+
+Applying this to Listing~\ref{lst:OOTA Cycle}, because values from
+speculative stores cannot be visible to non-speculative loads, lines~10
+and~12 cannot be committed until after the load in line~8 completes
+and the conditional on line~9 is evaluated non-speculatively.\footnote{
+	Alternatively, one could imagine that both the speculation
+	and the squashing of failed speculation might span multiple
+	threads.}
+Similarly, lines~18 and~20 cannot be committed until after lines~16
+and~17 complete non-speculatively.
+
+Note that if both legs of the \co{if} statement spanning lines~9-12 were
+to store the same value, the implementation would be within its rights
+to hoist the store out of that \co{if} statement.
+However, in this case, the two stores on lines~10 and~12 are storing
+distinct values, preventing the hoisting.
+
+Note also that some architectures provide conditional-move instructions,
+which allows line~7 to avoid emitting a conditional branch.
+However, such architectures would still treat a store of the
+target of the conditional-move instructions as speculative until
+such time as the conditional moves (and any loads that they depend
+on) complete.
 
 Finally, the prohibition of hardware OOTA applies within a single
 multi-threaded core as well as between cores.
@@ -746,50 +748,6 @@ a last operation, and the last operation cannot affect the first
 operation.
 Therefore, cycles cannot possibly form in a flattened program,
 which in turn implies that OOTA cycles cannot form.
-
-\subsection{Illustrative Examples}
-\label{sec:Illustrative Examples}
-
-This section works through OOTA examples, showing the effects of
-the constraints called out in this paper.
-
-\subsubsection{OOTA Cycle}
-\label{sec:OOTA Cycle}
-
-Listing~\ref{lst:OOTA Cycle}
-shows the canonical example of an OOTA cycle.
-Because values from speculative stores cannot be visible to other threads,
-line~7 cannot be committed until after line~6 completes.
-Similarly, line~9 cannot be committed until after line~8 completes.
-
-Because values stored take non-zero time to propagate from one thread
-to another, no cycle can form, and thus no OOTA cycle can form.
-
-\subsubsection{OOTA Cycle Based on Conditionals}
-\label{sec:OOTA Cycle Based on Conditionals}
-
-Listing~\ref{lst:OOTA Cycle Based on Conditionals}
-shows an if-condition-based example of an OOTA cycle.
-Because values from speculative stores cannot be visible to other threads,
-lines~8 and~10 cannot be committed until after the load in line~6 completes
-and the conditional on line~7 is evaluated non-speculatively.
-Similarly, line~12 cannot be committed until after line~11 completes.
-
-Because values stored take non-zero time to propagate from one thread
-to another, no cycle can form, and thus no OOTA cycle can form.
-
-Note that if both legs of the \co{if} statement spanning lines~7-10,
-the implementation would be within its rights to hoist the store out of
-that \co{if} statement.
-However, in this case, the two stores on lines~8 and~10 are storing
-distinct values, preventing the hoisting.
-
-Note also that some architectures provide conditional-move instructions,
-which allows line~7 to avoid emitting a conditional branch.
-However, such architectures would still treat a store of the
-target of the conditional-move instructions as speculative until
-such time as the conditional moves (and any loads that they depend
-on) complete.
 
 \subsection{Correct Implementations Cannot Form OOTA Cycles}
 \label{sec:Correct Implementations Cannot Form OOTA Cycles}
