@@ -292,8 +292,12 @@ There are also many other tools, but failing that, it is always possible
 to fall back to the oldest software-verification tool, namely manual
 code inspection.
 
-However, as will be seen in later sections, in some special but
-commonly occurring circumstances, much simpler methods exist.
+All of these tools can incur high overhead, especially manual code
+inspection.
+However, as we will see, C++ implementations need not use these tools.
+Their current analysis is guanteed to be sufficient.
+Furthermore, as we will also see, in some special but commonly occurring
+circumstances, much simpler methods exist that incur negligible overhead.
 
 % @@@ We could follow this long-established tradition of proposing
 % solutions to the OOTA problem without a definition of this problem.
