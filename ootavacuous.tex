@@ -61,8 +61,8 @@ Audience: SG1
 	of \co{memory_order_relaxed} have resulted in considerable
 	consternation over the years.
 	Attempts to create memory models that rule out OOTA behaviors
-	have either been non-executable, complex, or unloved by compiler
-	writers.
+	have either been non-executable, complex, or unloved by C++
+	implementers.
 	But at the same time, there are no known instances of OOTA
 	behavior in real C++ implementations.
 
@@ -170,8 +170,10 @@ behaviors of the program be appropriately preserved.
 \label{sec:Prior Work}
 
 All OOTA workers owe a debt to the foundational work in the infamous
-``Causality Test Cases''.\footnote{
+``Causality Test Cases'',\footnote{
 	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
+which may be found in
+Appendix~\ref{app:Litmus Tests from “Causality Test Cases"}.
 
 Some executable C++ memory models correctly flagged executions involving
 OOTA~\cite{JadeAlglave2014HerdingCats}.\footnote{
@@ -197,7 +199,7 @@ problem.
 
 Other workers recommend various procedures to identify and avoid OOTA
 cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA},
-but none of these have been looked upon favorably by compiler implementers.
+but none of these have been looked upon favorably by C++ implementers.
 
 All this work focused on either identifying OOTA or on how C++
 implementations could avoid it.
@@ -221,16 +223,26 @@ P0442R0 defines an OOTA cycle as a fixed-point computation that is
 destroyed by perturbations, which makes perfect sense to that paper's
 authors, but has left others unsatisfied.
 
-We could follow this long-established tradition of proposing
-solutions to the OOTA problem without a definition of this problem.
-However, we (perhaps foolishly) felt the need to provide a clear
-definition, which is a more detailed version of the wording in 33.5.4p8
-(\co{[atomics.order]}):
+The C++ standard says this in 33.5.4p8
+(\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
 
 \begin{quote}
 	Implementations should ensure that no “out-of-thin-air” values
 	are computed that circularly depend on their own computation.
 \end{quote}
+
+Others, current authors included, have define an OOTA cycle as a
+cycle in sdep $\cup$ rf, where sdep is the set of semantic
+dependencies within each thread and rf is the set of store-to-load
+links, whether intra-thread or between threads.
+This is a fine definition, and is consistent with the words in the C++
+standard, except that it simply shunts all the complexity into the
+term ``semantic dependency''.
+
+We could follow this long-established tradition of proposing
+solutions to the OOTA problem without a definition of this problem.
+However, we (perhaps foolishly) felt the need to provide a clear
+definition,
 
 We therefore define an OOTA cycle (also known as a causal cycle) as a
 cycle in the memory-model sense involving only reads-from links, that
@@ -259,10 +271,13 @@ design, which have been partially accounted for in the standard,
 one limitation being that accurate and executable formal descriptions
 of hardware memory models did not appear until after the standard
 was released.
+A final set of constraints is imposed by the C++ implementations
+themselves.
 
 The following sections discuss these constraints, starting with the
-laws of physics, continuing with hardware constraints, and ending
-with constraints imposed by the standard.
+laws of physics, continuing with hardware constraints, continuing
+further with constraints imposed by the standard, and culminating
+with constraints imposed by the C++ implementations themselves.
 
 \subsection{Laws of Physics}
 \label{sec:Laws of Physics}
@@ -401,7 +416,7 @@ either zero or one.
 Therefore, non-speculative loads are prohibited from loading values from
 speculative stores.
 
-As a special case of this prohibitino, a value stored speculatively must
+As a special case of this prohibition, a value stored speculatively must
 not be exposed to non-speculative loads from other threads.
 In the further special case of multiple hardware threads sharing a core,
 one might imagine speculation involving multiple threads.
@@ -419,7 +434,7 @@ non-speculative stores.
 \label{sec:Constraints of the Standard}
 
 Because volatile atomics constitute observable
-behavior~\cite[\co{intro.abstract}]{ThomasKoeppe2022N4910},
+behavior~\cite[\co{intro.abstract}]{ThomasKoeppe2023N4950},
 they must be executed in strict accordance with the rules of the abstract
 machine.
 This means that any volatile atomic operation involving a store
@@ -469,7 +484,7 @@ a CPPMEM\footnote{
 litmus test that demonstrates such a behavior.
 Without line~4, only the values~2 and~3 can be stored to \co{r1}.
 With that line, the additional value~42 can also be stored to \co{r1}.
-The compiler is therefore forbidded from inventing that store of 42
+The implementation is therefore forbidded from inventing that store of 42
 unless it can prove that doing so does not negatively affect the
 program's observable behaviors, independently of OOTA cycles.
 For example, the implementation might be able to prove that there
@@ -502,7 +517,7 @@ Without line~4, if the final value of \co{r1} is 1, then the final value
 of \co{x} must be 2.
 With that line, the final value of \co{x} can be 1 even when the
 final value of \co{r1} is 1.
-The compiler is therefore forbidded from duplicating that store of 1
+The implementation is therefore forbidden from duplicating that store of 1
 unless it can prove that doing so does not negatively affect the
 program's observable behaviors, independently of OOTA cycles.
 Again, the implementation might be able to prove that there
@@ -521,12 +536,125 @@ volatile atomic stores or to inline assembly\footnote{
 	between the two stores.
 	This macro is an empty GCC \co{asm} that specifies the \co{memory}
 	clobber.}
-to prevent the compiler from omitting a store.
+to prevent the implementation from omitting a store.
 However, acting as if such a redundant store was omitted from the source
 code cannot create an OOTA cycle because any valid execution (OOTA or not)
 of the program with the first of a back-to-back pair of non-volatile
 relaxed atomic stores omitted is essentially a valid execution of the
 program with the store present.
+
+\subsection{C++ Implementations}
+\label{sec:C++ Implementations}
+
+C++ implementations execute C++ programs, and use a range of techniques.
+For example, many implementations take steps to optimize the code to
+be executed.
+This optimization presents a trade-off between the time spent optimizing
+the code and the time spent actually executing it.
+One type of optimization is the identification of non-semantic dependencies
+and the replacement of them with simpler computations, up to and including
+replacement of arbitrarily complex passages of code with constants.\footnote{
+	There are a great many other optimizations, but this paper
+	necessarily focuses on semantic dependencies.}
+
+This optimization process may, roughly speaking, be divided into two
+activities, analysis of the code and classification of dependencies.
+
+\subsubsection{Code Analysis}
+\label{sec:Code Analysis}
+
+As would be expected given the various optimization/execution tradeoffs,
+different C++ implementations carry out different degrees of analysis.
+
+First, at one extreme, ``simple implementations'' do absolutely no
+analysis beyond that absolutely required to correctly execute the program.
+
+Second, other implementations do local analysis.
+This analysis might be on a per-code-path basis, within a single function,
+within a single function after inlining, and so forth.
+
+Third, one could imagine implementations whose analysis is restricted to
+a thread.
+In this case, the analysis stops at loads to objects that were last
+stored to by other threads (``rfe''), stores to objects where the next
+and/or previous stores in that object's modification order were executed
+by other threads (``coe'')), and loads from objects for which the value
+returned by a given load was overwritten by some other thread (``fre'').
+
+Fourth, one could also imagine implementations whose analysis is
+completely unrestricted, up to and including the limiting case where
+execution is oracular in nature.
+Of course, if we are going to imagine omniscient analysis and oracles,
+we can also rely on them to locate any OOTA cycles that might appear
+in environments not constrained by the laws of physics, hardware
+limitations, and C++ implementation concerns.
+
+However, for more realistic implementations in the third category,
+analysis relevant to OOTA cycles begins with loads from objects that were
+last stored to by some other thread and ends with stores to objects that
+might be loaded by other threads.
+
+If additional inter-thread information is available, the corresponding
+constraints may be applied.
+For example, if an implementation determines that the values of a pair
+of objects are always equal at any time that a given thread might access
+them, one could imagine a sufficiently brave implementation substituting
+a load from one for a load from the other.
+
+The next section focuses on the key analysis step for OOTA cycles,
+namely dependency classification.
+
+\subsubsection{Dependency Classification}
+\label{sec:Dependency Classification}
+
+Carrying out this type of optimization requires that the implementation
+classify dependencies as semantic or not.
+Given the limited resources available, almost all implementations will
+choose to approximate sdep, which entails some misclassifications, with
+the consequences summarized in
+Table~\ref{tab:Semantic-Dependency Classification}.
+The first row of the table depicts the case where the implementation
+correctly identifies a semantic dependency, and thus exhibits temporal
+behavior for the corresponding code.
+The second row depicts the case where the implementation misclassifies
+the dependency as non-semantic, which will result in an incorrect
+execution.
+In this case, the proper course of action is to fix that bug.
+The third row depicts the case where the implementation misclassifies
+the dependency as semantic, thus missing a chance to optimize.
+The resulting execution is nevertheless correct, and is also temporal.
+The fourth and final row depicts the case where the implementation
+correctly classifies the dependency as non-semantic, in which case
+the execution is both correct and atemporal.
+
+\begin{table}
+\centering
+\begin{tabular}{c|c|l}
+Actual Code	& Implementation	& Result \\
+\hline
+sdep		& sdep			& Temporal \\
+\cline{2-3}
+		& $\neg$sdep		& BUG!!! \\
+\hline
+$\neg$sdep	& sdep			& Temporal \\
+\cline{2-3}
+		& $\neg$sdep		& Atemporal \\
+\end{tabular}
+\caption{Semantic-Dependency Classification}
+\label{tab:Semantic-Dependency Classification}
+\end{table}
+
+Note well that in the absence of bugs in the implementation (which
+again should be fixed), it is the implementation's classification of
+the dependency that dictates whether or not the corresponding execution
+is temporal.
+
+Therefore, in the limiting case, analyses of OOTA cycles that focus on a
+given implementation can simply use that implementation's classification
+of dependencies as semantic on the one hand or non-semantic on the other.
+While taking this approach sacrifices significant generality, it has the
+benefit of greatly reduces the cost of dependency analysis, potentially
+to zero.
 
 \section{How to Form an OOTA Cycle?}
 \label{sec:How to Form an OOTA Cycle?}
@@ -600,7 +728,7 @@ The concept of flattening multiple threads into a single thread is
 tantalizing, especially given the large cache-miss penalties inherent
 to large multicore systems, which can have many sockets containing
 thousands of CPUs.
-One might object to the whole concept of flattening as a compiler
+One might object to the whole concept of flattening as an
 optimization given the difficulty inherent in avoiding deadlocks
 and other hazards.
 Nevertheless, it is only reasonable to ask whether flattening can
@@ -651,10 +779,10 @@ Because values stored take non-zero time to propagate from one thread
 to another, no cycle can form, and thus no OOTA cycle can form.
 
 Note that if both legs of the \co{if} statement spanning lines~7-10,
-the compiler would be within its rights to hoist the store out of
+the implementation would be within its rights to hoist the store out of
 that \co{if} statement.
 However, in this case, the two stores on lines~8 and~10 are storing
-distinct values, preventing the compiler from hoisting.
+distinct values, preventing the hoisting.
 
 Note also that some architectures provide conditional-move instructions,
 which allows line~7 to avoid emitting a conditional branch.
@@ -710,7 +838,7 @@ of producing OOTA cycles.
 Therefore, if your C++ implementation produces OOTA cycles, you have
 bugs that would be considered bugs even if OOTA cycles were allowed.
 And you need to fix those bugs, regardless of whether they are in your
-compiler, your hardware, or your alternative universe.
+C++ implementation, your hardware, or your alternative universe.
 
 \section{Acknowledgments}
 \label{sec:Acknowledgments}
@@ -784,7 +912,7 @@ Listing~\ref{lst:Causality Test Case 1}
 shows causality test case 1, for which the \co{r1 == r2 == 1} result
 is to be allowed.
 However, the \co{herd7} tool does not find this litmus test's cycle, presumably
-because this tool does not do the deep inter-thread compiler analysis
+because this tool does not do the deep inter-thread program analysis
 required to find it.
 
 \begin{listing}[tbp]
