@@ -153,8 +153,8 @@ All OOTA workers owe a debt to the foundational work in the infamous
 which may be found in
 Appendix~\ref{app:Litmus Tests from “Causality Test Cases"}.
 
-Some executable C++ memory models correctly flagged executions involving
-OOTA~\cite{JadeAlglave2014HerdingCats}.\footnote{
+Some executable C++ memory models correctly flag at least some executions
+involving OOTA cycles~\cite{JadeAlglave2014HerdingCats}.\footnote{
 	Others cleverly avoid this issue by forbidding atomic
 	stores of non-constant values~\cite{MarkBatty2011cppmem}.}
 % @@@ Better herd7 C11 citation?
@@ -246,6 +246,25 @@ the negative of \co{x}, there is no semantic dependency and the
 implementation can again act as if later accesses to \co{x} were
 instead the constant zero.
 
+But suppose that the implementation can prove that at any time that
+the above statement might execute, \co{y} is equal to \co{z}?
+That would allow the implementation to act as if the source code
+was instead as follows:
+
+\begin{quote}
+	\co{x = 2 * y;}
+\end{quote}
+
+Or equally valid:
+
+\begin{quote}
+	\co{x = 2 * z;}
+\end{quote}
+
+In this case, is the semantic dependency from \co{y} to \co{x},
+from \co{z} to \co{x}, or both \co{y} and \co{z} to \co{x}?
+Or is this a free choice on the part of the implementation?
+
 And perhaps worse:
 
 \begin{quote}
@@ -257,7 +276,8 @@ Here, the presence or absence of a semantic dependency from \co{y} to
 a horribly complex function.
 
 Fortunately, there are now tools that can help.
-The SAT-solver-based \co{cbmc} tool, which is readily available,\footnote{
+For example, the SAT-solver-based \co{cbmc} tool, which is readily
+available,\footnote{
 	On Debian-based distributions, via \co{sudo apt install cbmc}.}
 has been used to mechanically verify signicant portions of Linux-kernel
 RCU from the C-language source
@@ -268,8 +288,12 @@ verification~\cite{MichalisKokologiannakis2017NidhuggRCU,SMC-TreeRCU,MichalisKok
 Both tools can easily check whether or not a given dependency is semantic.
 % @@@ More on cbmc in an appendix.
 
+There are also many other tools, but failing that, it is always possible
+to fall back to the oldest software-verification tool, namely manual
+code inspection.
+
 However, as will be seen in later sections, in some special but
-commonly occurring circumstances, there are easier ways.
+commonly occurring circumstances, much simpler methods exist.
 
 % @@@ We could follow this long-established tradition of proposing
 % solutions to the OOTA problem without a definition of this problem.
@@ -581,9 +605,9 @@ are no other accesses to \co{x} at the time of the invented store.
 
 \paragraph{Omitted Redundant Atomic Stores}
 In contrast, a pair of back-to-back non-volatile atomic stores to \co{x}
-might always be executed such that no other thread accesses \co{x}
+might be executed such that no other thread accesses \co{x}
 during the time between those two stores.
-This means that, if the implementation acted as if the store was omitted
+This means that, if the implementation acted as if the first store was omitted
 from the source, the user would have no way to prove that fact short of
 inspecting the assembly code.
 In cases where such omissions are undesirable, the user can resort to
@@ -657,6 +681,12 @@ of objects are always equal at any time that a given thread might access
 them, one could imagine a sufficiently brave implementation substituting
 a load from one for a load from the other.
 
+However, if all of the inter-thread relaxed accesses are volatile,
+as they are in the C language, then all of the inter-thread traffic is
+observed behavior.
+In this case, even omniscient oracular implementations are required
+to confine their analyses within a single thread.
+
 The next section focuses on the key analysis step for OOTA cycles,
 namely dependency classification.
 
@@ -712,6 +742,24 @@ While taking this approach sacrifices significant generality, it has the
 benefit of greatly reduces the cost of dependency analysis, potentially
 to zero.
 
+\subsubsection{C++ Implementations: Consequences}
+\label{sec:C++ Implementations: Consequences}
+
+Given a correct C++ implementation, a given store will either be
+executed as if is was semantically dependent on a given prior load or
+not.
+In the former case on a real-world implementation, a non-negative interval
+of time will elapse between the load and the store, and in the latter
+case, that load-store pair cannot possibly be a member of an OOTA cycle.
+
+Of course, dependencies can be separately analyzed, and such analysis
+might show that one of the dependencies that the implementation treated
+as a semantic dependency was in fact non-semantic.
+And this is a belt-and-suspenders situation:
+The corresponding load-store pair cannot be a member of an OOTA cycle,
+and a non-negative interval of time will elapse between the load and
+the store.
+
 \section{How to Form an OOTA Cycle?}
 \label{sec:How to Form an OOTA Cycle?}
 
@@ -723,15 +771,15 @@ cannot form an OOTA cycle.
 Again, an OOTA cycle consists of loads from other threads' stores where
 a given store's address or value depends on the value returned by
 the corresponding thread's prior load.
-All of the links from ont thread to the next are reads-from links, which
+All of the links from one thread to the next are reads-from links, which
 are temporal in nature, that is, a given store must execute earlier in
 global time than any load from that stored-to object that returns the
 value stored.
 
-And again, an OOTA cycle must have at least one link that goes backwards
-in time.
-The only possible candidate counter-temporal links so are those
-confined to a given thread.
+But it is also the case that an OOTA cycle must have at least one link
+that goes backwards in time.
+Given that the inter-thread links are temporal, the only possible
+candidate atemporal links so are those confined to a given thread.
 This in turn requires that a store that depends on an earlier load
 be executed earlier in time than that load.
 The two ways that this can happen are when the implementation:
@@ -791,12 +839,10 @@ Nevertheless, it is only reasonable to ask whether flattening can
 result in OOTA cycles.
 As we will see, the answer is ``no''.
 
-But for the purposes of OOTA cycles, the flattening situation is
-much simpler.
-Any fully flattened program will be single threaded, which implies that
-each of its atomic load operations will return the last value stored to
-that same object in sequenced-before order (or the initial value if there
-is no such store).
+The reason for this answer is that any fully flattened program will be
+single threaded, which implies that each of its atomic load operations
+will return the last value stored to that same object in sequenced-before
+order (or the initial value if there is no such store).
 Thus, any sequence of loads and stores must have a first operation and
 a last operation, and the last operation cannot affect the first
 operation.
@@ -850,13 +896,13 @@ of producing OOTA cycles.
 Therefore, if your C++ implementation produces OOTA cycles, you have
 bugs that would be considered bugs even if OOTA cycles were allowed.
 And you need to fix those bugs, regardless of whether they are in your
-C++ implementation, your hardware, or your alternative universe.
+C++ implementation, your hardware, or your alternate universe.
 
 \section{Acknowledgments}
 \label{sec:Acknowledgments}
 
 We are grateful to David Goldblatt, Jade Alglave, and Alan Stern for their
-careful review of an early draft of this paper and to John Wikerson for
+careful review of an early draft of this paper and to John Wickerson for
 asking Paul for a rant and taking the proffered rant seriously.
 We also owe David Goldblatt a debt of gratitude for his having asked an
 insightful question at the right time, and for his ``Deathstation 9000''
