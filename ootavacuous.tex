@@ -138,7 +138,7 @@ due to physical constraints of which \co{herd7} is (by design) unaware.
 
 Note that C++ implementations are permitted to evaluate to a more
 general notion of OOTA values in cases involving unspecified or undefined
-behavior, such as use of uninitialized objects.
+behavior (UB), such as use of uninitialized objects.
 However, these situations do not involve OOTA cycles, but rather user
 errors and other issues that can lead to unfriendly optimizations that
 in turn result in unpredictable output.
@@ -178,6 +178,13 @@ problem.
 Other workers recommend various procedures to identify and avoid OOTA
 cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA},
 but none of these have been looked upon favorably by C++ implementers.
+
+Goldblatt looked at interactions between OOTA cycles and
+UB~\cite{DavidGoldblatt2019NoElegantOOTAfix}.
+Appendix~\ref{app:Aside on Undefined Behavior}
+analyzes the examples and proposes a way to separate UB and OOTA-cycle
+concerns.
+The remainder of this document will focus on examples lacking UB.
 
 All this work focused on either identifying OOTA or on how C++
 implementations could avoid it.
@@ -245,6 +252,10 @@ However, if the implementation knows that the value of \co{y} is always
 the negative of \co{x}, there is no semantic dependency and the
 implementation can again act as if later accesses to \co{x} were
 instead the constant zero.
+
+These examples demonstrate a key point: Although in some cases sdep can
+be a strict function of the source code, \emph{in general, sdep must be
+defined on a per-execution basis}.
 
 But suppose that the implementation can prove that at any time that
 the above statement might execute, \co{y} is equal to \co{z}?
@@ -468,7 +479,7 @@ for \co{a[]}.
 Suppose further that hardware speculation incorrectly guesses the value
 of \co{i} to be -1, so that the speculated store of 42 on line~5 uses
 the address of \co{x}.\footnote{
-	Yes, \co{y[-1]} is undefined behavior, but the CPU neither knows
+	Yes, \co{y[-1]} is UB, but the CPU neither knows
 	nor cares, nor should it.}
 Then line~7 can cause the final value of \co{r1} to be 42, when
 by the rules of the C++ abstract machine the value must instead be
@@ -1309,6 +1320,121 @@ thus justifying the values initially loaded by lines~9 and~10.
 \caption{Multi-Cycle Litmus Test}
 \label{lst:Multi-Cycle Litmus Test}
 \end{listing}
+
+\section{Aside on Undefined Behavior}
+\label{app:Aside on Undefined Behavior}
+
+The combination of OOTA cycles and UB has proven especially
+challenging~\cite{DavidGoldblatt2019NoElegantOOTAfix}.
+
+\subsection{Alignment-Based Undefined Behavior}
+\label{sec:Alignment-Based Undefined Behavior}
+
+The example shown in
+Listing~\ref{lst:Alignment-Based Undefined Behavior (P1916R0)}
+(taken from P1916R0) is especially instructive.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 std::atomic<int> y;
+ 2 template <typename T>
+ 3 void t1() {
+ 4   long long r1 = x.load(std::memory_order_relaxed);
+ 5   if (r1 % 4 == 0)
+ 6     y.store(1, std::memory_order_relaxed);
+ 7   *(T*)r1 = *(T*)r1;
+ 8 }
+\end{verbatim}
+\caption{Alignment-Based Undefined Behavior (P1916R0)}
+\label{lst:Alignment-Based Undefined Behavior (P1916R0)}
+\end{listing}
+
+Because the compiler often assumes that UB cannot happen, it might
+look at line~7 and conclude that the value of \co{r1} necessarily
+corresponded to an address aligned per the requirements of type \co{T}.
+If that type's alignment was larger than four bytes, the compiler could
+then replace the condition in line~5 with \co{true}, which would mean
+that there was no semantic dependency from the load of \co{x} to the
+store of \co{y}.
+
+Except that the developer might have knowingly carried out a misaligned
+access, for example, to test an alignment trap handler or because the
+system on which this code was to run was known to gracefully handle
+misaligned accesses.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 std::atomic<int> y;
+ 2 template <typename T>
+ 3 void t1() {
+ 4   long long r1 = x.load(std::memory_order_relaxed);
+ 5   if (r1 % 4 == 0)
+ 6     y.store(1, std::memory_order_relaxed);
+ 7   __asm__ __volatile__("": : :"mightnotreturn");
+ 8   *(T*)r1 = *(T*)r1;
+ 9 }
+\end{verbatim}
+\caption{Alignment-Based Undefined Behavior Fix}
+\label{lst:Alignment-Based Undefined Behavior Fix}
+\end{listing}
+
+However, in that case, the developer is stepping outside the bounds
+of the standard.
+It would be good to have some way for the developer to get the job
+done without confusing the compiler, thus separating OOTA-cycle and
+UB concerns.
+One approach is to have a \co{mightnotreturn} clobber similar to the
+\co{memory} clobber for GCC asms.
+Then this example could be rewritten as shown in
+Listing~\ref{lst:Alignment-Based Undefined Behavior Fix},
+with the asm on line~7 preventing the compiler from assuming that line~8
+is guaranteed to be executed, thus preventing the compiler from
+applying any lessons that it might learn from line~8 to line~5.
+
+% Clean up <200b> in vim: ":%s/\%u200b//g"
+
+This \co{mightnotreturn} clobber is merely an example.
+There might well be better ways to prevent UB from propagating backwards.
+Other options being considered include a call to an empty function that
+is invisible to the compiler and a GCC goto asm that the compiler cannot
+prove falls through.
+
+\subsection{Unreachability-Based Undefined Behavior}
+\label{sec:Unreachability-Based Undefined Behavior}
+
+This section attempts to apply the lessons
+of Appendix~\ref{sec:Unreachability-Based Undefined Behavior} to
+Goldblatt's unreachability-UB example.  Inserting the asm at line~12
+as shown in Listing~\ref{lst:Alignment-Based Undefined Behavior Fix}
+avoids confusing the compiler into assuming that the value of \co{local}
+must necessarily be zero.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 // UB if this function is ever called.
+ 2 [[noreturn]]
+ 3 inline void unreachable() {
+ 4   return;
+ 5 }
+ 6 void t1() {
+ 7   r1 = x.load(std::memory_order_relaxed);
+ 8   int local = (r1 & 1);
+ 9   if (local == 0)
+10     y.store(1, std::memory_order_relaxed);
+11   if (local != 0) {
+12     __asm__ __volatile__("": : :"mightnotreturn");
+13     // If we get here, UB.
+14     unreachable();
+15   }
+16 }
+\end{verbatim}
+\caption{Unreachability-Based Undefined Behavior Fix}
+\label{lst:Unreachability-Based Undefined Behavior Fix}
+\end{listing}
+
+By the same reasoning, Goldblatt's \co{misbhave} example that
+also involves unreachability can also be addressed through insertion
+of the asm.
 
 % \section{History}
 % \label{sec:History}
