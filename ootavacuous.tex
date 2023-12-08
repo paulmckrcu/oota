@@ -781,17 +781,19 @@ Some projects would choose to restructure the code in such cases on the
 grounds that code that is difficult for an automated tool to understand
 is likely also being misunderstood by its all-too-human developers.
 
-Some other tools respond to complexity by consuming all available CPU
-and memory, which can also be interpreted as a good and sufficient
-warning message.
+One advantage that tools often have over C++ implementations is the
+ability to devote much more computational power to the problem at hand.
+In fact, some tools respond to excessive complexity by consuming all
+available CPU and memory, which can also be interpreted as a good and
+sufficient warning message.
 
 However, there is an important special case for tools that are closely
 associated with a C++ implementation.
 Such tools can simply use that implementation's classification of
 dependencies as semantic on the one hand or non-semantic on the other.
-While taking this approach sacrifices significant generality, it has
-the not insignificant benefit of greatly reducing the cost of dependency
-analysis, potentially all the way to zero.
+While taking this approach sacrifices significant generality, it has the
+significant benefit of greatly reducing the cost of dependency analysis,
+potentially all the way down to zero.
 
 \section{How to Form an OOTA Cycle?}
 \label{sec:How to Form an OOTA Cycle?}
