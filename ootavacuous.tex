@@ -68,15 +68,10 @@ Audience: SG1
 
 	This paper goes further, adding temporal constraints from
 	long-standing laws of physics and constraints on hardware
-	architecture and design, thereby providing an informal
-	proof that OOTA cannot occur in correctly constructed C++
-	programs running on real-world systems.
-
-	The result is that a correct per-execution-path C++ implementation
-	necessarily preserves the semantic dependencies that prevent
-	OOTA cycles from forming.
-	Implementations that undertake complex cross-thread analysis
-	still need to be careful.
+	architecture and design to demonstrate that OOTA cannot occur in
+	correctly constructed C++ programs and correctly constructed C++
+	implementations running on on real-world systems.
+	This paper also looks at some tooling implicatoins of OOTA.
 \end{abstract}
 
 \section{Background}
@@ -1569,7 +1564,6 @@ of the authors.
 % Alan Stern: Memory models, mathematical logic, and variety of hardware.
 
 % @@@ TODO:
-% Create nicer sdep-evaluation example based on cbmc.
 % Add a "Tools" section to the real-world constraints section.
 %	Note the inversion from compiler, and the ability to complain
 %	when analysis cannot be carried out accurately.
