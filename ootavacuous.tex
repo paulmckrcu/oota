@@ -287,9 +287,7 @@ Here, the presence or absence of a semantic dependency from \co{y} to
 a horribly complex function.
 
 Fortunately, there are now tools that can help.
-For example, the SAT-solver-based \co{cbmc} tool, which is readily
-available,\footnote{
-	On Debian-based distributions, via \co{sudo apt install cbmc}.}
+For example, the SAT-solver-based \co{cbmc} tool
 has been used to mechanically verify signicant portions of Linux-kernel
 RCU from the C-language source
 code~\cite{LihaoLiang2016VerifyTreeRCU,LanceRoy2017CBMC-SRCU}.
@@ -297,7 +295,8 @@ Another tool, Nidhugg, which is based on partial-order
 reduction, has been used to carry out a similar
 verification~\cite{MichalisKokologiannakis2017NidhuggRCU,SMC-TreeRCU,MichalisKokologiannakis2019RCUstatelessModelCheck}.
 Both tools can easily check whether or not a given dependency is semantic.
-% @@@ More on cbmc in an appendix.
+An example use of \co{cbmc} is illustrated in
+Appendix~\ref{sec:Evaluating sdep Using cbmc}.
 
 There are also many other tools, but failing that, it is always possible
 to fall back to the oldest software-verification tool, namely manual
@@ -1342,6 +1341,10 @@ There might well be better ways to prevent UB from propagating backwards.
 Other options being considered include a call to an empty function that
 is invisible to the compiler and a GCC goto asm that the compiler cannot
 prove falls through.
+@@@ show details.
+
+A \co{std::observable()} function has been proposed to the C++ standards
+committee~\cite{DavisHerring2021P1494R2}.
 
 \subsection{Unreachability-Based Undefined Behavior}
 \label{sec:Unreachability-Based Undefined Behavior}
@@ -1379,6 +1382,130 @@ must necessarily be zero.
 By the same reasoning, Goldblatt's \co{misbhave} example that
 also involves unreachability can also be addressed through insertion
 of the asm.
+
+\section{Evaluating sdep Using \co{cbmc}}
+\label{sec:Evaluating sdep Using cbmc}
+
+This section demonstrates the evaluation of sdep using
+the C Bounded Model Checker
+(\co{cbmc})~\cite{EdmundClarke2004CBMC}.
+This tool takes a smallish C program as input and constructs a logic
+expression representing that program.
+The logic expression's variables represent bits in the program's inputs
+and state, and the result of that logic expression is \co{true} if that
+program has a bug, for example, if it is possible for that C program to
+trigger an assertion or execute an out-of-bounds array reference.
+The tool then hands this expression to a SAT solver, and if this solver
+finds a satisfying set of values, the tool uses that set to provide
+the execution path to the bug.
+
+\begin{listing}[tbp]
+\scriptsize
+\begin{verbatim}
+ 1 P0(atomic_int *x, atomic_int *y, atomic_int *limit)
+ 2 {
+ 3   r1 = atomic_load_explicit(x, memory_order_relaxed);
+ 4   r2 = atomic_load_explicit(limit, memory_order_relaxed);
+ 5   r3 = r1 * r1 + 2 * r1 + 2;
+ 6   r4 = r2;
+ 7   if (r2 >= r3)
+ 8     r4 = r3;
+ 9   atomic_store_explicit(y, r4, memory_order_relaxed);
+10 }
+\end{verbatim}
+\caption{Example Code for Evaluation of sdep}
+\label{lst:Example Code for Evaluation of sdep}
+\end{listing}
+
+Listing~\ref{lst:Example Code for Evaluation of sdep}
+shows a \co{herd7} process \co{P0()}.
+Is there a semantic dependency between the load from \co{x} on
+line~3 to the store to \co{y} on line~9?
+
+\begin{listing}[tbp]
+\scriptsize
+\begin{verbatim}
+ 1 int main(int argc, char *argv[])
+ 2 {
+ 3   int i;
+ 4   int y[2] = { 0, 0 };
+ 5
+ 6   for (i = 0; i < 2; i++) {
+ 7     int r1;
+ 8     int r2;
+ 9     int r3;
+10     int *yp = &y[i];
+11
+12     r1 = limited_arg(argv[2 * i + 1]);
+13     r2 = const_arg(limited_arg(argv[2 * i + 2]));
+14     r3 = r1 * r1 + 2 * r1 + 2;
+15     *yp = r2 <= r3 ? r2 : r3;
+16     printf("i = %d, r1 = %d, r2 = %d, r3 = %d\n", i, r1, r2, r3);
+17   }
+18   assert(y[0] == y[1]);
+19 }
+\end{verbatim}
+\caption{Code for cbmc-Based Evaluation of sdep}
+\label{lst:Code for cbmc-Based Evaluation of sdep}
+\end{listing}
+
+One way to answer this question is to create a C program
+(see Listing~\ref{lst:Code for cbmc-Based Evaluation of sdep})
+that runs the \co{P0()} process's code twice with arbitrary inputs
+(the loop spanning lines~6-17) and asserts that the results of
+each iteration be equal (line~18).
+
+Running this with:
+
+\begin{quote}
+	\scriptsize
+	\co{cbmc -DCBMC cbmc/sdep-quadratic.c}
+\end{quote}
+
+gives the result \co{VERIFICATION FAILED}.
+This indicates that there are different values of \co{x} and \co{limit}
+that yield different values of \co{y}, that is, that there can be
+a semantic dependency.
+
+However, $x^2 + 2x + 2$ has a minimum value of 1 at $x=-1$, so
+forcing \co{limit} to (say) zero should eliminate this static
+dependency:
+
+\begin{quote}
+	\scriptsize
+	\co{cbmc -DCBMC -DLOAD_CONSTANT=0 cbmc/sdep-quadratic.c}
+\end{quote}
+
+But this also gives the result \co{VERIFICATION FAILED}.
+One reason for this is that this program does 32-bit computer arithmetic,
+and is thus subject to wraparound.
+Limiting the value of \co{x} to 46,339 prevents wraparound:
+
+\begin{quote}
+	\scriptsize
+	\co{cbmc -DCBMC -DLOAD_CONSTANT=0 -DLOAD_LIMITS=46339 cbmc/sdep-quadratic.c}
+\end{quote}
+
+And this yields \co{VERIFICATION SUCCESSFUL}, indicating that there
+is no semantic dependency in this case.
+This is to be expected because the specified value of zero for \co{limit}
+is smaller than the minimum of the quadratic expression, so that the
+value stored to \co{y} is always zero.
+Specifying \co{-DLOAD_CONSTANT=1} also yields \co{VERIFICATION SUCCESSFUL}
+because this value is equal to that minimum, so that the value stored to
+\co{y} is always 1.
+However, specifying any larger value (for example, \co{-DLOAD_CONSTANT=2})
+yields \co{VERIFICATION FAILED} because the value assigned to \co{y}
+might be either 1 or 2, indicating that a semantic dependency exists.
+
+This situation underscores the point that the existance of a semantic
+dependency can be a property of a particular execution rather than a
+universal property of the code itself.
+
+There are numerous other tools that can be used, up to and including
+manual inspection, but \co{cbmc} is readily available and easy to
+use.\footnote{
+	On Debian-based distributions, via \co{sudo apt install cbmc}.}
 
 % \section{History}
 % \label{sec:History}
@@ -1461,7 +1588,8 @@ of the authors.
 % Threats to validity:
 % Speed of light might not always be finite.
 % Zero-sized atoms might be discovered.
-% It might be possible to propagate information > c.
+% It might be possible to propagate information at infinite velocity
+%	despite the finite speed of light.
 % It might be possible to violate causality.
 % ML hallucination might convince people that OOTA is OK.
 
