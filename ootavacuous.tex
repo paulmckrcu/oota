@@ -303,31 +303,10 @@ code inspection.
 All of these tools can incur high overhead, especially manual code
 inspection.
 However, as we will see, C++ implementations need not use these tools.
-Their current analysis is guanteed to be sufficient.
+Their current analysis is guaranteed to be sufficient, courtesy of the
+real-world constraints discussed in the next section.
 Furthermore, as we will also see, in some special but commonly occurring
 circumstances, much simpler methods exist that incur negligible overhead.
-
-% @@@ We could follow this long-established tradition of proposing
-% solutions to the OOTA problem without a definition of this problem.
-% However, we (perhaps foolishly) felt the need to provide a clear
-% definition,
-
-% We therefore define an OOTA cycle (also known as a causal cycle) as a
-% cycle in the memory-model sense involving only reads-from links, that
-% is, the value stored in on thread being read by the next thread.
-% Within each thread in the cycle, the value stored depends on
-% the value loaded.
-% This dependency might be a control dependency
-% (see Listing~\ref{lst:OOTA Cycle})
-% or it might be a data dependency
-% (see Listing~\ref{lst:Causality Test Case 4} on
-% page~\pageref{lst:Causality Test Case 4}).\footnote{
-%	Sufficiently motivated readers should have no problem constructing
-%	examples involving address dependencies.}
-% @@@ There must be at least two distinct values such that if a given load
-% returns a given value, that value forces the cycle to execute so as to
-% cause the corresponding store's value to be equal to that given value, and
-% for that store to occur early enough for the load to return that value.
 
 \section{Real-World Constraints}
 \label{sec:Real-World Constraints}
@@ -347,6 +326,8 @@ The following sections discuss these constraints, starting with the
 laws of physics, continuing with hardware constraints, continuing
 further with constraints imposed by the standard, and culminating
 with constraints imposed by the C++ implementations themselves.
+An additional section discusses the OOTA-cycle implications for
+any tooling that exists separately for these C++ implementations.
 
 \subsection{Laws of Physics}
 \label{sec:Laws of Physics}
@@ -713,7 +694,7 @@ the consequences summarized in
 Table~\ref{tab:Semantic-Dependency Classification}.
 The first row of the table depicts the case where the implementation
 correctly identifies a semantic dependency, and thus exhibits temporal
-behavior for the corresponding code.
+behavior for the execution at hand of the corresponding code.
 The second row depicts the case where the implementation misclassifies
 the dependency as non-semantic, which will result in an incorrect
 execution.
@@ -747,13 +728,6 @@ again should be fixed), it is the implementation's classification of
 the dependency that dictates whether or not the corresponding execution
 is temporal.
 
-Therefore, in the limiting case, analyses of OOTA cycles that focus on a
-given implementation can simply use that implementation's classification
-of dependencies as semantic on the one hand or non-semantic on the other.
-While taking this approach sacrifices significant generality, it has the
-benefit of greatly reduces the cost of dependency analysis, potentially
-to zero.
-
 \subsubsection{C++ Implementations: Consequences}
 \label{sec:C++ Implementations: Consequences}
 
@@ -771,6 +745,53 @@ And this is a belt-and-suspenders situation:
 The corresponding load-store pair cannot be a member of an OOTA cycle,
 and a non-negative interval of time will elapse between the load and
 the store.
+
+\subsection{Semantic Dependencies and Tooling}
+\label{sec:Semantic Dependencies and Tooling}
+
+Where a C++ implementation's primary function is to correctly execute
+a C++ program, the function of tooling is often to evaluate properties
+of possible executions of that same program.
+This difference in function results in different sensitivities to
+sdep misclassifications, as shown in
+Table~\ref{tab:Semantic-Dependency Classification For Tools}.
+
+\begin{table}
+\centering
+\begin{tabular}{c|c|l}
+Actual Code	& Tooling		& Result \\
+\hline
+sdep		& sdep			& Temporal \\
+\cline{2-3}
+		& $\neg$sdep		& False Positive (Warning?) \\
+\hline
+$\neg$sdep	& sdep			& False Negative (Warning?) \\
+\cline{2-3}
+		& $\neg$sdep		& Atemporal \\
+\end{tabular}
+\caption{Semantic-Dependency Classification For Tools}
+\label{tab:Semantic-Dependency Classification For Tools}
+\end{table}
+
+Any misclassification will result in either a false positive or
+a false negative, except that many tools give some indication of a
+misclassification, for example, printing a warning message indicating
+that the code is too complex for it to analyze.
+Some projects would choose to restructure the code in such cases on the
+grounds that code that is difficult for an automated tool to understand
+is likely also being misunderstood by its all-too-human developers.
+
+Some other tools respond to complexity by consuming all available CPU
+and memory, which can also be interpreted as a good and sufficient
+warning message.
+
+However, there is an important special case for tools that are closely
+associated with a C++ implementation.
+Such tools can simply use that implementation's classification of
+dependencies as semantic on the one hand or non-semantic on the other.
+While taking this approach sacrifices significant generality, it has
+the not insignificant benefit of greatly reducing the cost of dependency
+analysis, potentially all the way to zero.
 
 \section{How to Form an OOTA Cycle?}
 \label{sec:How to Form an OOTA Cycle?}
@@ -866,7 +887,8 @@ which in turn implies that OOTA cycles cannot form.
 
 This section has shown that an implementation that correctly
 handles the memory model, observable behavior, and the as-if rule
-cannot form OOTA cycles.
+cannot form OOTA cycles when running on real systems in this
+universe.
 
 \section{Suggested Changes to Wording}
 \label{sec:Suggested Changes to Wording}
@@ -1567,9 +1589,6 @@ of the authors.
 % Alan Stern: Memory models, mathematical logic, and variety of hardware.
 
 % @@@ TODO:
-% Add a "Tools" section to the real-world constraints section.
-%	Note the inversion from compiler, and the ability to complain
-%	when analysis cannot be carried out accurately.
 % Update wording.
 % Add more detail on blocking UB to "Aside on Undefined Behavior".
 
