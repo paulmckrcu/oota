@@ -890,35 +890,6 @@ handles the memory model, observable behavior, and the as-if rule
 cannot form OOTA cycles when running on real systems in this
 universe.
 
-\section{Suggested Changes to Wording}
-\label{sec:Suggested Changes to Wording}
-
-Add the following note in \co{[atomics.order]} after 33.5.4p9:
-
-\begin{quote}
-	[ \emph{Note:} Implementations that respect the following
-	constraints are incapable of computing out-of-thin-air value
-	that depend circularly on their own computation:
-
-	\begin{itemize}
-	\item	Correctly implement the C++ abstract machine, and
-	\item	Run on correctly implemented hardware
-		(specifically, hardware that forbids non-speculative
-		loads from returning values from speculative stores
-		and that forbids exposing values from speculative
-		stores to other threads), and
-	\item	Reside in a universe having a finite speed of light
-		and atomic matter.
-	\end{itemize}
-
-	All three constraints are subject to the as-if rule.
-	For example, those creating an alternate universe in which
-	C++ implementations are to run correctly should ensure
-	that their universe behaves as if the speed of light was
-	finite and the nature of matter was atomic.
-	--- \emph{end note} ]
-\end{quote}
-
 \section{Conclusion}
 \label{sec:Conclusion}
 
@@ -1589,7 +1560,6 @@ of the authors.
 % Alan Stern: Memory models, mathematical logic, and variety of hardware.
 
 % @@@ TODO:
-% Update wording.
 % Add more detail on blocking UB to "Aside on Undefined Behavior".
 
 % Additional snark:
