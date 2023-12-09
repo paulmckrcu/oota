@@ -222,6 +222,9 @@ This is a fine definition, and is consistent with the words in the C++
 standard, except that it simply shunts all the complexity into the
 term ``semantic dependency''.
 
+\subsubsection{Semantic Dependencies Are Per Execution}
+\label{sec:Semantic Dependencies Are Per Execution}
+
 One aspect of this complexity is the fact that semantic dependencies
 are a function not strictly of the source code, but of a particular
 execution.
@@ -255,6 +258,9 @@ These examples demonstrate a key point: Although in some cases sdep can
 be a strict function of the source code, \emph{in general, sdep must be
 defined on a per-execution basis}.
 
+\subsubsection{Semantic Dependencies Can Be a Choice}
+\label{sec:Semantic Dependencies Can Be a Choice}
+
 But suppose that the implementation can prove that at any time that
 the above statement might execute, \co{y} is equal to \co{z}?
 That would allow the implementation to act as if the source code
@@ -272,17 +278,21 @@ Or equally valid:
 
 In this case, is the semantic dependency from \co{y} to \co{x},
 from \co{z} to \co{x}, or both \co{y} and \co{z} to \co{x}?
-Or is this a free choice on the part of the implementation?
+The answer is that this is a free choice on the part of the
+implementation.
 
-And perhaps worse:
+\subsubsection{Semantic Dependencies Can Be Complex}
+\label{sec:Semantic Dependencies Can Be Complex}
+
+Consider this example:
 
 \begin{quote}
 	\co{x = horribly_complex(y, z);}
 \end{quote}
 
 Here, the presence or absence of a semantic dependency from \co{y} to
-\co{x} depends not only on the value of \co{z}, but also the code in
-a horribly complex function.
+\co{x} depends not only on the value of \co{z}, but also the code in a
+function that, although single threaded, is horribly complex.
 
 Fortunately, there are now tools that can help.
 For example, the SAT-solver-based \co{cbmc} tool
@@ -300,13 +310,17 @@ There are also many other tools, but failing that, it is always possible
 to fall back to the oldest software-verification tool, namely manual
 code inspection.
 
+\subsubsection{Complex Semantic Dependencies Are a Choice}
+\label{sec:Complex Semantic Dependencies Are a Choice}
+
 All of these tools can incur high overhead, especially manual code
 inspection.
-However, as we will see, C++ implementations need not use these tools.
+However, as we will see, the actual C++ implementations themselves need
+not use these tools.
 Their current analysis is guaranteed to be sufficient, courtesy of the
 real-world constraints discussed in the next section.
 Furthermore, as we will also see, in some special but commonly occurring
-circumstances, much simpler methods exist that incur negligible overhead.
+circumstances, there are much simpler methods that incur negligible overhead.
 
 \section{Real-World Constraints}
 \label{sec:Real-World Constraints}
@@ -1569,8 +1583,11 @@ of the authors.
 %	program analysis.  If you expect better verification of concurrent
 %	code than of sequential code, you are in an intellectual state
 %	of sin."
-5 "Forcing relaxed loads to be ordered before subsequent relaxed stores
+% "Forcing relaxed loads to be ordered before subsequent relaxed stores
 %	is an expensive no-op."
+% "So you don't want to learn concurrency?  Then I can only suggest
+%	that you either move further up the stack or take early
+%	retirement."
 
 % One-pager:
 % Threats to validity:
