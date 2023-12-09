@@ -1348,9 +1348,9 @@ There might well be better ways to prevent UB from propagating backwards.
 Other options being considered include a call to an empty function that
 is invisible to the compiler and a GCC goto asm that the compiler cannot
 prove falls through.
-@@@ show details.
 
-A \co{std::observable()} function has been proposed to the C++ standards
+A \co{std::observable()} function that would block backwards-propagating
+UB has been proposed to the C++ standards
 committee~\cite{DavisHerring2021P1494R2}.
 
 \subsection{Unreachability-Based Undefined Behavior}
@@ -1576,7 +1576,7 @@ of the authors.
 % Alan Stern: Memory models, mathematical logic, and variety of hardware.
 
 % @@@ TODO:
-% Add more detail on blocking UB to "Aside on Undefined Behavior".
+% Measure store-buffer delays on an x86 system.
 
 % Additional snark:
 % "This work reduces the problem of OOTA analysis to that of sequential
