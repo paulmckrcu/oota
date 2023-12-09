@@ -66,19 +66,25 @@ Audience: SG1
 	But at the same time, there are no known instances of OOTA
 	behavior in real C++ implementations.
 
-	This paper goes further, adding temporal constraints from
-	long-standing laws of physics and constraints on hardware
-	architecture and design to demonstrate that OOTA cannot occur in
-	correctly constructed C++ programs and correctly constructed C++
-	implementations running on on real-world systems.
-	This paper also looks at some tooling implicatoins of OOTA.
+	This paper adds constraints from long-standing laws of physics
+	and on hardware systems to demonstrate that OOTA cannot occur
+	in correctly constructed C++ programs running on correctly
+	constructed C++ implementations.
+
+	In this, OOTA behaviors are similar to the issues surrounding
+	undecidability and its real-world counterpart, high complexity.
+	So similar, in fact, that not only the same strategies apply
+	to OOTA, but also the same \emph{code} applies, both for C++
+	implementations and for associated tooling.
 \end{abstract}
 
 \section{Background}
 \label{sec:Background}
 
-This section provides a brief overview of the OOTA problem followed
-by an equally brief summary of prior work in this area.
+This section provides a brief overview of the OOTA problem, followed
+by an equally brief summary of prior work in this area, and ending
+with a quick review of a few of the challenges for general definitions of
+``OOTA cycle''.
 
 \subsection{Brief OOTA Overview}
 \label{sec:Brief OOTA Overview}
@@ -1533,7 +1539,6 @@ of the authors.
 
 % @@@ reviewer to do.
 % Luc Maranget: Memory models.
-% Richard Gristenthwaite: ARM hardware.
 % Mark Rutland: ARM memory ordering.
 % Will Deacon: ARM hardware, C++, and OOTA.
 % Greg Kroah-Hartman and Linus Torvalds: FYI, trouble being caused.
@@ -1574,6 +1579,10 @@ of the authors.
 % Alan Jeffrey: Fixed-point insight P0422R0.  Reached out via LinkedIn.
 % Jade Alglave: C++ herd model?  Memory models and variety of hardware.
 % Alan Stern: Memory models, mathematical logic, and variety of hardware.
+% Martin Uecker (offered)
+% Peter Sewell
+% Mark Batty
+% Richard Gristenthwaite: ARM hardware.  Posed HW speculation question.
 
 % @@@ TODO:
 % Measure store-buffer delays on an x86 system.
