@@ -200,8 +200,8 @@ in OOTA executions.
 This paper therefore drops the question of how OOTA can be avoided and
 instead focuses on proving that OOTA cannot occur.
 
-\subsection{OOTA Definition}
-\label{sec:OOTA Definition}
+\subsection{On OOTA Definitions}
+\label{sec:On OOTA Definitions}
 
 Prior work defines ``OOTA cycle'' by example, without a precise
 definition.
@@ -211,6 +211,9 @@ constitute a causal cycle.
 P0442R0 defines an OOTA cycle as a fixed-point computation that is
 destroyed by perturbations, which makes perfect sense to that paper's
 authors, but has left others unsatisfied.
+Still others argue (perhaps correctly) that it is impossible to provide
+a general definition of ``OOTA cycle'', but even accepting this raises
+the question of whether a \emph{useful} definition can be formulated.
 
 The C++ standard says this in 33.5.4p8
 (\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
@@ -313,7 +316,7 @@ An example use of \co{cbmc} is illustrated in
 Appendix~\ref{sec:Evaluating sdep Using cbmc}.
 
 There are also many other tools, but failing that, it is always possible
-to fall back to the oldest software-verification tool, namely manual
+to fall back to older software-verification tools such as manual
 code inspection.
 
 \subsubsection{Complex Semantic Dependencies Are a Choice}
