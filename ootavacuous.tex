@@ -94,7 +94,7 @@ but where each thread's store depends on the value returned by that
 thread's load.
 A given out-of-thin-air value passes around the resulting cycle.
 Because there is a cycle, on a real system, at least one of the links
-must be counter-temporal, that is, either a load returns a value before
+must be atemporal, that is, either a load returns a value before
 that value is stored, or a store's address or value is computed before
 a prior load returns a value used in that computation.
 
@@ -132,10 +132,15 @@ an equality comparison.
 \label{lst:OOTA Cycle, herd7 Output}
 \end{listing}
 
-Line~4 of the corresponding output of the \co{herd7} tool shows the
+Listing~\ref{lst:OOTA Cycle, herd7 Output} shows the corresponding output
+of the \co{herd7} tool.
+Lines~3 and~4 show the possible states, with line~4 showing the
 counterintuitive outcome where both processes load the value 42.
 As we will see, this outcome is not possible in real-world implementations
 due to physical constraints of which \co{herd7} is (by design) unaware.
+Line~9 contains \co{Sometimes} (as opposed to \co{Never} or \co{Always}),
+indicating that some executions satisfy the \co{exists} clause and
+others do not.
 
 Other OOTA-related litmus tests may be found in
 Appendix~\ref{app:OOTA-Related Litmus Tests}.
@@ -163,8 +168,8 @@ involving OOTA cycles~\cite{JadeAlglave2014HerdingCats}.\footnote{
 	stores of non-constant values~\cite{MarkBatty2011cppmem}.}
 % @@@ Better herd7 C11 citation?
 However, because these models are atemporal, they cannot reject
-OOTA executions other than by flagging the OOTA value as arbitrary
-(which some in fact do in at least some cases).
+OOTA executions other than by flagging the OOTA value as arbitrary,
+which some in fact do in at least some cases.
 
 P0442R0 (``Out-of-Thin-Air Execution is Vacuous'')~\cite{PaulEMcKenney2016OOTA}
 provided a decision procedure for classifying behaviors as permitted
@@ -186,7 +191,7 @@ but none of these have been looked upon favorably by C++ implementers.
 Goldblatt looked at interactions between OOTA cycles and
 UB~\cite{DavidGoldblatt2019NoElegantOOTAfix}.
 Appendix~\ref{app:Aside on Undefined Behavior}
-analyzes the examples and proposes a way to separate UB and OOTA-cycle
+analyzes the examples and notes ways to separate UB and OOTA-cycle
 concerns.
 The remainder of this document will focus on examples lacking UB.
 
@@ -223,13 +228,16 @@ The C++ standard says this in 33.5.4p8
 	are computed that circularly depend on their own computation.
 \end{quote}
 
-Others, current authors included, have define an OOTA cycle as a
+Others, current authors included, have defined an OOTA cycle as a
 cycle in sdep $\cup$ rf, where sdep is the set of semantic
 dependencies within each thread and rf is the set of store-to-load
 links, whether intra-thread or between threads.
 This is a fine definition, and is consistent with the words in the C++
-standard, except that it simply shunts all the complexity into the
+standard, except that it simply shunts all the complexity onto the
 term ``semantic dependency''.
+
+The following sections discuss properties of and constraints on
+useful definitions of ``semantic dependency''.
 
 \subsubsection{Semantic Dependencies Are Per Execution}
 \label{sec:Semantic Dependencies Are Per Execution}
@@ -250,7 +258,7 @@ accesses), the implementation is within its rights to discard this
 statement and act as if later accesses to \co{x} were instead the
 constant zero, at least up to the next assignment to \co{x}.
 
-Similarly:
+Consider also:
 
 \begin{quote}
 	\co{x = y + z;}
@@ -265,7 +273,23 @@ instead the constant zero.
 
 These examples demonstrate a key point: Although in some cases sdep can
 be a strict function of the source code, \emph{in general, sdep must be
-defined on a per-execution basis}.
+defined on a per-execution basis}.\footnote{
+	Thanks to Alan Stern for the examples in this section and
+	in the preceding one.}
+
+\subsubsection{Semantic Dependencies Can Be Nondeterministic}
+\label{sec:Semantic Dependencies Can Be Nondeterministic}
+
+Consider this example, with \co{i} initially zero:
+
+\begin{quote}
+	\co{x = ++i / ++i;}
+\end{quote}
+
+The standard does not specify the order of evaluation, so the resulting
+value might be zero ($\frac{1}{2}$ truncated) or two ($\frac{2}{1}$).
+This indeterminacy is why many coding guidelines prohibit side effects
+in expressions, but the above code nevertheless conforms to the standard.
 
 \subsubsection{Semantic Dependencies Can Be a Choice}
 \label{sec:Semantic Dependencies Can Be a Choice}
@@ -336,7 +360,8 @@ code~\cite{LihaoLiang2016VerifyTreeRCU,LanceRoy2017CBMC-SRCU}.
 Another tool, Nidhugg, which is based on partial-order
 reduction, has been used to carry out a similar
 verification~\cite{MichalisKokologiannakis2017NidhuggRCU,SMC-TreeRCU,MichalisKokologiannakis2019RCUstatelessModelCheck}.
-Both tools can easily check whether or not a given dependency is semantic.
+Both tools can easily check whether or not a given dependency is semantic
+for at least some approximate definitions of ``semantic dependency''.
 An example use of \co{cbmc} is illustrated in
 Appendix~\ref{sec:Evaluating sdep Using cbmc}.
 
@@ -352,7 +377,8 @@ inspection.
 However, as we will see, the actual C++ implementations themselves need
 not use these tools.
 Their current analysis is guaranteed to be sufficient, courtesy of the
-real-world constraints discussed in the next section.
+real-world constraints discussed in the next section, at least assuming
+that their analysis is in fact correct.
 Furthermore, as we will also see, in some special but commonly occurring
 circumstances, there are much simpler methods that incur negligible overhead.
 
@@ -423,13 +449,13 @@ light to be finite, thus preventing causal loops based on infinite-speed
 propagation of information.
 
 This paper will therefore assume that the speed of light is finite, and
-thus the maximum speed at which information can propagate is also finite.
+that the maximum speed at which information can propagate is also finite.
 
 \subsubsection{Non-Zero Sized Atoms}
 \label{sec:Non-Zero Sized Atoms}
 
 If atoms were of zero size, a zero-sized computer might be constructed.
-In such a computer, even give finite speed of light, information could
+In such a computer, even given finite speed of light, information could
 propagate among computing elements in zero time.
 This situation would also permit a load to return the value stored by
 some other thread at the exact instant that the store executed, which
@@ -446,7 +472,7 @@ running C++ will be of non-zero size.
 \label{sec:Laws of Physics: Consequences}
 
 These three laws of physics mean that if one thread loads the value
-stored by some other thread, that load must have occurred later
+stored by some other thread, that load must have occurred earlier
 in global time than did the store.
 In other words, the reads-from relation is temporal in nature.
 
@@ -528,7 +554,9 @@ and~12 cannot be committed until after the load in line~8 completes
 and the conditional on line~9 is evaluated non-speculatively.\footnote{
 	Alternatively, one could imagine that both the speculation
 	and the squashing of failed speculation might span multiple
-	threads.}
+	threads.
+	This might make sense for multiple hardware threads sharing
+	a core.}
 Similarly, lines~18 and~20 cannot be committed until after lines~16
 and~17 complete non-speculatively.
 
@@ -726,7 +754,7 @@ However, if all of the inter-thread relaxed accesses are volatile,
 as they are in the C language, then all of the inter-thread traffic is
 observed behavior.
 In this case, even omniscient oracular implementations are required
-to confine their analyses within a single thread.
+to confine their analyses to within a single thread.
 
 The next section focuses on the key analysis step for OOTA cycles,
 namely dependency classification.
@@ -757,15 +785,15 @@ the execution is both correct and atemporal.
 \begin{table}
 \centering
 \begin{tabular}{c|c|l}
-Actual Code	& Implementation	& Result \\
+Actual Execution	& Implementation	& Result \\
 \hline
-sdep		& sdep			& Temporal \\
+sdep			& sdep			& Temporal \\
 \cline{2-3}
-		& $\neg$sdep		& Fix C++ bug! \\
+			& $\neg$sdep		& Fix C++ bug! \\
 \hline
-$\neg$sdep	& sdep			& Temporal \\
+$\neg$sde		& sdep			& Temporal \\
 \cline{2-3}
-		& $\neg$sdep		& Atemporal \\
+			& $\neg$sdep		& Atemporal \\
 \end{tabular}
 \caption{Semantic-Dependency Classification}
 \label{tab:Semantic-Dependency Classification}
@@ -807,15 +835,15 @@ Table~\ref{tab:Semantic-Dependency Classification For Tools}.
 \begin{table}
 \centering
 \begin{tabular}{c|c|l}
-Actual Code	& Tooling		& Result \\
+Actual Execution	& Tooling		& Result \\
 \hline
-sdep		& sdep			& Temporal \\
+sdep			& sdep			& Temporal \\
 \cline{2-3}
-		& $\neg$sdep		& False Positive (Warning?) \\
+			& $\neg$sdep		& False Positive (Warning?) \\
 \hline
-$\neg$sdep	& sdep			& False Negative (Warning?) \\
+$\neg$sdep		& sdep			& False Negative (Warning?) \\
 \cline{2-3}
-		& $\neg$sdep		& Atemporal \\
+			& $\neg$sdep		& Atemporal \\
 \end{tabular}
 \caption{Semantic-Dependency Classification For Tools}
 \label{tab:Semantic-Dependency Classification For Tools}
@@ -1554,16 +1582,19 @@ use.\footnote{
 \section{Acknowledgments}
 \label{sec:Acknowledgments}
 
-We are grateful to David Goldblatt, Jade Alglave, and Alan Stern for their
-careful review of an early draft of this paper and to John Wickerson for
-asking Paul for a rant and taking the proffered rant seriously.
+We are grateful to David Goldblatt, Jade Alglave, Alan Stern, and Peter
+Sewell for their careful review of an early draft of this paper and
+to John Wickerson for asking Paul for a rant and taking the proffered
+rant seriously.
 We also owe David Goldblatt a debt of gratitude for his having asked an
 insightful question at the right time, his insights on combinations of
 OOTA and UB, and for his ``Deathstation 9000'' demonic CPU.
 Alan Stern located many unclear statements and gaps in reasoning.
 Martin Uecker contributed valuable insights on backwards-propagating UB.
+
 Nonetheless, all errors and omissions in this paper are the sole property
-of the authors.
+of the authors, and the appearance of a name in this paragraph does
+not in any way constitute agreement with anything in this paper.
 
 % @@@ reviewer to do.
 % Luc Maranget: Memory models.
@@ -1614,6 +1645,7 @@ of the authors.
 
 % @@@ TODO:
 % Measure store-buffer delays on an x86 system.
+% Real-world compilers freeze nondeterministic choices.
 
 % Objections:
 % "Atomic operations are not observable behavior."
