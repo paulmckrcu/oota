@@ -290,6 +290,22 @@ from \co{z} to \co{x}, or both \co{y} and \co{z} to \co{x}?
 The answer is that this is a free choice on the part of the
 implementation.
 
+\subsubsection{Semantic Dependencies and I/O}
+\label{sec:Semantic Dependencies and I/O}
+
+A computation might include I/O:
+
+\begin{quote}
+	\co{x = y * input_int();}
+\end{quote}
+
+Then there is a semantic dependency from \co{y} to \co{x} only if
+the number input is non-zero.
+Similar issues arise when reading timestamps.
+
+In addition, I/O operations are observed behavior, which greatly restricts
+optimizations involving them.
+
 \subsubsection{Semantic Dependencies Can Be Complex}
 \label{sec:Semantic Dependencies Can Be Complex}
 
@@ -302,6 +318,15 @@ Consider this example:
 Here, the presence or absence of a semantic dependency from \co{y} to
 \co{x} depends not only on the value of \co{z}, but also the code in a
 function that, although single threaded, is horribly complex.
+
+A special case is as follows:
+
+\begin{quote}
+	\co{x = y & 0x1 ? do_odd(y) : do_even(y);}
+\end{quote}
+
+The key point here is that diferent values might cause almost completely
+disjoint code to be executed.
 
 Fortunately, there are now tools that can help.
 For example, the SAT-solver-based \co{cbmc} tool
@@ -736,7 +761,7 @@ Actual Code	& Implementation	& Result \\
 \hline
 sdep		& sdep			& Temporal \\
 \cline{2-3}
-		& $\neg$sdep		& BUG!!! \\
+		& $\neg$sdep		& Fix C++ bug! \\
 \hline
 $\neg$sdep	& sdep			& Temporal \\
 \cline{2-3}
@@ -1589,6 +1614,23 @@ of the authors.
 
 % @@@ TODO:
 % Measure store-buffer delays on an x86 system.
+
+% Objections:
+% "Atomic operations are not observable behavior."
+%	They are for volatile atomic objects.  Plus an implementation
+%	whose analysis is confined to a thread would need to assume
+%	that any atomic store might lead to observable behavior in some
+%	other thread.  An implementation with a global view must preserve
+%	observable behavior regardless of OOTA cycles.	Plus if an OOTA
+%	cycle does not affect observable behavior, who cares?
+% "The C++ abstract machine is independent of the laws of physics."
+%	That might be, but any real implementation of that abstract
+%	machine will be governed by those laws.
+% "Real hardware can exhibit OOTA, as exemplified by audio feedback."
+%	Such hardware does not run C++.  Also, audio feedback is more
+%	closely approximated by a loop calculating sound intensity than
+%	by OOTA, especially given that you must include the audio
+%	properties of the enclosing space in analyzing the feedback loop.
 
 % Additional snark:
 % "This work reduces the problem of OOTA analysis to that of sequential
