@@ -582,7 +582,10 @@ non-speculative stores.
 \subsection{Constraints of the Standard}
 \label{sec:Constraints of the Standard}
 
-Because volatile atomics constitute observable
+The exact definition of a computer language is subject to some debate,
+with standards, implementations, and users all having
+influence~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2}.
+Nevertheless, because volatile atomics constitute observable
 behavior~\cite[\co{intro.abstract}]{ThomasKoeppe2023N4950},
 they must be executed in strict accordance with the rules of the abstract
 machine.
@@ -1591,6 +1594,8 @@ insightful question at the right time, his insights on combinations of
 OOTA and UB, and for his ``Deathstation 9000'' demonic CPU.
 Alan Stern located many unclear statements and gaps in reasoning.
 Martin Uecker contributed valuable insights on backwards-propagating UB.
+Richard Grisenthwaite patiently explained the architectural constraints
+that prevent hardware OOTA.
 
 Nonetheless, all errors and omissions in this paper are the sole property
 of the authors, and the appearance of a name in this paragraph does
@@ -1682,6 +1687,7 @@ not in any way constitute agreement with anything in this paper.
 % It might be possible to propagate information at infinite velocity
 %	despite the finite speed of light.
 % It might be possible to violate causality.
+% Hardware and compiler bugs might result in OOTA.
 % ML hallucination might convince people that OOTA is OK.
 
 \bibliographystyle{plain}
