@@ -583,8 +583,9 @@ non-speculative stores.
 \label{sec:Constraints of the Standard}
 
 The exact definition of a computer language is subject to some debate,
-with standards, implementations, and users all having
-influence~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2}.
+with standards, implementations, and users all having some degree of
+influence~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2},
+and each of which is subject to change over time.
 Nevertheless, because volatile atomics constitute observable
 behavior~\cite[\co{intro.abstract}]{ThomasKoeppe2023N4950},
 they must be executed in strict accordance with the rules of the abstract
@@ -636,7 +637,7 @@ a CPPMEM\footnote{
 litmus test that demonstrates such a behavior.
 Without line~4, only the values~2 and~3 can be stored to \co{r1}.
 With that line, the additional value~42 can also be stored to \co{r1}.
-The implementation is therefore forbidded from inventing that store of 42
+The implementation is therefore forbidden from inventing that store of 42
 unless it can prove that doing so does not negatively affect the
 program's observable behaviors, independently of OOTA cycles.
 For example, the implementation might be able to prove that there
@@ -661,7 +662,7 @@ are no other accesses to \co{x} at the time of the invented store.
 \label{lst:CPPMEM Duplicated Store}
 \end{listing}
 
-Duplicating atomic stores can also introduce new and undesireable
+Duplicating atomic stores can also introduce new and undesirable
 behaviors.
 To see this, consider Listing~\ref{lst:CPPMEM Duplicated Store}, a CPPMEM
 litmus test that demonstrates such a behavior.
