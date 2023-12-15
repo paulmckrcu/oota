@@ -1,0 +1,26 @@
+coe.out-4
+	Output of "./temporal --coe --nthreads 15".
+coe.out-4.dat
+	Result of running perfbook coereduce.sh on coe.out-4.
+coe.out-4.dot
+	Result of running perfbook coe2dot.sh on coe.out-4.  Use "dot
+	-Tpdf" on this file to produce ../coe-out-4.pdf.  Note the extra
+	"-", as LaTeX doesn't much like more than one "." in a filename.
+fre.sh.out
+	Output of 1000 runs of perfbook's fre.sh script.
+fre.sh.out.dat
+	The fre.sh.out.sort file is passed to perfbook's temporalhist.sh
+	script.
+fre.sh.out.sort
+	The numeric lines of fre.sh.out are sorted numerically by their
+	last column.
+plots.sh
+	Produce the .png files from the .dat files.
+rfe.sh.out
+	Output of 1000 runs of perfbook's rfe.sh script.
+rfe.sh.out.dat
+	The rfe.sh.out.sort file is passed to perfbook's temporalhist.sh
+	script.
+rfe.sh.out.sort
+	The numeric lines of rfe.sh.out are sorted numerically by their
+	last column.

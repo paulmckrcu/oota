@@ -41,7 +41,7 @@
 \floatname{listing}{Listing}
 
 \begin{document}
-\title{D3064R0: OOTA Execution is Provably Vacuous}
+\title{D3064R0: OOTA Execution on Real Implementations is Provably Vacuous}
 
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
@@ -732,7 +732,11 @@ In this case, the analysis stops at loads to objects that were last
 stored to by other threads (``rfe''), stores to objects where the next
 and/or previous stores in that object's modification order were executed
 by other threads (``coe'')), and loads from objects for which the value
-returned by a given load was overwritten by some other thread (``fre'').
+returned by a given load was overwritten by some other thread
+(``fre'').\footnote{
+	See Appendix~\ref{app:Inter-Process Communications} for more
+	information on these memory-reference interprocess communications
+	modes.}
 
 Fourth, one could also imagine implementations whose analysis is
 completely unrestricted, up to and including the limiting case where
@@ -767,7 +771,7 @@ namely dependency classification.
 \label{sec:Dependency Classification}
 
 Carrying out this type of optimization requires that the implementation
-classify dependencies as semantic or not.
+classify dependencies as maybe semantic or definitely not.
 Given the limited resources available, almost all implementations will
 choose to approximate sdep, which entails some misclassifications, with
 the consequences summarized in
@@ -1580,6 +1584,151 @@ manual inspection, but \co{cbmc} is readily available and easy to
 use.\footnote{
 	On Debian-based distributions, via \co{sudo apt install cbmc}.}
 
+\section{Inter-Process Communications}
+\label{app:Inter-Process Communications}
+
+This section more clearly defines the ``coe'', ``fre'', and ``rfe''
+types of interprocess communication (also collectively called ``links'')
+and gives evidence on the temporal qualities of these different types.
+
+First, context.
+The final ``e'' in all three acronyms stands for ``external'' as opposed
+to within-thread communication (``coi'', ``fri'', and ``rfi'') and as
+also opposed to all communication, whether inter-thread or intra-thread
+(``co'', ``fr'', and ``rf'').
+
+Next, definitions:
+
+\begin{description}
+\item[coe]
+	Coherency (external), which connects a store to any other store
+	to that same object that overwrites either the first store's
+	value or that overwrites some later value.
+\item[fre]
+	From-read (external), which connects a load to any other store
+	object that overwrites either the value that the load returned
+	or that overwrites some later value.
+\item[rfe]
+	Reads-from (external), which connects a store to any load from
+	that same object that returns the value stored.
+\end{description}
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{4in}{!}{\includegraphics{ipc}}
+\caption{IPC Diagram for coe, fre, and rfe}
+\label{fig:IPC Diagram for coe, fre, and rfe}
+\end{center}
+\end{figure}
+
+Thirdly, Figure~\ref{fig:IPC Diagram for coe, fre, and rfe} illustrates
+the coe, fre, fri, and rfe links for four threads with time advancing
+from the top to the bottom of the figure.  Starting with coe, even though
+Thread~1's store was later in global time than that of Thread~0, that of
+Thread~1 came first in coe order, followed by those of Threads~2 and ~3.
+There is thus a coe link from Thread~1's store to every other store,
+from Thread~0's store to those of Threads~2 and~3, and from Thread~2's
+store to that of Thread~3.
+
+Thread~3's load reads the value stored by Thread~0's store, so there is
+an rfe link from that store to that load.  There is also an fre link from
+that load to Thread~2's store and an fri link to Thread~3's later store.
+Note that this fre link goes backwards in time.
+
+Finally, there might be a desire for hard evidence that coe and fre
+links really can go backwards in time.
+We provide this evidence on x86 to demonstrate that these effects
+are not confined to weakly ordered systems.
+This system is a laptop with Intel(R) Core(TM) i9-10885H CPU @ 2.40GHz,
+having a single socket with 8~cores, each having a pair of hardware
+threads.
+The code generating this data may be found in the \path{CodeSamples/cpu}
+directory of the
+perfbook~\cite{McKenney2018ParallelProgramming-2018-12-08a}.\footnote{
+	\co{git clone git://git.kernel.org/pub/scm/linux/kernel/git/paulmck/perfbook.git}}
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{3in}{!}{\includegraphics{coe-sh-out}}
+\caption{On x86, coe Links Are Atemporal}
+\label{fig:On x86, coe Links Are Atemporal}
+\end{center}
+\end{figure}
+
+Figure~\ref{fig:On x86, coe Links Are Atemporal}
+shows the results of 15 of the laptop's hardware threads simultaneously
+storing their identifying integer (ranging from 0 to 14) to a shared
+variable, then repeatedly doing timestamped reads from that variable.
+The x-axis displays time in TSC periods, each of which is about 0.417~ns
+in duration.
+The y-axis shows the number of distinct opinions that the hardware
+threads have as a function of time, a number that is frequently rather
+larger than one.
+The backwards-in-time coe link from Thread~1 to Thread~0 in
+Figure~\ref{fig:IPC Diagram for coe, fre, and rfe}
+is therefore entirely plausible.
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{5in}{!}{\includegraphics{coe-out-4}}
+\caption{On x86, coe Links Are Partially Ordered}
+\label{fig:On x86, coe Links Are Partially Ordered}
+\end{center}
+\end{figure}
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{3in}{!}{\rotatebox{90}{\includegraphics{store15tred}}}
+\caption{On Power5, coe Links Are Also Partially Ordered}
+\label{fig:On Power5, coe Links Are Also Partially Ordered}
+\end{center}
+\end{figure}
+
+However, Figure~\ref{fig:On x86, coe Links Are Partially Ordered}
+shows that the order of reads of each value at each thread are
+consistent with a number of global orders, as required.
+Figure~\ref{fig:On Power5, coe Links Are Also Partially Ordered}
+shows a rather more elaborate partial order from a Power5
+system~\cite{McKenney2018ParallelProgramming-2018-12-08a}.
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{3in}{!}{\includegraphics{fre-sh-out}}
+\caption{On x86, fre Links Are Atemporal}
+\label{fig:On x86, fre Links Are Atemporal}
+\end{center}
+\end{figure}
+
+Figure~\ref{fig:On x86, fre Links Are Atemporal}
+plots a histogram of the elapsed time from the last load to return the
+old value to the store that provided the new value.
+Note well that most of the data falls into negative time, that is to say,
+the last load of the old value executes about 50 timestamp periods (about
+20~nanoseconds) \emph{after} the store that overwrote that same old value.
+That is, fre links can and do go backwards in time.
+This corresponds to the fre link between Thread~3 an Thread~2 depicted in
+Figure~\ref{fig:IPC Diagram for coe, fre, and rfe}.
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{3in}{!}{\includegraphics{rfe-sh-out}}
+\caption{On x86, rfe Links Are Temporal}
+\label{fig:On x86, rfe Links Are Temporal}
+\end{center}
+\end{figure}
+
+Figure~\ref{fig:On x86, rfe Links Are Temporal}
+plots a histogram of the elapsed time from a store of a new value
+to the first load of that new value.
+Note well that all of the data falls into positive time, indicating
+that rfe links always go forward in time, as those familiar with
+computer hardware and the laws of physics would expect.
+
+And this is exactly why the C++ memory model guarantees ordering from
+rfe links but not the coe and fre links for relaxed accesses in the
+absence of other ordering from stronger atomic memory accesses or
+\co{atomic_thread_fence()}.
+
 % \section{History}
 % \label{sec:History}
 
@@ -1599,7 +1748,7 @@ Richard Grisenthwaite patiently explained the architectural constraints
 that prevent hardware OOTA.
 
 Nonetheless, all errors and omissions in this paper are the sole property
-of the authors, and the appearance of a name in this paragraph does
+of the authors, and the appearance of a name in this appendix does
 not in any way constitute agreement with anything in this paper.
 
 % @@@ reviewer to do.

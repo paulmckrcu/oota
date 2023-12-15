@@ -78,6 +78,17 @@ END {
 	print "___EOF___";
 }' | sh > ootavacuous-flat.tex
 
+svgfiles=`find . -name '*.svg' -print`
+for i in $svgfiles
+do
+	basename="${i%.svg}"
+	if test ! -f "$basename.pdf" -o "$basename.svg" -nt "$basename.pdf"
+	then
+		echo "$basename.svg -> $basename.pdf"
+		inkscape --export-pdf=$basename.pdf $basename.svg
+	fi
+done
+
 pdflatex ootavacuous-flat.tex
 bibtex ootavacuous-flat.aux
 pdflatex ootavacuous-flat.tex
