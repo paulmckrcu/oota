@@ -283,21 +283,37 @@ defined on a per-execution basis}.\footnote{
 Consider this example, with \co{i} initially zero:
 
 \begin{quote}
-	\co{x = ++i / ++i;}
+	\co{y = ++i / ++i;} \\
+	\co{x = y * z;}
 \end{quote}
 
 The standard does not specify the order of evaluation, so the resulting
-value might be zero ($\frac{1}{2}$ truncated) or two ($\frac{2}{1}$).
-This indeterminacy is why many coding guidelines prohibit side effects
-in expressions, but the above code nevertheless conforms to the standard.
+value of \co{y} might be zero ($\frac{1}{2}$ truncated) or two
+($\frac{2}{1}$).
+In the former case, there is no semantic dependency from \co{z} to
+\co{x}, but in the latter case there is.
+Thus, semantic dependencies are not just a function of a particular
+execution through the source code, but also of arbitrary choices made
+by the C++ implementation.\footnote{
+	Thanks to Peter Sewell for pointing out this possibility.}
 
-\subsubsection{Semantic Dependencies Can Be a Choice}
-\label{sec:Semantic Dependencies Can Be a Choice}
+Note well that C++ implementations can and do act as if portions of
+the source code was duplicated in order to apply specialization
+optimizations, in which case any nondeterminism might also be
+duplicated.
+
+Many projects' coding guidelines prohibit side effects in expressions,
+their goal being to obtain portable code whose behavior does not depend
+on arbitrary choices on the part of the implementation.
+However, the above code nevertheless conforms to the standard.
+
+\subsubsection{Semantic Dependencies And Optimization}
+\label{sec:Semantic Dependencies And Optimization}
 
 But suppose that the implementation can prove that at any time that
 the above statement might execute, \co{y} is equal to \co{z}?
-That would allow the implementation to act as if the source code
-was instead as follows:
+That would allow the implementation to optimize, that is, to act as if
+the source code was instead as follows:
 
 \begin{quote}
 	\co{x = 2 * y;}
@@ -369,8 +385,8 @@ There are also many other tools, but failing that, it is always possible
 to fall back to older software-verification tools such as manual
 code inspection.
 
-\subsubsection{Complex Semantic Dependencies Are a Choice}
-\label{sec:Complex Semantic Dependencies Are a Choice}
+\subsubsection{Complex Semantic Dependencies Analysis is a Choice}
+\label{sec:Complex Semantic Dependencies Analysis is a Choice}
 
 All of these tools can incur high overhead, especially manual code
 inspection.
@@ -539,6 +555,9 @@ either zero or one.
 
 Therefore, non-speculative loads are prohibited from loading values from
 speculative stores.
+And yes, this does mean that hardware can produce OOTA cycles during
+speculative execution, but the hardware is required to prevent all such
+speculative exection from ever committing.
 
 As a special case of this prohibition, a value stored speculatively must
 not be exposed to non-speculative loads from other threads.
@@ -712,6 +731,8 @@ replacement of arbitrarily complex passages of code with constants.\footnote{
 
 This optimization process may, roughly speaking, be divided into two
 activities, analysis of the code and classification of dependencies.
+Two sections on these topics are followed by sections on optimizations
+and on consequences.
 
 \subsubsection{Code Analysis}
 \label{sec:Code Analysis}
@@ -811,6 +832,30 @@ Note well that in the absence of bugs in the implementation (which
 again should be fixed), it is the implementation's classification of
 the dependency that dictates whether or not the corresponding execution
 is temporal.
+
+\subsubsection{C++ Implementations: Optimization}
+\label{sec:C++ Implementations: Optimization}
+
+C++ implementations undertake a wide variety of optimizations, in
+some cases taking advantage of nondeterminism and in others applying
+the results of code analysis to produce faster code.
+The changes can be profound, for example, with large computations being
+replaced by simple constants.
+Either way, the implementation is behaving as if the original program
+had been written more optimally.
+
+In such cases, one option is to carry out analysis of semantic dependencies
+on the optimized code.
+The seL4 project took this approach to the extreme of analyzing
+the binary output~\cite{ThomasSewell2013L4binaryVerification}.
+
+In C++ implementations using compilers, non-determinism of a given
+(post-optimization) code path is ``frozen'' into the resulting binary,
+which greatly simplifies analysis of semantic dependencies.
+Other c++ implementations (for example, those using interpreters or JITs)
+might need to directly model any nondeterminism.
+This latter situation might motivate additional C++ projects to ban
+nondeterminism in favor of portable code.
 
 \subsubsection{C++ Implementations: Consequences}
 \label{sec:C++ Implementations: Consequences}
