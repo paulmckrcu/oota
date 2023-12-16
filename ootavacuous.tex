@@ -385,6 +385,47 @@ There are also many other tools, but failing that, it is always possible
 to fall back to older software-verification tools such as manual
 code inspection.
 
+\subsubsection{Implementers and Users Influence ``Semantic Dependencies'' Definition}
+\label{sec:Implementers and Users Influence ``Semantic Dependencies'' Definition}
+
+The exact definition of a computer language is subject to some debate,
+with standards, implementations, and users all having some degree of
+influence~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2},
+and each of which is subject to change over time.
+Users  and implementers are of course wise to assume that their opinions
+might be overridden by those of the standard and, for the users,
+especially the implementation.
+However, consider the following code:
+
+\begin{quote}
+	\co{void foo(char c} \\
+	\co{\{} \\
+	\co{\ \ \ \ return c + 128;} \\
+	\co{\}}
+\end{quote}
+
+The standard does not specify whether or not type \co{char} is signed,
+leaving that choice to the implementations, which follow the lead
+of the architects of a given CPU family.
+Therefore, the code above is undefined behavior on systems choosing
+signed \co{char} and having 8-bit bytes (so that there is no semantic
+dependency from the \co{foo()} function's argument to its return value),
+but perfectly well-defined on systems having unsigned \co{char}
+(so that there is a semantic dependency).
+So score one for the implementers, albeit by conscious choice on the
+part of the standards committee.
+
+Except that GCC provides the \co{-funsigned-char} command-line
+argument that causes this implementation to treat variables of
+type \co{char} as unsigned, regardless of the architects' wishes.
+Given this command-line argument, there is always a semantic dependency
+from the \co{foo()} function's argument to its return value.
+So score one for at least some implementations' users.
+
+Please see Appendix~\ref{sec:User Influence Over Language Semantics}
+for more examples of user control over semantics, including semantic
+dependencies.
+
 \subsubsection{Complex Semantic Dependencies Analysis is a Choice}
 \label{sec:Complex Semantic Dependencies Analysis is a Choice}
 
@@ -601,11 +642,7 @@ non-speculative stores.
 \subsection{Constraints of the Standard}
 \label{sec:Constraints of the Standard}
 
-The exact definition of a computer language is subject to some debate,
-with standards, implementations, and users all having some degree of
-influence~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2},
-and each of which is subject to change over time.
-Nevertheless, because volatile atomics constitute observable
+Because volatile atomics constitute observable
 behavior~\cite[\co{intro.abstract}]{ThomasKoeppe2023N4950},
 they must be executed in strict accordance with the rules of the abstract
 machine.
@@ -617,7 +654,9 @@ relaxed loads before relaxed stores, albeit one not requiring
 expensive memory-fence instructions on weakly ordered architectures.
 
 Although C++ non-volatile accesses to atomic objects are not observable
-behavior, they are still subject to the memory model.
+behavior, @@@
+
+In addition,such accesses are still subject to the memory model.
 In particular, implementations must not behave as if the source code has
 additional:
 
@@ -1585,6 +1624,8 @@ cycle cannot form in a correct real-world C++ implementation.
 \label{lst:Multi-Cycle Litmus Test}
 \end{listing}
 
+\clearpage
+
 \section{Aside on Undefined Behavior}
 \label{app:Aside on Undefined Behavior}
 
@@ -1971,6 +2012,128 @@ And this is exactly why the C++ memory model guarantees ordering from
 rfe links but not the coe and fre links for relaxed accesses in the
 absence of other ordering from stronger atomic memory accesses or
 \co{atomic_thread_fence()}.
+
+\clearpage
+
+\section{User Influence Over Language Semantics}
+\label{sec:User Influence Over Language Semantics}
+
+As noted earlier, the exact definition of a computer language is subject
+to some debate, with standards, implementations, and users all having
+some degree of
+influence~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2},
+and each of which is subject to change over time.
+It is natural to dismiss user influence when compared to the text of
+standards or the code in implementations, but both are subject to
+change and do change over time.
+The implementation is especially subject to change, for example,
+consider the following command line used to build the Linux kernel's
+\co{kernel/rcu/tree.c} C-language source file:
+
+~\\
+{
+	\scriptsize
+	\texttt{
+	gcc -Wp,-MMD,kernel/rcu/.tree.o.d -nostdinc
+	-I./arch/x86/include -I./arch/x86/include/generated  -I./include
+	-I./arch/x86/include/uapi -I./arch/x86/include/generated/uapi
+	-I./include/uapi -I./include/generated/uapi
+	-include ./include/linux/compiler-version.h
+	-include ./include/linux/kconfig.h -include
+	./include/linux/compiler\_types.h -D\_\_KERNEL\_\_
+	-fmacro-prefix-map=./= -Werror -std=gnu11 -fshort-wchar
+	-funsigned-char -fno-common -fno-PIE -fno-strict-aliasing -mno-sse
+	-mno-mmx -mno-sse2 -mno-3dnow -mno-avx -fcf-protection=branch
+	-fno-jump-tables -m64 -falign-jumps=1 -falign-loops=1
+	-mno-80387 -mno-fp-ret-in-387 -mpreferred-stack-boundary=3
+	-mskip-rax-setup -mtune=generic -mno-red-zone -mcmodel=kernel
+	-Wno-sign-compare -fno-asynchronous-unwind-tables
+	-mindirect-branch=thunk-extern -mindirect-branch-register
+	-mindirect-branch-cs-prefix -mfunction-return=thunk-extern
+	-fno-jump-tables -fpatchable-function-entry=16,16
+	-fno-delete-null-pointer-checks -O2 -fno-allow-store-data-races
+	-fstack-protector-strong -fomit-frame-pointer
+	-fno-stack-clash-protection -falign-functions=16
+	-fno-strict-overflow -fno-stack-check -fconserve-stack
+	-Wall -Wundef -Werror=implicit-function-declaration
+	-Werror=implicit-int -Werror=return-type -Werror=strict-prototypes
+	-Wno-format-security -Wno-trigraphs -Wno-frame-address
+	-Wno-address-of-packed-member -Wframe-larger-than=2048 -Wno-main
+	-Wno-unused-but-set-variable -Wno-unused-const-variable -Wvla
+	-Wno-pointer-sign -Wcast-function-type -Wno-array-bounds
+	-Wno-alloc-size-larger-than -Wimplicit-fallthrough=5
+	-Werror=date-time -Werror=incompatible-pointer-types
+	-Werror=designated-init -Wenum-conversion
+	-Wno-unused-but-set-variable -Wno-unused-const-variable
+	-Wno-restrict -Wno-packed-not-aligned -Wno-format-overflow
+	-Wno-format-truncation -Wno-stringop-overflow
+	-Wno-stringop-truncation -Wno-missing-field-initializers
+	-Wno-type-limits -Wno-shift-negative-value
+	-Wno-maybe-uninitialized -Wno-sign-compare
+	-DKBUILD\_MODFILE='"kernel/rcu/tree"' -DKBUILD\_BASENAME='"tree"'
+	-DKBUILD\_MODNAME='"tree"' -D\_\_KBUILD\_MODNAME=kmod\_tree -c
+	-o kernel/rcu/tree.o kernel/rcu/tree.c
+	}
+}
+
+We do not propose to explain all of these, and sufficiently motivated
+readers can avail themselves of the GCC documentation.
+We instead look at representative members of several categories.
+
+The \co{-funsigned-char} causes type \co{char} to be unsigned, which
+overrides per-architecture defaults, some of which treat \co{char}
+as signed and others as \co{unsigned}.
+This choice prevents a class of bugs, and also allows the kernel to make
+reliable use of the uppermost bit of variables of type \co{char}.
+It also affects the definition of ``semantic dependency'' by changing
+the arithmetic proporties of this type.
+In theory, the standard could specify the signedness of \co{char},
+but presumably the variety of existing practice in the 1980s prevented
+this from being done.
+
+The \co{-mno-sse} prevents GCC from making use of the SSE hardware.
+This is done for performance reasons, as it avoids the overhead of
+saving and restoring the state of this hardware when switching between
+user and kernel contexts.
+Similarly, the \co{-mcmodel=kernel} causes the kernel binary to be
+placed in the uppermost 2GB of the address space, again reducing
+the overhead of switching between user and kernel contexts.
+These are cases where the standard does not specify anything, nor
+should it.
+
+The \co{-fpatchable-function-entry=16,16} causes GCC to emit 16
+\co{nop} instructions at the beginning of each function, with
+the function's entry point being just after this string of \co{nop}
+instructions.
+The resulting buffers are used by the Linux-kernel tracing infrastructure
+which is in turn used for debugging, performance measurement, and
+monitoring.
+This is again clearly outside of the scope of the standard.
+
+The \co{-fstack-protector-strong} causes GCC to emit code that provides
+some protection against some clases of attacks based on buffer overflows.
+One could rightly argue code should simply avoid ever overflowing buffers,
+but things like memory allocators and userspace memory accesses must
+use code that can be difficult to distinguish from buffer overflows.
+It is not clear that the ever-increasing variety of attacks should
+affect the standard.
+
+The \co{-fno-strict-overflow} causes GCC to act as if signed integer
+overflow is defined behavior.
+Note well that this command-line option also affects the definition of
+``semantic dependency''.
+This might be a controversial choice, and another option would be to add
+a new set of signed integer types to the standard for which overflow is
+defined as wrapping, similar to the situation with unsigned integers.
+
+The \co{-Werror=strict-prototypes} causes GCC to warn if old-style
+non-ANSI function prototypes are used.
+This helps avoid certain classes of bugs.
+Warnings are by design outside of the scope of the standard.
+
+In other words, user preference can exert a non-trivial influence over
+language semantics, and in particular can affect some aspects of the
+definition of ``semantic dependency''.
 
 % \section{History}
 % \label{sec:History}
