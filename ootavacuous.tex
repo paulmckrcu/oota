@@ -228,13 +228,27 @@ The C++ standard says this in 33.5.4p8
 	are computed that circularly depend on their own computation.
 \end{quote}
 
-Others, current authors included, have defined an OOTA cycle as a
-cycle in sdep $\cup$ rf, where sdep is the set of semantic
-dependencies within each thread and rf is the set of store-to-load
-links, whether intra-thread or between threads.
+Others have defined an OOTA cycle as a cycle in sdep $\cup$ rf, where
+sdep is the set of semantic dependencies within each thread and rf is
+the set of store-to-load links, whether intra-thread (rfi) or between
+threads (rfe).\footnote{
+	See Appendix~\ref{app:Inter-Process Communications} for definitions
+	and properies of rf, rfe, and rfi.}
 This is a fine definition, and is consistent with the words in the C++
 standard, except that it simply shunts all the complexity onto the
 term ``semantic dependency''.
+
+The current authors deviate slightly from this tradition by instead
+defining an OOTA cycle as a cycle in sdep $\cup$ rfe, where rfe is the
+set of store-to-load links, but excluding intra-thread rfi links, which
+are instead considered to be part of sdep.
+Although this does shunt even more complexity onto the term
+``semantic dependency'', it also enables us to bring to bear
+laws of physics and properties of hardware onto correct real-world
+C++ implementations.\footnote{
+	Thanks to Alan Stern for providing a litmus test that demonstrated
+	that we had unwittingly (but productively!) shifted our definition
+	to sdep $\cup$ rfe.}
 
 The following sections discuss properties of and constraints on
 useful definitions of ``semantic dependency''.
@@ -398,8 +412,8 @@ There are also many other tools, but failing that, it is always possible
 to fall back to older software-verification tools such as manual
 code inspection.
 
-\subsubsection{Implementers and Users Influence ``Semantic Dependencies'' Definition}
-\label{sec:Implementers and Users Influence ``Semantic Dependencies'' Definition}
+\subsubsection{Implementers and Users Influence Semantic-Dependencies Definition}
+\label{sec:Implementers and Users Influence Semantic-Dependencies Definition}
 
 The exact definition of a computer language is subject to some debate,
 with standards, implementations, and users all having some degree of
@@ -438,6 +452,9 @@ So score one for at least some implementations' users.
 Please see Appendix~\ref{sec:User Influence Over Language Semantics}
 for more examples of user control over semantics, including semantic
 dependencies.
+
+\emph{A definition of sdep drawn strictly from the standard will be
+at best an approximation to a definition that is useful in practice.}
 
 \subsubsection{Complex Semantic Dependencies Analysis is a Choice}
 \label{sec:Complex Semantic Dependencies Analysis is a Choice}
@@ -809,7 +826,7 @@ returned by a given load was overwritten by some other thread
 (``fre'').\footnote{
 	See Appendix~\ref{app:Inter-Process Communications} for more
 	information on these memory-reference interprocess communications
-	modes.}
+	links.}
 
 Fourth, one could also imagine implementations whose analysis is
 completely unrestricted, up to and including the limiting case where
