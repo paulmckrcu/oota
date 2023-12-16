@@ -684,9 +684,17 @@ relaxed loads before relaxed stores, albeit one not requiring
 expensive memory-fence instructions on weakly ordered architectures.
 
 Although C++ non-volatile accesses to atomic objects are not observable
-behavior, @@@
+behavior, any implementation that restricts its code analysis to a
+single thread must assume (unless it can prove otherwise) that a given
+relaxed atomic store might affect observable behavior following any
+load that returns the value stored.
+This assumption does not constrain the implementation to anywhere near
+the extent that a volatile relaxed atomic store would, but it does add
+significant constrants over those related to non-volatile non-atomic
+stores.
 
-In addition,such accesses are still subject to the memory model.
+For example, non-volatile relaxed atomic accesses are subject to
+the memory model.
 In particular, implementations must not behave as if the source code has
 additional:
 
