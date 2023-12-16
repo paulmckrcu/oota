@@ -15,7 +15,7 @@
 #	Why not both?  ;-)
 
 T="`mktemp -d ${TMPDIR-/tmp}/ootavacuous.sh.XXXXXX`"
-trap 'rm -rf $T' 0
+trap 'rm -rf $T' 0 2
 
 awk -v sq="'" -v dq='"' -v bs='\\' < ootavacuous.tex '
 BEGIN {
