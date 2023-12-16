@@ -51,7 +51,7 @@ Michael Wong\\\email{fraggamuffin@gmail.com} \and
 Maged Michael\\\email{maged.michael@gmail.com} \and
 The Indefatigible TBD
 }
-\date{November 27, 2023 (Pre-Tokyo)}
+\date{December 15, 2023 (Pre-Tokyo)}
 \maketitle{}
 
 Audience: SG1
@@ -774,12 +774,12 @@ might be loaded by other threads.
 
 If additional inter-thread information is available, the corresponding
 constraints may be applied.
-For example, if an implementation determines that the values of a pair
-of objects are always equal at any time that a given thread might access
-them, one could imagine a sufficiently brave implementation substituting
-a load from one for a load from the other.
+For example, if an implementation proves that the values of a pair of
+objects are always equal at any time that a given thread might access
+them, that implementation could behave as if the that thread's code had
+substituted a load from one for a load from the other.
 
-However, if all of the inter-thread relaxed accesses are volatile,
+Note that if all of the inter-thread relaxed accesses are volatile,
 as they are in the C language, then all of the inter-thread traffic is
 observed behavior.
 In this case, even omniscient oracular implementations are required
@@ -857,6 +857,15 @@ might need to directly model any nondeterminism.
 This latter situation might motivate additional C++ projects to ban
 nondeterminism in favor of portable code.
 
+Another question is how to prove that a given optimization is valid.
+This has been a hard question in the past, and is likely to remain so
+both for sequential and concurrent programs.
+The consequences of using an invalid optimization can be quite severe,
+and the evidence thus far indicates that OOTA cycles are not a bit issue.
+Nevertheless, a proof that the same value is always stored implies a
+proof that there is no semantic dependency to that relaxed atomic store,
+and thus no chance of that store participating in an OOTA cycle.
+
 \subsubsection{C++ Implementations: Consequences}
 \label{sec:C++ Implementations: Consequences}
 
@@ -919,7 +928,10 @@ sufficient warning message.
 However, there is an important special case for tools that are closely
 associated with a C++ implementation.
 Such tools can simply use that implementation's classification of
-dependencies as semantic on the one hand or non-semantic on the other.
+dependencies as semantic on the one hand or non-semantic on the other,
+whether by working with that implementation's intermediate representations,
+binaries produced by that implementation, or by tracing the program's
+execution.
 While taking this approach sacrifices significant generality, it has the
 significant benefit of greatly reducing the cost of dependency analysis,
 potentially all the way down to zero.
@@ -929,8 +941,8 @@ potentially all the way down to zero.
 
 Rather than look at how to prevent an implementation from forming
 an OOTA cycle, this section instead looks at how to form one.
-This will lead to the conclusion that a correct C++ implementation
-cannot form an OOTA cycle.
+This will lead to the conclusion that a correct real-world C++
+implementation cannot form an OOTA cycle.
 
 Again, an OOTA cycle consists of loads from other threads' stores where
 a given store's address or value depends on the value returned by
@@ -942,14 +954,15 @@ value stored.
 
 But it is also the case that an OOTA cycle must have at least one link
 that goes backwards in time.
-Given that the inter-thread links are temporal, the only possible
-candidate atemporal links so are those confined to a given thread.
+Given that the inter-thread links are temporal with a give store preceding
+any load returning the value stored, the only possible candidate atemporal
+links are those confined to a given thread.
 This in turn requires that a store that depends on an earlier load
 be executed earlier in time than that load.
 The two ways that this can happen are when the implementation:
 
 \begin{enumerate}
-\item	Is able to determine (prove) the location and value of the store.
+\item	Is able to prove the location and value of the store.
 \item	Guesses the location and value of the store and has some means
 	to take corrective action should any guess prove incorrect.
 \end{enumerate}
@@ -965,10 +978,9 @@ Implementation can sometimes prove the location and value of a given
 store.
 For example, if the value loaded is multiplied by zero, the result
 is known to be zero, so that the store can proceed prior to the load.
-But in this case, there is no perturbation of the value returned from
+But in this case, there is no way that the value returned from
 the load that can affect the value stored.
-Therefore, by P0442R0, that store cannot possibly take part in an
-OOTA cycle.
+Therefore, that store cannot possibly take part in an OOTA cycle.
 
 \subsection{Implementation Guesses at Value}
 \label{sec:Implementation Guesses at Value}
@@ -979,8 +991,8 @@ of the guesses prove incorrect.
 But in this case, a given store is not committed until all guesses that
 this store depends on have been confirmed, and thus no uncommitted store
 is visible to any other thread.
-Therefore, hardware speculation cannot result in OOTA cycles, and
-by design, even on weakly ordered
+Therefore, any hardware speculation that results in OOTA cycles is doomed
+to be squashed an discarded, and by design, even on weakly ordered
 systems~\cite{ARMv7A:2010,ARMv8A:2017,PowerISA2.07-2013}.
 This same constraint applies to software, which might use compare-and-swap
 loops or hardware transactional memory to confirm guesses.
@@ -1026,11 +1038,10 @@ universe.
 
 This paper has added temporal reasoning to OOTA analysis of the C++
 memory model.
-This work shows that correct C++ implementations are inherently incapable
-of producing OOTA cycles.
+This work shows that correct real-world C++ implementations are inherently
+incapable of producing OOTA cycles.
 
-Therefore, if your C++ implementation produces OOTA cycles, you have
-bugs that would be considered bugs even if OOTA cycles were allowed.
+Therefore, if your C++ implementation produces OOTA cycles, you have bugs.
 And you need to fix those bugs, regardless of whether they are in your
 C++ implementation, your hardware, or your alternate universe.
 
@@ -1049,15 +1060,32 @@ C++ implementation, your hardware, or your alternate universe.
 Listing~\ref{lst:Causality Test Case 1}
 shows causality test case 1, for which the \co{r1 == r2 == 1} result
 is to be allowed.
-However, the \co{herd7} tool does not find this litmus test's cycle, presumably
-because this tool does not do the deep inter-thread program analysis
-required to find it.
+The \co{herd7} tool finds this litmus test's cycle, even without the
+inter-thread analysis, because C++ does not respect control dependencies
+to relaxed atomic stores.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-1.litmus @@
 \caption{Causality Test Case 1}
 \label{lst:Causality Test Case 1}
 \end{listing}
+
+Implementations that can prove that the value of \co{x} is always
+non-negative can also prove that there is no semantic dependency between
+\co{P0()}'s load from \co{x} on line~8 to its store to \co{y} on line~10,
+that is, no matter which of the possible values is loaded from \co{x},
+the value 1 will always be stored to \co{y}.
+
+Less-omniscient implementations, including those whose code analysis
+is restricted to a thread, would need to act as if there was in fact a
+semantic dependency.
+
+Even omniscient implementations will observe a semantic dependency from
+\co{P1()}'s load from \co{y} on line~14 to its store to \co{x} on line~15.
+
+Either way, there is no OOTA cycle, with omniscient implementations
+having no cycle at all, and other implementations retaining the
+non-semantic dependency.
 
 \subsubsection{Causality Test Case 2}
 \label{app:Causality Test Case 2}
@@ -1073,6 +1101,27 @@ The \co{herd7} tool finds this cycle, and does not flag it as an OOTA cycle.
 \label{lst:Causality Test Case 2}
 \end{listing}
 
+Because \co{P0()}'s loads from \co{x} on lines~8 and~9 are unordered,
+an implementation can act as if the source code loaded from \co{x} only
+once and assigned the returned value to both \co{r1} and \co{r2}.\footnote{
+	But not in C, where relaxed atomic operations are volatile,
+	and thus observable behavior.}
+The implementation could then prove that the condition on line~10
+would always evaluate to \co{true}, and act as if the source code had
+unconditionally executed the relaxed store to \co{y} on line~11.
+The implementation could then act as if the resulting relaxed accesses
+to \co{x} and \co{y} appeared in reverse order, at which point
+\co{P0()}'s store to \co{y} could be read by \co{P1()} load so that
+\co{P1()} stored 1 to \co{x}, thus resulting in \co{P1()} loading
+that 1 from \co{x}.
+
+Note that \co{P1()} has a trivial semantic dependency from its load
+from \co{y} on line~15 to its store to \co{x} on line~16.
+
+If \co{P0()}'s loads from \co{x} are fused, there is no cycle,
+otherwise the preserved non-semantic dependency prevents an
+OOTA cycle from forming on correct real-world implementations.
+
 \subsubsection{Causality Test Case 3}
 \label{app:Causality Test Case 3}
 
@@ -1080,6 +1129,13 @@ Listing~\ref{lst:Causality Test Case 3}
 shows causality test case 3, for which the \co{r1 == r2 == r3 == 1} result
 is to be allowed.
 The \co{herd7} tool finds this cycle, and does not flag it as an OOTA cycle.
+
+The analysis from Section~\ref{app:Causality Test Case 2}
+applies here, including the difference in volatility between C and C++
+atomics.
+Although the addition of \co{P2} allows sequentially consistent executions
+where \co{P0()}'s two loads from \co{x} might return different values,
+it does not change the fact that those two loads can be merged.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-3.litmus @@
@@ -1093,7 +1149,8 @@ The \co{herd7} tool finds this cycle, and does not flag it as an OOTA cycle.
 Listing~\ref{lst:Causality Test Case 4}
 shows causality test case 4, for which the \co{r1 == r2 == 1} result
 is to be forbidden.
-The \co{herd7} tool finds this OOTA cycle, and flags it as such using \co{S8}.
+The \co{herd7} tool finds this OOTA cycle because C++ does not respect
+data dependencies, and flags it as such using \co{S8}.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-4.litmus @@
@@ -1101,13 +1158,18 @@ The \co{herd7} tool finds this OOTA cycle, and flags it as such using \co{S8}.
 \label{lst:Causality Test Case 4}
 \end{listing}
 
+Both \co{P0()} and \co{P1()} have straightforward semantic dependencies
+from their relaxed atomic loads to their relaxed atomic stores, which
+prevents this OOTA cycle on real-world C++ implementations.
+
 \subsubsection{Causality Test Case 5}
 \label{app:Causality Test Case 5}
 
 Listing~\ref{lst:Causality Test Case 5}
 shows causality test case 5, for which the \co{r1 == r2 == 1 && r3 == 0}
 result is to be forbidden.
-The \co{herd7} tool finds this OOTA cycle, and flags it as such using \co{S8}.
+The \co{herd7} tool finds this OOTA cycle because C++ does not respect
+data dependencies, and flags it as such using \co{S8}.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-5.litmus @@
@@ -1115,19 +1177,40 @@ The \co{herd7} tool finds this OOTA cycle, and flags it as such using \co{S8}.
 \label{lst:Causality Test Case 5}
 \end{listing}
 
+Each of \co{P0()}, \co{P1()}, and \co{P3()} have trivial semantic
+dependencies from their relaxed atomic loads to their relaxed
+atomic stores, which prevents any OOTA cycle from forming in correct
+real-world C++ implementations.
+\co{P2()} has no loads, so cannot participate in an OOTA cycle in
+any case.
+
 \subsubsection{Causality Test Case 6}
 \label{app:Causality Test Case 6}
 
 Listing~\ref{lst:Causality Test Case 6}
 shows causality test case 6, for which the \co{r1 == r2 == 1}
 result is to be allowed.
-The \co{herd7} tool finds this cycle, and does not flag it as an OOTA cycle.
+The \co{herd7} tool finds this cycle, and does not flag it as an OOTA
+cycle because C++ does not respect control dependencies to relaxed
+atomic stores.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-6.litmus @@
 \caption{Causality Test Case 6}
 \label{lst:Causality Test Case 6}
 \end{listing}
+
+A C++ implementation that can prove that \co{y} is always either
+zero or one can also prove that there is no semantic dependency
+from \co{P1()}'s load on line~14 to its stores on lines~16 and~29.
+Such an implementation could act as if lines~15-20 had been replaced
+by a single store to \co{x}, allowing that store to execute first,
+followed by lines~8, 10, and~14, in that order, satisfying the
+\co{exists} clause on line~23.
+
+Less-omniscient implementations will preserve the non-semantic
+dependency, preventing any OOTA loop from forming in a correct real-world C++
+implementation.
 
 \subsubsection{Causality Test Case 7}
 \label{app:Causality Test Case 7}
@@ -1142,6 +1225,14 @@ The \co{herd7} tool finds this cycle, and does not flag it as an OOTA cycle.
 \caption{Causality Test Case 7}
 \label{lst:Causality Test Case 7}
 \end{listing}
+
+Because all accesses are relaxed atomics, this test case has everything
+to do with reordering and nothing to do with OOTA cycles.
+The outcome happens when lines~17, 10, 11, 15, 16 and~9 execute in that
+order.
+Note that this ordering preserves the semantic dependencies from
+lines~10-11 and~15-16, and can thus happen on correct real-world
+C++ implementations.
 
 \subsubsection{Causality Test Case 8}
 \label{app:Causality Test Case 8}
@@ -1159,15 +1250,28 @@ from flagging it as an OOTA cycle.
 \label{lst:Causality Test Case 8}
 \end{listing}
 
+Omniscient C++ implementations might note that the computation on line~9
+can only have the value one when the load from \co{x} returns either
+zero or one, and both \co{x} and \co{y} are initialized to zero.
+Such an implementation act as if line~10's \co{r2} had instead been
+the value~1,
+Then there would be no semantic dependency between \co{P0()}'s load
+and store, and thus no OOTA cycle in a correct real-world C++
+implementation.
+
+A less-capable implementation would leave the non-semantic dependency
+in place, also preventing any OOTA cycle in a correct real-world C++
+implementation.
+
 \subsubsection{Causality Test Case 9}
 \label{app:Causality Test Case 9}
 
 Listing~\ref{lst:Causality Test Case 9}
 shows causality test case 9, for which the \co{r1 == r2 == 1}
 result is to be allowed.
-The \co{herd7} tool does not find this cycle, but when \co{r2} is explicitly
-initialized to the constant \co{1}, it does find the cycle and refrains
-from flagging it as an OOTA cycle.
+The \co{herd7} tool does not find this cycle because it depends on
+scheduling \co{P2()} after the other two processes, and C++ is not
+constrained to do this.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-9.litmus @@
@@ -1175,15 +1279,19 @@ from flagging it as an OOTA cycle.
 \label{lst:Causality Test Case 9}
 \end{listing}
 
+Both processes have straightforward semantic dependencies between their
+respective relaxed atomic loads and relaxed atomic stores, so an OOTA
+cycle cannot form in a correct real-world C++ implementation.
+
 \subsubsection{Causality Test Case 9a}
 \label{app:Causality Test Case 9a}
 
 Listing~\ref{lst:Causality Test Case 9a}
 shows causality test case 9a, for which the \co{r1 == r2 == 1}
 result is to be allowed.
-The \co{herd7} tool does not find this cycle, but when \co{r2} is explicitly
-initialized to the constant \co{1}, it does find the cycle and refrains
-from flagging it as an OOTA cycle.
+The \co{herd7} tool does not find this cycle because it depends on
+scheduling \co{P2()} before the other two processes, and C++ is not
+constrained to do this.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-9a.litmus @@
@@ -1191,20 +1299,31 @@ from flagging it as an OOTA cycle.
 \label{lst:Causality Test Case 9a}
 \end{listing}
 
+Both processes have straightforward semantic dependencies between their
+respective relaxed atomic loads and relaxed atomic stores, so an OOTA
+cycle cannot form in a correct real-world C++ implementation.
+
 \subsubsection{Causality Test Case 10}
 \label{app:Causality Test Case 10}
 
 Listing~\ref{lst:Causality Test Case 10}
 shows causality test case 10, for which the \co{r1 == r2 == 1 && r3 == 0}
 result is to be forbidden.
-The \co{herd7} tool nevertheless reports this result and does not flag it as
-an OOTA cycle.
+Because C++ does not respect control dependencies, the \co{herd7} tool
+nevertheless reports this result and does not flag it as an OOTA cycle.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-10.litmus @@
 \caption{Causality Test Case 10}
 \label{lst:Causality Test Case 10}
 \end{listing}
+
+However, each of \co{P0()}, \co{P1()}, and \co{P3()} have straightforward
+semantic dependencies between their respective loads and stores, and
+thus cannot form an OOTA cycle when running on a correct real-world C++
+implementation.
+For its part, \co{P2()} has no semantic dependency, so it cannot be part
+of an OOTA cycle when running on a correct real-world C++ implementation.
 
 \subsubsection{Causality Test Case 11}
 \label{app:Causality Test Case 11}
@@ -1220,11 +1339,30 @@ The \co{herd7} tool reports this result and does not flag it as an OOTA cycle.
 \label{lst:Causality Test Case 11}
 \end{listing}
 
+This test case has nothing to do with OOTA cycles.
+The result may be obtained by executing the statements in the following
+order: line~20, line~12, line~13, line~18, line~19, line~10, line~11,
+and finally line~17.
+
 \subsubsection{Causality Test Case 12}
 \label{app:Causality Test Case 12}
 
-JMM Causality Test Case 12 uses arrays, which are not yet supported
-by the \co{herd7} tool.
+JMM Causality Test Case 12 in
+Figure~\ref{lst:Causality Test Case 12}
+uses arrays, which are not yet supported by the \co{herd7} tool.
+
+\begin{listing}[tbp]
+@@ DisplayLitmus litmus/oota-causality-12.litmus @@
+\caption{Causality Test Case 12}
+\label{lst:Causality Test Case 12}
+\end{listing}
+
+An omniscient C++ implementation could note that only \co{P0()} accesses
+array \co{a[]} and act as if the code was simpler, but there would
+still be semantic dependencies between \co{P0()}'s and \co{P1()}s
+relaxed atomic loads and stores involving \co{x} and \co{y}.
+Those dependencies prevent an OOTA cycle from forming on a correct
+real-world C++ implementation, omniscient or not.
 
 \subsubsection{Causality Test Case 13}
 \label{app:Causality Test Case 13}
@@ -1232,8 +1370,8 @@ by the \co{herd7} tool.
 Listing~\ref{lst:Causality Test Case 13}
 shows causality test case 13, for which the \co{r1 == r2 == 1}
 result is to be forbidden.
-The \co{herd7} tool nevertheless reports this result and does not flag it as
-an OOTA cycle.
+But because C++ does not respect control dependencies, \co{herd7} tool
+reports this result and does not flag it as an OOTA cycle.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-13.litmus @@
@@ -1241,13 +1379,19 @@ an OOTA cycle.
 \label{lst:Causality Test Case 13}
 \end{listing}
 
+There are straightforward semantic dependencies between \co{P0()}'s and
+\co{P1()}s relaxed atomic loads and stores involving \co{x} and \co{y}.
+Those dependencies prevent an OOTA cycle from forming on a correct
+real-world C++ implementation.
+
 \subsubsection{Causality Test Case 14}
 \label{app:Causality Test Case 14}
 
 Listing~\ref{lst:Causality Test Case 14}
 shows causality test case 14, for which the \co{r1 == r3 == 1 && r2 == 0}
 result is to be forbidden.
-The \co{herd7} tool does not report this result.
+The \co{herd7} tool nevertheless reports this result because C++ does not
+respect control dependencies for atomic stores.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-14.litmus @@
@@ -1255,19 +1399,48 @@ The \co{herd7} tool does not report this result.
 \label{lst:Causality Test Case 14}
 \end{listing}
 
+In C++, this is not a matter of OOTA but rather reordering.
+Dependencies notwithstanding, according to the C++ memory model,
+the statements could execute in the following order:
+Line~17 (so \co{r2 == 0}), line~21, line~9 (so \co{r1 == 1}),
+line~13, line~18 (so \co{r3 == 1)}.
+The sum of \co{r2} and \co{r3} is non-zero, justifying line~21's
+store to \co{x}.
+
+However, correct real-world C++ implementations would have semantic
+dependencies between \co{P0()}'s line~9 and lines~11 and~13, and also
+between \co{P1()}'s lines~17 and~18 and line~21, preventing any
+OOTA cycle from forming.
+
 \subsubsection{Causality Test Case 15}
 \label{app:Causality Test Case 15}
 
 Listing~\ref{lst:Causality Test Case 15}
 shows causality test case 15, for which the \co{r0 == r1 == r3 == 1 && r2 == 0}
 result is to be forbidden.
-The \co{herd7} tool does not report this result.
+The \co{herd7} tool nevertheless reports this result because C++ does not
+respect control dependencies for atomic stores.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-15.litmus @@
 \caption{Causality Test Case 15}
 \label{lst:Causality Test Case 15}
 \end{listing}
+
+In C++, this is not a matter of OOTA but rather reordering.
+Dependencies notwithstanding, according to the C++ memory model,
+the statements could execute in the following order:
+Line~31, line~27, line~10 (so \co{r0 == 1}), line~13 (so \co{r1 == 1}),
+line~19 (because \co{r1 == 1}), line~23 (so \co{r2 == 0}),
+and finally line~24 (so \co{r3 == 1}).
+The sum of \co{r2} and \co{r3} is non-zero, justifying line~27's
+store to \co{u}.
+
+However, correct real-world C++ implementations would have semantic
+dependencies between \co{P0()}'s lines~10 and~13 and lines~17 and~19, and also
+between \co{P1()}'s lines~23 and~24 and line~27, preventing any
+OOTA cycle from forming.
+Having no load, \co{P2()} cannot participate in an OOTA cycle.
 
 \subsubsection{Causality Test Case 16}
 \label{app:Causality Test Case 16}
@@ -1276,8 +1449,8 @@ Listing~\ref{lst:Causality Test Case 16}
 shows causality test case 16, for which the \co{r1 == 2 && r2 == 1}
 result is to be allowed.
 The \co{herd7} tool does not report this result, which is to be expected
-given the differences between Java on the one hand and C and C++
-on the other.
+given that C++ does not permit a thread to reorder accesses to a single
+atomic variable, even when those accesses are relaxed.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-16.litmus @@
@@ -1292,8 +1465,8 @@ Listing~\ref{lst:Causality Test Case 17}
 shows causality test case 17, for which the \co{r1 == r2 == r3 == 42}
 result is to be allowed.
 The \co{herd7} tool does not report this result, which is to be expected
-given the differences between Java on the one hand and C and C++
-on the other.
+given that C++ does not permit a thread to reorder accesses to a single
+atomic variable, even when those accesses are relaxed.
 But note that the \co{herd7} tool correctly notes the presence of an
 OOTA cycle with \co{S17}.
 
@@ -1303,6 +1476,10 @@ OOTA cycle with \co{S17}.
 \label{lst:Causality Test Case 17}
 \end{listing}
 
+Both processes have straightforward semantic dependencies between their
+respective relaxed atomic loads and relaxed atomic stores, so an OOTA
+cycle cannot form in a correct real-world C++ implementation.
+
 \subsubsection{Causality Test Case 18}
 \label{app:Causality Test Case 18}
 
@@ -1310,8 +1487,8 @@ Listing~\ref{lst:Causality Test Case 18}
 shows causality test case 18, for which the \co{r1 == r2 == r3 == 42}
 result is to be allowed.
 The \co{herd7} tool does not report this result, which is to be expected
-given the differences between Java on the one hand and C and C++
-on the other.
+given that C++ does not permit a thread to reorder accesses to a single
+atomic variable, even when those accesses are relaxed.
 But note that the \co{herd7} tool correctly notes the presence of an
 OOTA cycle with \co{S17}.
 
@@ -1321,6 +1498,10 @@ OOTA cycle with \co{S17}.
 \label{lst:Causality Test Case 18}
 \end{listing}
 
+Both processes have straightforward semantic dependencies between their
+respective relaxed atomic loads and relaxed atomic stores, so an OOTA
+cycle cannot form in a correct real-world C++ implementation.
+
 \subsubsection{Causality Test Case 19}
 \label{app:Causality Test Case 19}
 
@@ -1328,16 +1509,23 @@ Listing~\ref{lst:Causality Test Case 19}
 shows causality test case 19, for which the \co{r1 == r2 == r3 == 42}
 result is to be allowed.
 The \co{herd7} tool does not report this result, which is to be expected
-given the differences between Java on the one hand and C and C++
-on the other.
+given that C++ does not permit a thread to reorder accesses to a single
+atomic variable, even when those accesses are relaxed.
 But note that the \co{herd7} tool correctly notes the presence of an
 OOTA cycle with \co{S8}.
+
+It is interesting that this \co{S8} value does not propagate to
+\co{r3}.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-19.litmus @@
 \caption{Causality Test Case 19}
 \label{lst:Causality Test Case 19}
 \end{listing}
+
+All processes have straightforward semantic dependencies between their
+respective relaxed atomic loads and relaxed atomic stores, so an OOTA
+cycle cannot form in a correct real-world C++ implementation.
 
 \subsubsection{Causality Test Case 20}
 \label{app:Causality Test Case 20}
@@ -1346,16 +1534,23 @@ Listing~\ref{lst:Causality Test Case 20}
 shows causality test case 20, for which the \co{r1 == r2 == r3 == 42}
 result is to be allowed.
 The \co{herd7} tool does not report this result, which is to be expected
-given the differences between Java on the one hand and C and C++
-on the other.
+given that C++ does not permit a thread to reorder accesses to a single
+atomic variable, even when those accesses are relaxed.
 But note that the \co{herd7} tool correctly notes the presence of an
 OOTA cycle with \co{S8}.
+
+It is interesting that this \co{S8} value does not propagate to
+\co{r3}.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-20.litmus @@
 \caption{Causality Test Case 20}
 \label{lst:Causality Test Case 20}
 \end{listing}
+
+All processes have straightforward semantic dependencies between their
+respective relaxed atomic loads and relaxed atomic stores, so an OOTA
+cycle cannot form in a correct real-world C++ implementation.
 
 \subsection{Additional Litmus Tests}
 \label{app:Additional Litmus Tests}
@@ -1376,6 +1571,10 @@ thus justifying the values initially loaded by lines~9 and~10.
 \caption{Non-LB Litmus Test}
 \label{lst:Non-LB Litmus Test}
 \end{listing}
+
+All processes have straightforward semantic dependencies between their
+respective relaxed atomic loads and relaxed atomic stores, so an OOTA
+cycle cannot form in a correct real-world C++ implementation.
 
 \subsubsection{Multi-Cycle Litmus Tests}
 \label{app:Multi-Cycle Litmus Tests}
@@ -1435,7 +1634,7 @@ misaligned accesses.
  4   long long r1 = x.load(std::memory_order_relaxed);
  5   if (r1 % 4 == 0)
  6     y.store(1, std::memory_order_relaxed);
- 7   __asm__ __volatile__("": : :"mightnotreturn");
+ 7   std::observable();
  8   *(T*)r1 = *(T*)r1;
  9 }
 \end{verbatim}
@@ -1448,8 +1647,10 @@ of the standard.
 It would be good to have some way for the developer to get the job
 done without confusing the compiler, thus separating OOTA-cycle and
 UB concerns.
-One approach is to have a \co{mightnotreturn} clobber similar to the
-\co{memory} clobber for GCC asms.
+One approach is to use the \co{std::observable()} function
+that has been proposed to the C++ standards
+committee~\cite{DavisHerring2021P1494R2}.
+This function would blocks backwards-propagating UB.
 Then this example could be rewritten as shown in
 Listing~\ref{lst:Alignment-Based Undefined Behavior Fix},
 with the asm on line~7 preventing the compiler from assuming that line~8
@@ -1458,22 +1659,19 @@ applying any lessons that it might learn from line~8 to line~5.
 
 % Clean up <200b> in vim: ":%s/\%u200b//g"
 
-This \co{mightnotreturn} clobber is merely an example.
-There might well be better ways to prevent UB from propagating backwards.
-Other options being considered include a call to an empty function that
-is invisible to the compiler and a GCC goto asm that the compiler cannot
-prove falls through.
-
-A \co{std::observable()} function that would block backwards-propagating
-UB has been proposed to the C++ standards
-committee~\cite{DavisHerring2021P1494R2}.
+There are a number of ways to implement \co{std::observable()},
+for example, a new \co{"mightnotreturn"} GCC asm clobber, a call to an empty
+function that is invisible to the compiler, and a GCC goto asm that the
+compiler cannot prove falls through.
 
 \subsection{Unreachability-Based Undefined Behavior}
 \label{sec:Unreachability-Based Undefined Behavior}
 
 This section attempts to apply the lessons
 of Appendix~\ref{sec:Unreachability-Based Undefined Behavior} to
-Goldblatt's unreachability-UB example.  Inserting the asm at line~12
+Goldblatt's unreachability-UB example.
+
+Inserting \co{std::observable()} at line~12
 as shown in Listing~\ref{lst:Alignment-Based Undefined Behavior Fix}
 avoids confusing the compiler into assuming that the value of \co{local}
 must necessarily be zero.
@@ -1491,7 +1689,7 @@ must necessarily be zero.
  9   if (local == 0)
 10     y.store(1, std::memory_order_relaxed);
 11   if (local != 0) {
-12     __asm__ __volatile__("": : :"mightnotreturn");
+12     std::observable();
 13     // If we get here, UB.
 14     unreachable();
 15   }
@@ -1503,7 +1701,7 @@ must necessarily be zero.
 
 By the same reasoning, Goldblatt's \co{misbhave} example that
 also involves unreachability can also be addressed through insertion
-of the asm.
+of the proposed \co{std::observable()}.
 
 \section{Evaluating sdep Using \co{cbmc}}
 \label{sec:Evaluating sdep Using cbmc}
@@ -1873,7 +2071,8 @@ not in any way constitute agreement with anything in this paper.
 %	is an expensive no-op."
 % "So you don't want to learn concurrency?  Then I can only suggest
 %	that you either move further up the stack or take early
-%	retirement."
+%	retirement."  Note that that C++ committee's concurrency
+%	expertise has grown beyond recognition over the past 15 years.
 
 % One-pager:
 % Threats to validity:

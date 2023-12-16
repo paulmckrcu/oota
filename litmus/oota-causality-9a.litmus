@@ -21,10 +21,7 @@ C oota-causality-9a
 
 P0(atomic_int *x, atomic_int *y) {
 	int r1 = atomic_load_explicit(x, memory_order_relaxed);
-	// Uncomment for exact form
 	int r2 = 1 + r1 * r1 - r1;
-	// Uncomment for herd7 to produce allowed behavior
-	// int r2 = 1;
 	atomic_store_explicit(y, r2, memory_order_relaxed);
 }
 

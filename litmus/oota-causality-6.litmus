@@ -8,8 +8,8 @@ C oota-causality-6
  *	always writes 1 to x and hoist the write to the beginning of thread 2.
  *)
 {
-	[x] = 0;
-	[y] = 0;
+	[x] = 0; (* A *)
+	[y] = 0; (* B *)
 }
 
 P0(atomic_int *x, atomic_int *y) {

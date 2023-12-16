@@ -10,9 +10,9 @@ C oota-causality-14
  *	are allowed.
  *)
 {
-	[x] = 0;
-	[y] = 0;
-	[z] = 0;
+	[x] = 0; (* a *)
+	[y] = 0; (* b *)
+	[z] = 0; (* y *)
 }
 
 P0(atomic_int *x, atomic_int *y, atomic_int *z) {
@@ -27,7 +27,8 @@ P1(atomic_int *x, atomic_int *y, atomic_int *z) {
 	int r2 = atomic_load_explicit(z, memory_order_seq_cst);
 	int r3 = atomic_load_explicit(y, memory_order_relaxed);
 	int r4 = r2 + r3;
-	atomic_store_explicit(x, 1, memory_order_relaxed);
+	if (r4)
+		atomic_store_explicit(x, 1, memory_order_relaxed);
 }
 
-exists(0:r1=1 /\ 1:r2=0 /\ 1:r3=1 /\ 1:r4=0)
+exists(0:r1=1 /\ 1:r2=0 /\ 1:r3=1 /\ ~1:r4=0)
