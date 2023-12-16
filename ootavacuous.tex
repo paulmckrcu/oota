@@ -271,6 +271,19 @@ the negative of \co{x}, there is no semantic dependency and the
 implementation can again act as if later accesses to \co{x} were
 instead the constant zero.
 
+Finally, consider this:
+
+\begin{quote}
+	\co{r1 = x;} \\
+	\co{if (r1 > 0)} \\
+	\co{\ \ \ \ y = r1;} \\
+	\co{else} \\
+	\co{\ \ \ \ z = r1;}
+\end{quote}
+
+Here there is a semantic dependency from \co{x}, but in some executions
+it extends to \co{y} and in others to \co{z}.
+
 These examples demonstrate a key point: Although in some cases sdep can
 be a strict function of the source code, \emph{in general, sdep must be
 defined on a per-execution basis}.\footnote{
