@@ -1132,8 +1132,27 @@ C++ implementation, your hardware, or your alternate universe.
 \section{OOTA-Related Litmus Tests}
 \label{app:OOTA-Related Litmus Tests}
 
+This appendix evaluates a number of OOTA-related litmus tests.
+The evaluations are carried out using the \co{herd7} tool and also
+using manual analysis.
+The manual analysis uses the informal rule that a semantic dependency
+exists between a given relaxed atomic load and store on any execution
+where a different value loaded would change either the address or the
+value of that store.
+Producing a precise formal statement of this rule is quite challenging.
+
+Appendix~\ref{app:Litmus Tests from “Causality Test Cases"}
+evaluates the obligatory litmus tests from the JMM Causality Test
+Cases, and
+Appendix~\ref{app:Additional Litmus Tests}
+evaluates some additional litmus tests that affected our thinking or
+otherwise gave us pause.
+
 \subsection{Litmus Tests from “Causality Test Cases"}
 \label{app:Litmus Tests from “Causality Test Cases"}
+
+These tests might be two decades old, but they are still quite
+relevant.
 
 \subsubsection{Causality Test Case 1}
 \label{app:Causality Test Case 1}
@@ -1640,6 +1659,9 @@ cycle cannot form in a correct real-world C++ implementation.
 \subsection{Additional Litmus Tests}
 \label{app:Additional Litmus Tests}
 
+These litmus tests helped illuminate important aspects of the problem
+of defining sdep and identifying OOTA cycles.
+
 \subsubsection{Non-LB Litmus Tests}
 \label{app:Non-LB Litmus Tests}
 
@@ -1657,12 +1679,26 @@ thus justifying the values initially loaded by lines~9 and~10.
 \label{lst:Non-LB Litmus Test}
 \end{listing}
 
-All processes have straightforward semantic dependencies between their
-respective relaxed atomic loads and relaxed atomic stores, so an OOTA
-cycle cannot form in a correct real-world C++ implementation.
+All processes's loads' return values affect the value stored, so all
+processes have semantic dependencies between their respective relaxed
+atomic loads and relaxed atomic stores.
+Therefore, an OOTA cycle cannot form in a correct real-world C++
+implementation.
 
 \subsubsection{Multi-Cycle Litmus Tests}
 \label{app:Multi-Cycle Litmus Tests}
+
+Figure~\ref{lst:Multi-Cycle Litmus Test}
+shows an expansion to four threads of Causality Test Case 4, which is shown in
+Listing~\ref{lst:Causality Test Case 4}
+and discussed in
+Appendix~\ref{app:Causality Test Case 4}.
+The \co{herd7} tool shows multiple different possible OOTA cycles,
+as expected.
+However, the value returned by each thread's load directly affects the
+value stored, so there is a semantic dependency in each thread.
+Therefore, none of these OOTA cycles can happen in a correct real-world
+C++ implementation.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-two-source.litmus @@
