@@ -1270,9 +1270,6 @@ shows causality test case 5, for which the \co{r1 == r2 == 1 && r3 == 0}
 result is to be forbidden.
 The \co{herd7} tool finds this OOTA cycle because C++ does not respect
 data dependencies, and flags it as such using \co{S8}.
-Interestingly enough, there is no state with \co{r3} also shown as
-\co{S8}, perhaps indicating that \co{herd7} does not propagate OOTA
-values.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-5.litmus @@
@@ -1580,9 +1577,24 @@ OOTA cycle with \co{S17}.
 \label{lst:Causality Test Case 17}
 \end{listing}
 
-Both processes have straightforward semantic dependencies between their
-respective relaxed atomic loads and relaxed atomic stores, so an OOTA
-cycle cannot form in a correct real-world C++ implementation.
+\co{P1()} has a straightforward semantic dependency between its
+relaxed atomic load and relaxed atomic store.
+However, suppose that \co{P0()}'s load from \co{x} on line~8 returns
+the value 42.
+In that case, the second load on line~11 can be fused with the first,
+so that it also returns the value 42.
+On the other hand, if the load on line~8 returns some other value, then
+line~10 will store the value 42 to \co{x}, and then the load on line~11
+can be elided\footnote{
+	In C++, but not in C due to atomics being volatile.}
+in favor of using the value 42 stored by line~10.
+
+Either way, the value of \co{r1} will be the constant 42.
+Therefore, the loads from \co{x} cannot affect the store on line~17,
+so there is no semantic dependency.
+This allows that store to \co{y} to be moved to the very beginning of
+\co{P0()}, thus allowing a correct real-world C++ implementation to
+satisfy the \co{exists} clause.
 
 \subsubsection{Causality Test Case 18}
 \label{app:Causality Test Case 18}
