@@ -1126,7 +1126,7 @@ Therefore, if your C++ implementation produces OOTA cycles, you have bugs.
 And you need to fix those bugs, regardless of whether they are in your
 C++ implementation, your hardware, or your alternate universe.
 
-
+\clearpage
 \appendix
 
 \section{OOTA-Related Litmus Tests}
@@ -1958,6 +1958,8 @@ By the same reasoning, Goldblatt's \co{misbhave} example that
 also involves unreachability can also be addressed through insertion
 of the proposed \co{std::observable()}.
 
+\clearpage
+
 \section{Evaluating sdep Using \co{cbmc}}
 \label{sec:Evaluating sdep Using cbmc}
 
@@ -2081,6 +2083,8 @@ There are numerous other tools that can be used, up to and including
 manual inspection, but \co{cbmc} is readily available and easy to
 use.\footnote{
 	On Debian-based distributions, via \co{sudo apt install cbmc}.}
+
+\clearpage
 
 \section{Inter-Process Communications}
 \label{app:Inter-Process Communications}
@@ -2349,6 +2353,8 @@ In other words, user preference can exert a non-trivial influence over
 language semantics, and in particular can affect some aspects of the
 definition of ``semantic dependency''.
 
+\clearpage
+
 \section{Debates on Causality}
 \label{sec:Debates on Causality}
 
@@ -2411,6 +2417,8 @@ about the nature of causality in these contexts.
 
 % \section{History}
 % \label{sec:History}
+
+\clearpage
 
 \section{Acknowledgments}
 \label{sec:Acknowledgments}
@@ -2478,8 +2486,10 @@ not in any way constitute agreement with anything in this paper.
 % Will Deacon: ARM hardware, C++, and OOTA.
 
 % @@@ TODO:
-% Measure store-buffer delays on an x86 system.
-% Real-world compilers freeze nondeterministic choices.
+% Diagrams from perfbook showing coe and fre in terms of propagation delay
+% Convert remaining PPCMEM diagrams to herd7
+% Emphasize that real-world implementations map abstract machine to matter
+%	and energy in the real world.
 
 % Objections:
 % "Atomic operations are not observable behavior."
