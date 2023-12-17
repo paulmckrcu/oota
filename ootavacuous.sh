@@ -85,7 +85,7 @@ do
 	if test ! -f "$basename.pdf" -o "$basename.svg" -nt "$basename.pdf"
 	then
 		echo "$basename.svg -> $basename.pdf"
-		inkscape --export-pdf=$basename.pdf $basename.svg
+		XDG_RUNTIME_DIR=na DBUS_SESSION_BUS_ADDRESS=na inkscape -o $basename.pdf < $basename.svg
 	fi
 done
 

@@ -2226,6 +2226,16 @@ Note well that all of the data falls into positive time, indicating
 that rfe links always go forward in time, as those familiar with
 computer hardware and the laws of physics would expect.
 
+\begin{figure}[tb]
+\begin{center}
+\resizebox{4in}{!}{\includegraphics{coe}}
+\resizebox{4in}{!}{\includegraphics{fre}}
+\resizebox{4in}{!}{\includegraphics{rfe}}
+\caption{Propagation Delay and Temporal Properties of coe, fre, and rfe}
+\label{fig:Propagation Delay and Temporal Properties of coe, fre, and rfe}
+\end{center}
+\end{figure}
+
 And this is exactly why the C++ memory model guarantees ordering from
 rfe links but not the coe and fre links for relaxed accesses in the
 absence of other ordering from stronger atomic memory accesses or
