@@ -6,7 +6,7 @@ set output "../coe-sh-out.png"
 set xlabel "Time (Timestamp Periods)"
 set ylabel "Number of Simultaneous Values"
 #set logscale y
-set xrange [:3500]
+set xrange [:750]
 #set yrange [100:10000]
 set nokey
 # set label 1 "RCU" at 0.1,10 left
@@ -14,7 +14,7 @@ set nokey
 # set label 3 "brlock" at 0.4,0.6 left
 # set label 4 "rwlock" at 0.3,1.6 left
 # set label 5 "refcnt" at 0.15,2.8 left
-plot "coe.out-4.dat" w l
+plot "coe.out-1.dat" w l
 ---EOF---
 
 gnuplot << ---EOF---

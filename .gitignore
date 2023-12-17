@@ -16,7 +16,8 @@
 *.bz2
 *.swp
 *.swo
-!coe.out-4.pdf
+!coe-out-1.pdf
+!coe-out-4.pdf
 !store15tred.pdf
 bib
 ootavacuous-flat.tex

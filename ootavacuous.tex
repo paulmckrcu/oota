@@ -2172,7 +2172,7 @@ is therefore entirely plausible.
 
 \begin{figure}[tb]
 \begin{center}
-\resizebox{5in}{!}{\includegraphics{coe-out-4}}
+\resizebox{5in}{!}{\includegraphics{coe-out-1}}
 \caption{On x86, coe Links Are Partially Ordered}
 \label{fig:On x86, coe Links Are Partially Ordered}
 \end{center}
@@ -2229,7 +2229,7 @@ computer hardware and the laws of physics would expect.
 And this is exactly why the C++ memory model guarantees ordering from
 rfe links but not the coe and fre links for relaxed accesses in the
 absence of other ordering from stronger atomic memory accesses or
-\co{atomic_thread_fence()}.
+\co{atomic_thread_fence(memory_order_seq_cst}.
 
 \clearpage
 
