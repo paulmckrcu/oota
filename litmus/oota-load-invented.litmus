@@ -47,4 +47,4 @@ P2(atomic_int *x, atomic_int *y, atomic_int *z) {
 }
 
 locations [x;y;z]
-exists(0:r1=1 /\ 0:r2=1)
+exists(0:r3=1 /\ 0:r4=1)
