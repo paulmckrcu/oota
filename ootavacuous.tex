@@ -1260,7 +1260,7 @@ data dependencies, and flags it as such using \co{S8}.
 
 Both \co{P0()} and \co{P1()} have straightforward semantic dependencies
 from their relaxed atomic loads to their relaxed atomic stores, which
-prevents this OOTA cycle on real-world C++ implementations.
+prevents this OOTA cycle on correct real-world C++ implementations.
 
 \subsubsection{Causality Test Case 5}
 \label{app:Causality Test Case 5}
@@ -1452,7 +1452,7 @@ and finally line~17.
 \label{app:Causality Test Case 12}
 
 JMM Causality Test Case 12 in
-Figure~\ref{lst:Causality Test Case 12}
+Listing~\ref{lst:Causality Test Case 12}
 uses arrays, which are not yet supported by the \co{herd7} tool.
 
 \begin{listing}[tbp]
@@ -1688,7 +1688,7 @@ implementation.
 \subsubsection{Multi-Cycle Litmus Tests}
 \label{app:Multi-Cycle Litmus Tests}
 
-Figure~\ref{lst:Multi-Cycle Litmus Test}
+Listing~\ref{lst:Multi-Cycle Litmus Test}
 shows an expansion to four threads of Causality Test Case 4, which is shown in
 Listing~\ref{lst:Causality Test Case 4}
 and discussed in
@@ -1705,6 +1705,107 @@ C++ implementation.
 \caption{Multi-Cycle Litmus Test}
 \label{lst:Multi-Cycle Litmus Test}
 \end{listing}
+
+\subsubsection{Three-Process Version of JMM Causality Test Case 4}
+\label{app:Three-Process Version of JMM Causality Test Case 4}
+
+Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4}
+shows a different way of expanding
+Listing~\ref{lst:Causality Test Case 4}
+(discussed in
+Appendix~\ref{app:Causality Test Case 4})
+from two processes to three processes.
+The \co{herd7} tool finds OOTA values, but in a rather odd manner.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-3proc.litmus @@
+\caption{Three-Process Version of JMM Causality Test Case 4}
+\label{lst:Three-Process Version of JMM Causality Test Case 4}
+\end{listing}
+
+All processes have straightforward semantic dependencies from their
+relaxed atomic loads to their relaxed atomic stores, which prevents this
+OOTA cycle on correct real-world C++ implementations.
+
+\subsubsection{Why rfe Instead of Tried-And-True rf?}
+\label{app:Why rfe Instead of Tried-And-True rf?}
+
+Listing~\ref{lst:Why rfe Instead of Tried-And-True rf?}
+revises
+Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4}
+to flatten \co{PO()} and \co{P1()} into a single thread, so that the
+resulting \co{P0()} has an rfi link instead of an rfe link connecting
+the store to and load from \co{y}.
+In addition, the value stored to \co{y} is forced to be at least the
+value 17, and the value stored to \co{z} is forced to be at most the
+value 17.
+This of course means that the store to \co{z} must always be the value
+17, and that a C++ implementation could prove this by examining \co{P0()}
+in isolation given that it is also legal for a C++ implementation
+to replace the value loaded from \co{y} with the value just stored.\footnote{
+	This is not an option in C because atomic operations are volatile,
+	and thus observed behavior.}
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-whyrfe.litmus @@
+\caption{Why rfe Instead of Tried-And-True rf?}
+\label{lst:Why rfe Instead of Tried-And-True rf?}
+\end{listing}
+
+In the confines of the C++ abstract machine (omitting the no-OOTA
+restriction), this allows a value-17 OOTA cycle, courtesy of the fact
+that C++ respects neither control nor data dependencies.
+However, the \co{herd7} tool does not identify this cycle, perhaps due
+to its restrictions on its handling of arithmetic on OOTA values.
+
+In a real-world implementation that proves that the value 17 is always
+stored to \co{z}, there is no semantic dependency to
+\co{P0()}'s store to \co{z}, but there is to all of the other relaxed
+atomic stores.
+On the other hand, if the implementation does not prove the value
+stored to \co{z}, there will be a global-time delay between each of
+\co{P0()}'s loads and its store to \co{z}, preventing a value-17 OOTA
+cycle from forming.
+
+Either way, the value-17 OOTA cycle cannot occur in a correct real-world
+C++ implementation.
+Yes, an implementation that proves that the value 17 is always
+stored to \co{z} can satisfy the \co{exists} clause, but because
+there is no semantic dependency to \co{P0()}'s store to \co{z},
+this is not an OOTA cycle.
+
+But what if we chose to define an OOTA cycle as (sdep $\cup$ rf) instead
+of (sdep $\cup$ rfe)?
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-whyrfe-z17.litmus @@
+\caption{Why rfe Instead of Tried-And-True rf When z=17?}
+\label{lst:Why rfe Instead of Tried-And-True rf When z=17?}
+\end{listing}
+
+In that case, it would be necessary to separately consider the dependency
+from \co{P0()}'s load from \co{x} and \co{y} and that from its load
+from \co{y} and its store to \co{z}.
+The problem with this is shown in
+Listing~\ref{lst:Why rfe Instead of Tried-And-True rf When z=17?},
+which shows an equivalent program given the knowledge that the value~17
+will always be stored to \co{z}.
+Because all atomic operations are relaxed and because C++ does not
+respect control dependencies, the store to \co{z} can be moved up
+to the very beginning of \co{P0()}.
+This transformation causes the rfi link associated with \co{y} to
+go backwards in time, which is perfectly legitimate in this case,
+but which makes defining OOTA cycles in terms of (sdep $\cup$ rf)
+problematic.
+
+Again, in C, the load from \co{y} cannot be removed because it is
+volatile, and thus observable behavior.
+C++ could remove that load, but we left it in to demonstrate the all-17s
+outcome.
+
+This example demonstrates why OOTA cycles must be defined in terms
+of (sdep $\cup$ rfe), or in \co{herd7} nomenclature,
+\co{acyclic(sdep; rfe)}.
 
 \clearpage
 
