@@ -301,6 +301,8 @@ Finally, consider this:
 
 Here there is a semantic dependency from \co{x}, but in some executions
 it extends to \co{y} and in others to \co{z}.
+This is an example of the load affecting not the value or address of
+a given store, but rather whether or not that store is executed at all.
 
 These examples demonstrate a key point: Although in some cases sdep can
 be a strict function of the source code, \emph{in general, sdep must be
@@ -1137,9 +1139,11 @@ The evaluations are carried out using the \co{herd7} tool and also
 using manual analysis.
 The manual analysis uses the informal rule that a semantic dependency
 exists between a given relaxed atomic load and store on any execution
-where a different value loaded would change either the address or the
-value of that store.
-Producing a precise formal statement of this rule is quite challenging.
+where a different value loaded would change the address stored to, the
+value stored, or the whether or not that store would be executed in
+the first place.
+Producing a precise formal statement of this rule turns out to be quite
+challenging.
 
 Appendix~\ref{app:Litmus Tests from “Causality Test Cases"}
 evaluates the obligatory litmus tests from the JMM Causality Test
@@ -2236,6 +2240,17 @@ computer hardware and the laws of physics would expect.
 \end{center}
 \end{figure}
 
+Figure~\ref{fig:Propagation Delay and Temporal Properties of coe, fre, and rfe}
+shows how the temporal properties of coe, fre, and rfe are explained
+by propagation delay.
+In the case of coe, the two stores take time to propagate across the
+system, and their ordering can and is decided after the fact.
+In the case of fre, the store again takes time to propagate across
+the system, and so a load might execute later in global time than
+did the store, but not late enough to return that store's value.
+In the case of rfe, the load cannot return a given store's value until
+the value has propagated to that part of the system executing that load.
+
 And this is exactly why the C++ memory model guarantees ordering from
 rfe links but not the coe and fre links for relaxed accesses in the
 absence of other ordering from stronger atomic memory accesses or
@@ -2496,10 +2511,10 @@ not in any way constitute agreement with anything in this paper.
 % Will Deacon: ARM hardware, C++, and OOTA.
 
 % @@@ TODO:
-% Diagrams from perfbook showing coe and fre in terms of propagation delay
 % Convert remaining PPCMEM diagrams to herd7
 % Emphasize that real-world implementations map abstract machine to matter
 %	and energy in the real world.
+% Look into why inkscape no longer likes generating PDFs.
 
 % Objections:
 % "Atomic operations are not observable behavior."
