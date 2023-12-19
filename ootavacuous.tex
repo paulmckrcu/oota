@@ -617,31 +617,20 @@ Finally, computation is based on instructions, and instructions require
 finite time to execute, even when executed speculatively.
 
 \begin{listing}[tbp]
-\begin{verbatim}
- 1 int foo(int i) {
- 2   atomic_int x = 0;
- 3   int y[3];
- 4   volatile int r1;
- 5   {{{ { y[i].store(42, memory_order_relaxed);
- 6         x.store(1, memory_order_relaxed); }
- 7   ||| r1 = x.load(memory_order_relaxed);
- 8   }}};
- 9   return 0;
-10 }
-\end{verbatim}
+@@ DisplayLitmus litmus/speculative-store.litmus @@
 \caption{Speculated Store and Non-Speculated Load}
 \label{lst:Speculated Store and Non-Speculated Load}
 \end{listing}
 
 For example, in Listing~\ref{lst:Speculated Store and Non-Speculated Load},
 suppose that the storage for \co{x} is located immediately before that
-for \co{a[]}.
+for \co{y[]}.
 Suppose further that hardware speculation incorrectly guesses the value
-of \co{i} to be -1, so that the speculated store of 42 on line~5 uses
+of \co{i} to be -1, so that the speculated store of 42 on line~9 uses
 the address of \co{x}.\footnote{
 	Yes, \co{y[-1]} is UB, but the CPU neither knows
 	nor cares, nor should it.}
-Then line~7 can cause the final value of \co{r1} to be 42, when
+Then line~11 can cause the value 42 to be loaded into \co{r1}, when
 by the rules of the C++ abstract machine the value must instead be
 either zero or one.
 
