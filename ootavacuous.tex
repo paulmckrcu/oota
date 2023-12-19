@@ -304,6 +304,21 @@ it extends to \co{y} and in others to \co{z}.
 This is an example of the load affecting not the value or address of
 a given store, but rather whether or not that store is executed at all.
 
+But beware of this example:
+
+\begin{quote}
+	\co{r1 = x;} \\
+	\co{if (r1 > 0)} \\
+	\co{\ \ \ \ y = 42;} \\
+	\co{else} \\
+	\co{\ \ \ \ y = 42;}
+\end{quote}
+
+Because the stores executed on each branch of that "if" statement
+store identical values to identical addresses, they are for all intents
+and purposes the same store.
+Therefore, there is no semantic dependency~\cite{Howells2009membartxt}.
+
 These examples demonstrate a key point: Although in some cases sdep can
 be a strict function of the source code, \emph{in general, sdep must be
 defined on a per-execution basis}.% \footnote{
@@ -1122,6 +1137,10 @@ value stored, or the whether or not that store would be executed in
 the first place.
 Producing a precise formal statement of this rule turns out to be quite
 challenging.
+For but one example, identical stores are fungible, so that if all
+executions always execute one of several equivalently positioned stores
+having identical addresses and values, there is no semantic dependency
+from any load to any of those stores~\cite{Howells2009membartxt}.
 
 Appendix~\ref{app:Litmus Tests from “Causality Test Cases"}
 evaluates the obligatory litmus tests from the JMM Causality Test
@@ -2490,7 +2509,6 @@ not in any way constitute agreement with anything in this paper.
 % Will Deacon: ARM hardware, C++, and OOTA.
 
 % @@@ TODO:
-% Convert remaining PPCMEM diagrams to herd7
 % Emphasize that real-world implementations map abstract machine to matter
 %	and energy in the real world.
 
