@@ -494,15 +494,24 @@ circumstances, there are much simpler methods that incur negligible overhead.
 \label{sec:Real-World Constraints}
 
 Real-world constraints are imposed by the standard, which have been
-considered in prior work, and by the laws of physics, which have
-not.
-Additional constraints are imposed by hardware architecture and
-design, which have been partially accounted for in the standard,
-one limitation being that accurate and executable formal descriptions
-of hardware memory models did not appear until after the standard
-was released.
+considered in prior work.
+However, in correct real-world C++ implementations, the standard's
+abstract machine must be mapped onto real matter and energy.
+This mapping has not been considered by prior work, and brings to
+bear additional constraints from the laws of physics and from hardware
+architecture and design, both of which have been only partially accounted
+for in the standard.
+One reason for the incomplete accounting for hardware constraints is
+that accurate and executable formal descriptions of hardware memory
+models did not appear until after the standard was released.
 A final set of constraints is imposed by the C++ implementations
-themselves.
+themselves, some of which have resulted in non-determinisms within
+the standard.\footnote{
+	For example, when pre-existing implementations could not agree
+	on any specific deterministic handling of side-effects within
+	expressions.
+	On the other hand, implementer freedom does have significant
+	value.}
 
 The following sections discuss these constraints, starting with the
 laws of physics, continuing with hardware constraints, continuing
@@ -2498,8 +2507,6 @@ not in any way constitute agreement with anything in this paper.
 % Will Deacon: ARM hardware, C++, and OOTA.
 
 % @@@ TODO:
-% Emphasize that real-world implementations map abstract machine to matter
-%	and energy in the real world.
 
 % Objections:
 % "Atomic operations are not observable behavior."
