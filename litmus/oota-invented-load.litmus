@@ -13,17 +13,14 @@ C oota-invented-load
 }
 
 P0(atomic_int *x, atomic_int *y, atomic_int *z) {
-	int r1 = atomic_load_explicit(x, memory_order_relaxed);
-	int r2 = atomic_load_explicit(y, memory_order_relaxed);
-	int r3 = 0;
-	if (r1 == r2)
-		r3 = 1;
-	atomic_store_explicit(z, r3, memory_order_relaxed);
+	int r1 = atomic_load_explicit(x, memory_order_relaxed) != 0;
+	int r2 = atomic_load_explicit(y, memory_order_relaxed) != 0;
+	atomic_store_explicit(z, r1 == r2, memory_order_relaxed);
 }
 
 P1(atomic_int *x, atomic_int *y, atomic_int *z) {
-	int r4 = atomic_load_explicit(z, memory_order_relaxed);
-	atomic_store_explicit(y, r4, memory_order_relaxed);
+	int r3 = atomic_load_explicit(z, memory_order_relaxed);
+	atomic_store_explicit(y, r3, memory_order_relaxed);
 }
 
 P2(atomic_int *x, atomic_int *y, atomic_int *z) {

@@ -20,8 +20,8 @@ C oota-load-invented
 }
 
 P0(atomic_int *x, atomic_int *y, atomic_int *z) {
-	int r1 = atomic_load_explicit(x, memory_order_relaxed);
-	int r2 = atomic_load_explicit(x, memory_order_relaxed);
+	int r1 = atomic_load_explicit(x, memory_order_relaxed) != 0;
+	int r2 = atomic_load_explicit(x, memory_order_relaxed) != 0;
 	int r3;
 	int r4 = r2;
 	if (r1 != r2) {
@@ -30,10 +30,7 @@ P0(atomic_int *x, atomic_int *y, atomic_int *z) {
 		r4 = r3;
 	} else {
 		r3 = atomic_load_explicit(y, memory_order_relaxed);
-		int r5 = 0;
-		if (r3 == r4)
-			r5 = 1;
-		atomic_store_explicit(z, r5, memory_order_relaxed);
+		atomic_store_explicit(z, r3 == r4, memory_order_relaxed);
 	}
 }
 
@@ -46,5 +43,5 @@ P2(atomic_int *x, atomic_int *y, atomic_int *z) {
 	atomic_store_explicit(x, 1, memory_order_relaxed);
 }
 
-locations [x;y;z]
+locations [0:r1;0:r2;1:r4;x;y;z]
 exists(0:r3=1 /\ 0:r4=1)
