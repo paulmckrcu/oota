@@ -35,8 +35,8 @@ P0(atomic_int *x, atomic_int *y, atomic_int *z) {
 }
 
 P1(atomic_int *x, atomic_int *y, atomic_int *z) {
-	int r4 = atomic_load_explicit(z, memory_order_relaxed);
-	atomic_store_explicit(y, r4, memory_order_relaxed);
+	int r5 = atomic_load_explicit(z, memory_order_relaxed);
+	atomic_store_explicit(y, r5, memory_order_relaxed);
 }
 
 P2(atomic_int *x, atomic_int *y, atomic_int *z) {
