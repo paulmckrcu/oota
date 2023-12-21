@@ -22,8 +22,8 @@ C oota-load-invented
 P0(atomic_int *x, atomic_int *y, atomic_int *z) {
 	int r1 = atomic_load_explicit(x, memory_order_relaxed) != 0;
 	int r2 = atomic_load_explicit(x, memory_order_relaxed) != 0;
-	int r3;
-	int r4 = r2;
+	int r3;       // Value loaded from y.
+	int r4 = r2;  // Chosen value loaded from x.
 	if (r1 != r2) {
 		atomic_store_explicit(z, 1, memory_order_relaxed);
 		r3 = atomic_load_explicit(y, memory_order_relaxed);

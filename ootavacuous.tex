@@ -1746,16 +1746,29 @@ OOTA cycle on correct real-world C++ implementations.
 Listing~\ref{lst:Why rfe Instead of Tried-And-True rf?}
 revises
 Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4}
+so that the value stored to \co{y} is forced to be at most the
+value 17, and the value stored to \co{z} is forced to be at least the
+value 17.
+This of course means that the store to \co{z} must always be the value
+17, as can be seen from the \co{herd7} output.
+However, a single-thread-at-a-time analysis could not prove this.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-whyrfe-3.litmus @@
+\caption{Three-Process Version of JMM Causality Test Case 4 With Max and Min}
+\label{lst:Three-Process Version of JMM Causality Test Case 4 With Max and Min}
+\end{listing}
+
+Listing~\ref{lst:Why rfe Instead of Tried-And-True rf?}
+further revises
+Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4 With Max and Min}
 to flatten \co{PO()} and \co{P1()} into a single thread, so that the
 resulting \co{P0()} has an rfi link instead of an rfe link connecting
 the store to and load from \co{y}.
-In addition, the value stored to \co{y} is forced to be at least the
-value 17, and the value stored to \co{z} is forced to be at most the
-value 17.
-This of course means that the store to \co{z} must always be the value
-17, and that a C++ implementation could prove this by examining \co{P0()}
-in isolation given that it is also legal for a C++ implementation
-to replace the value loaded from \co{y} with the value just stored.\footnote{
+This means that a C++ implementation could prove that the value 17 is
+always stored to \co{z} by examining \co{P0()} in isolation, given that
+it is also legal for a C++ implementation to replace the value loaded
+from \co{y} with the value just stored.\footnote{
 	This is not an option in C because atomic operations are volatile,
 	and thus observed behavior.}
 
