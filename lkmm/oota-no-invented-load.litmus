@@ -1,0 +1,31 @@
+C oota-no-invented-load
+(*
+ * Result: Never
+ *
+ * Demonstration of surprising consequences of inventing atomic loads.
+ * Note that C++ respects neither control nor data dependencies,
+ * allowing the OOTA result in absence of the restriction.
+ *)
+{
+	[x] = 0;
+	[y] = 0;
+	[z] = 0;
+}
+
+P0(atomic_int *x, atomic_int *y, atomic_int *z) {
+	int r1 = READ_ONCE(*x) != 0;
+	int r2 = READ_ONCE(*y) != 0;
+	WRITE_ONCE(*z, r1 == r2);
+}
+
+P1(atomic_int *x, atomic_int *y, atomic_int *z) {
+	int r3 = READ_ONCE(*z);
+	WRITE_ONCE(*y, r3);
+}
+
+P2(atomic_int *x, atomic_int *y, atomic_int *z) {
+	WRITE_ONCE(*x, 1);
+}
+
+locations [x;y;z]
+exists(0:r1=1 /\ 0:r2=1)

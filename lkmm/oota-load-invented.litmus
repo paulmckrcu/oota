@@ -1,0 +1,47 @@
+C oota-load-invented
+(*
+ * Result: Sometimes
+ *
+ * Demonstration of surprising consequences of inventing atomic loads.
+ * Note that C++ respects neither control nor data dependencies,
+ * allowing the OOTA result in absence of the restriction.
+ *
+ * If the value from the invented load differs from that of the original,
+ * then the implementation can choose whichever load it prefers, thus
+ * allowing a store of a constant to z, thus allowing that store to
+ * be reordered to the beginning of P0(), even on a real-world C++
+ * implementation.  Paul believes that C++ implementations should be
+ * prohibited from inventing atomic loads.
+ *)
+{
+	[x] = 0;
+	[y] = 0;
+	[z] = 0;
+}
+
+P0(atomic_int *x, atomic_int *y, atomic_int *z) {
+	int r1 = READ_ONCE(*x) != 0;
+	int r2 = READ_ONCE(*x) != 0;
+	int r3;
+	int r4 = r2;
+	if (r1 != r2) {
+		WRITE_ONCE(*z, 1);
+		r3 = READ_ONCE(*y);
+		r4 = r3;
+	} else {
+		r3 = READ_ONCE(*y);
+		WRITE_ONCE(*z, r3 == r4);
+	}
+}
+
+P1(atomic_int *x, atomic_int *y, atomic_int *z) {
+	int r5 = READ_ONCE(*z);
+	WRITE_ONCE(*y, r5);
+}
+
+P2(atomic_int *x, atomic_int *y, atomic_int *z) {
+	WRITE_ONCE(*x, 1);
+}
+
+locations [0:r1;0:r2;1:r4;x;y;z]
+exists(0:r3=1 /\ 0:r4=1)
