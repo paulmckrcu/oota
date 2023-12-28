@@ -433,6 +433,45 @@ There are also many other tools, but failing that, it is always possible
 to fall back to older software-verification tools such as manual
 code inspection.
 
+But consider the following code fragment:
+
+\begin{quote}
+	\co{x = collatz_cycle_min(y);}
+\end{quote}
+
+Here, \co{collatz_cycle_min()}\footnote{
+	\url{https://en.wikipedia.org/wiki/Collatz_conjecture}}
+takes its arbitrary-precision-integer argument and repeatedly either
+divides it by two if it is even, or multiplies it by three and adds one
+if it is odd.
+Should the resulting sequence of arbitrary-precision integers reach
+a cycle, the function returns the minimum element of that cycle.
+Leaving aside the practical complication of a value of \co{y} that
+consumes more than half of the available memory, there is reason to
+believe that the above code fragment will always assign the value 1 to
+\co{x}.
+Except that this reason for belief is based on the Collatz conjecture,
+which is unproven and might never be proven.
+
+A similar example could be constructed from Fermat's Last Theorem
+(FLT),\footnote{
+\url{https://en.wikipedia.org/wiki/Fermat\%27s_Last_Theorem}}
+which was first stated in the year 1637 and finally proved more than
+300~years later, in 1994.
+This of course means that it was only after 1994 that code relying on
+FLT was known not to have a semantic dependency.
+
+One could quite reasonably argue that these two examples are irrelevant
+to any real-world C++ implementation.
+After all, evidence to date suggests that code relying on either the
+Collatz Conjecture or FLT is quite rare, and thus not worth optimizing.
+And the value of any given optimization is another real-world constraint
+on the problem of locating OOTA cycles, but one that will not be considered
+further in this document.
+
+\emph{A C++ implementation must assume that a given dependency is
+a semantic dependency unless and until it can prove otherwise.}
+
 \subsubsection{Implementers and Users Influence Semantic-Dependencies Definition}
 \label{sec:Implementers and Users Influence Semantic-Dependencies Definition}
 
