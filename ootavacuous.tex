@@ -276,6 +276,15 @@ accesses), the implementation is within its rights to discard this
 statement and act as if later accesses to \co{x} were instead the
 constant zero, at least up to the next assignment to \co{x}.
 
+Worse yet, suppose that both \co{y} and \co{z} are zero.
+Then there is no semantic dependency from either to \co{x} unless both
+\co{y} and \co{z} change.
+Alternatively, when both \co{y} and \co{z} are zero, there is no semantic
+dependency from either \co{y} or \co{z} to \co{x}, but rather a semantic
+dependency from the combination of \co{y} and \co{z} to \co{x}.
+This means that precise definitions of sdep cannot always rely on
+single-variable perturbations.
+
 Consider also:
 
 \begin{quote}
