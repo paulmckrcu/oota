@@ -328,11 +328,67 @@ store identical values to identical addresses, they are for all intents
 and purposes the same store.
 Therefore, there is no semantic dependency~\cite{Howells2009membartxt}.
 
+A similar caution applies to loads:
+
+\begin{quote}
+	\co{r1 = x;} \\
+	\co{if (r1 > 42)} \\
+	\co{\ \ \ \ r2 = y;} \\
+	\co{else} \\
+	\co{\ \ \ \ r2 = y;} \\
+	\co{z = r2;}
+\end{quote}
+
+The two loads from \co{y} are fungible, and one should therefore expect
+a compiler to replace this \co{if} statement with a single load from \co{y}.
+
 These examples demonstrate a key point: Although in some cases sdep can
 be a strict function of the source code, \emph{in general, sdep must be
 defined on a per-execution basis}.% \footnote{
 % 	Thanks to Alan Stern for the examples in this section and
 % 	in the preceding one.}
+
+\subsubsection{Semantic Dependencies Depend on Context}
+\label{sec:Semantic Dependencies Depend on Context}
+
+Consider the following:
+
+\begin{quote}
+	\co{r1 = x;} \\
+	\co{// r1 = 0;} \\
+	\co{z = y * r1;} \\
+	\co{// z = y / r1;}
+\end{quote}
+
+As written, there is a semantic dependency from \co{x} and \co{y}
+to \co{z}.
+But if the second line is uncommented, there is no semantic
+dependency.
+If the second line is left commented, but the last line is uncommented,
+then the compiler is free to backwards-propagate the potential
+divide-by-zero undefined behavior to precede the first assignment
+to \co{z}.
+This could prevent both assignments to \co{z} from executing, for example,
+due to a divide-by-zero exception.
+
+More subtle changes in context can also have an effect.
+For example:
+
+\begin{quote}
+	\co{r1 = x;} \\
+	\co{z = y * r1;} \\
+	\co{z = 42;}
+\end{quote}
+
+Given that there is no ordering, a C++ implementation could choose to
+act as if the first store to \co{z} was omitted, even if that store was
+a relaxed atomic store.
+But if \co{z} was marked volatile, both stores would need to be executed
+in strict accordance with the rules of the abstract machine.
+
+\emph{Any analysis of semantic dependencies must either be fully informed
+of the enclosing context, or much make conservative assumptions about
+that context.}
 
 \subsubsection{Semantic Dependencies Can Be Nondeterministic}
 \label{sec:Semantic Dependencies Can Be Nondeterministic}
@@ -478,7 +534,9 @@ And the value of any given optimization is another real-world constraint
 on the problem of locating OOTA cycles, but one that will not be considered
 further in this document.
 
-\emph{A C++ implementation must assume that a given dependency is
+\emph{Because of unsolved mathematical problems, precise definitions of
+``semantic dependency'' are problematic.
+Therefore, C++ implementations must assume that a given dependency is
 a semantic dependency unless and until it can prove otherwise.}
 
 \subsubsection{Implementers and Users Influence Semantic-Dependencies Definition}
