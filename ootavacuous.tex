@@ -527,6 +527,9 @@ which was first stated in the year 1637 and finally proved more than
 This of course means that it was only after 1994 that code relying on
 FLT was known not to have a semantic dependency.
 
+Many analysis tools would respond to these examples by failing, for example,
+by consuming all available CPU and memory.
+
 One could quite reasonably argue that these two examples are irrelevant
 to any real-world C++ implementation.
 After all, evidence to date suggests that code relying on either the
@@ -536,7 +539,7 @@ on the problem of locating OOTA cycles, but one that will not be considered
 further in this document.
 
 \emph{Because of unsolved mathematical problems, precise definitions of
-``semantic dependency'' are problematic.
+``semantic dependency'' have limitations.
 Therefore, C++ implementations must assume that a given dependency is
 a semantic dependency unless and until it can prove otherwise.}
 
@@ -1207,6 +1210,69 @@ a last operation, and the last operation cannot affect the first
 operation.
 Therefore, cycles cannot possibly form in a flattened program,
 which in turn implies that OOTA cycles cannot form.
+
+\subsection{But What About Non-Volatile Atomics?}
+\label{sec:But What About Non-Volatile Atomics?}
+
+Volatile atomic accesses have some very attractive properties from
+the viewpoint of analyzing executions for OOTA behavior because C++
+compilers are prohibited from reordering, omitting, fusing, or inventing
+volatile accesses.
+Thus, if the compiler emits code that faithfully reflects the behaviors
+specified by the source code, the hardware memory model will prohibit
+OOTA cycles.
+
+However, there is some question as to what exactly a C++ implementation
+is permitted to do with non-volatile atomic accesses~\cite{JFBastien2015N4455}.
+For example,
+Appendix~\ref{app:Inventing Atomic Loads}
+shows a clever litmus test that results in OOTA-like behavior
+if a C++ implementation duplicates an atomic load, compares the two values
+loaded, and then, if the two loads return different values, chooses the
+one that eliminates a semantic dependency that would otherwise remain
+in place.
+Perhaps in the fullness of time, such examples will be considered to be
+simple optimizations rather than full-on OOTA cycles, but in the meantime
+C++ implementations might wish to prohibit such behavior.
+
+One way to accomplish this while still permitting optimization of code
+containing non-volatile atomics is to model non-volatile behavior on that
+of volatile atomics, but with these specific weakenings:
+
+\begin{itemize}
+\item	Loads that do not affect observable behavior can be omitted,
+	along with any computations based on their return values.
+\item	Given a pair of relaxed loads from the same object that can
+	be reordered to be adjacent to each other, one of the pair can
+	be omitted with uses of the omitted load instead using the value
+	returned by the surviving load.
+	This is termed \emph{load fusing}.
+\item	Given a pair of relaxed stores to the same object that can
+	be reordered to be adjacent to each other, the first of the pair
+	can be omitted.
+	This is termed \emph{store fusing}.
+\item	If an expression can be proven to always result in a constant,
+	that constant can be substituted for that expression.
+	Note well that combining this with specialization optimizations
+	can convert address and data dependencies to weaker control
+	dependencies.
+	Address and data dependencies order later loads and stores,
+	and control dependencies order only later stores.\footnote{
+		Yes, yes, the C++ standard does not mention address or
+		data dependencies, and mandates control dependencies
+		only indirectly.
+		Such dependencies nevertheless still exist.}
+\end{itemize}
+
+Note that load and store fusing can only be applied a finite number of
+times.
+In practice, this means that fusing can be used to unroll loops, but
+not to hoist atomic loads or stores out of loops than cannot be proven
+to be always finite.
+
+These optimizations are examples, not necessarily a full set.
+Additional optimizations might be added over time, but great care will
+of course be required.
 
 \subsection{Correct Implementations Cannot Form OOTA Cycles}
 \label{sec:Correct Implementations Cannot Form OOTA Cycles}
