@@ -41,7 +41,7 @@
 \floatname{listing}{Listing}
 
 \begin{document}
-\title{D3064R0: OOTA Execution on Real Implementations is Provably Vacuous}
+\title{D3064R0: Making OOTA Execution on Real Implementations be Vacuous}
 
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
@@ -249,10 +249,14 @@ are instead considered to be part of sdep.
 Although this does shunt even more complexity onto the term
 ``semantic dependency'', it also enables us to bring to bear
 laws of physics and properties of hardware onto correct real-world
-C++ implementations.% \footnote{
+C++ implementations.
+% \footnote{
 %	Thanks to Alan Stern for providing a litmus test that demonstrated
 %	that we had unwittingly (but productively!) shifted our definition
 %	to sdep $\cup$ rfe.}
+Please see
+Appendix~\ref{app:Informal Definition of Semantic Dependency}
+for more a more detailed (albeit quite informal) definition.
 
 The following sections discuss properties of and constraints on
 useful definitions of ``semantic dependency''.
@@ -847,6 +851,13 @@ additional:
 The discussion of these two constraints is followed by a discussion of
 when redundant atomic stores may safely be omitted.
 
+It is also important to note that implementations and users have a
+surprising degree of influence over language
+semantics~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2}.
+Please see
+Appendix~\ref{app:User Influence Over Language Semantics}
+for examples.
+
 \paragraph{Invented Atomic Stores}
 
 \begin{listing}[tbp]
@@ -910,6 +921,9 @@ code cannot create an OOTA cycle because any valid execution (OOTA or not)
 of the program with the first of a back-to-back pair of non-volatile
 relaxed atomic stores omitted is essentially a valid execution of the
 program with the store present.
+
+For more discussion along these lines, please see
+Section~\ref{sec:But What About Non-Volatile Atomics?}.
 
 \subsection{C++ Implementations}
 \label{sec:C++ Implementations}
@@ -2417,6 +2431,9 @@ might be either 1 or 2, indicating that a semantic dependency exists.
 This situation underscores the point that the existance of a semantic
 dependency can be a property of a particular execution rather than a
 universal property of the code itself.
+The interested reader is encouraged to create more complex examples,
+for example, demonstrating semantic dependencies from multiple loads or
+exploring indeterminacy.
 
 There are numerous other tools that can be used, up to and including
 manual inspection, but \co{cbmc} is readily available and easy to
@@ -2613,44 +2630,61 @@ consider the following command line used to build the Linux kernel's
 	\scriptsize
 	\texttt{
 	gcc -Wp,-MMD,kernel/rcu/.tree.o.d -nostdinc
-	-I./arch/x86/include -I./arch/x86/include/generated  -I./include
-	-I./arch/x86/include/uapi -I./arch/x86/include/generated/uapi
-	-I./include/uapi -I./include/generated/uapi
+	-I./arch/x86/include \\
+	-I./arch/x86/include/generated  -I./include
+	-I./arch/x86/include/uapi \\
+	-I./arch/x86/include/generated/uapi
+	-I./include/uapi -I./include/generated/uapi \\
 	-include ./include/linux/compiler-version.h
-	-include ./include/linux/kconfig.h -include
-	./include/linux/compiler\_types.h -D\_\_KERNEL\_\_
-	-fmacro-prefix-map=./= -Werror -std=gnu11 -fshort-wchar
-	-funsigned-char -fno-common -fno-PIE -fno-strict-aliasing -mno-sse
-	-mno-mmx -mno-sse2 -mno-3dnow -mno-avx -fcf-protection=branch
-	-fno-jump-tables -m64 -falign-jumps=1 -falign-loops=1
+	-include ./include/linux/kconfig.h \\
+	-include ./include/linux/compiler\_types.h -D\_\_KERNEL\_\_
+	-fmacro-prefix-map=./= \\
+	-Werror -std=gnu11 -fshort-wchar
+	-funsigned-char -fno-common -fno-PIE \\
+	-fno-strict-aliasing -mno-sse
+	-mno-mmx -mno-sse2 -mno-3dnow -mno-avx \\
+	-fcf-protection=branch
+	-fno-jump-tables -m64 -falign-jumps=1 -falign-loops=1 \\
 	-mno-80387 -mno-fp-ret-in-387 -mpreferred-stack-boundary=3
-	-mskip-rax-setup -mtune=generic -mno-red-zone -mcmodel=kernel
-	-Wno-sign-compare -fno-asynchronous-unwind-tables
-	-mindirect-branch=thunk-extern -mindirect-branch-register
+	-mskip-rax-setup \\
+	-mtune=generic -mno-red-zone -mcmodel=kernel
+	-Wno-sign-compare \\
+	-fno-asynchronous-unwind-tables
+	-mindirect-branch=thunk-extern \\
+	-mindirect-branch-register
 	-mindirect-branch-cs-prefix -mfunction-return=thunk-extern
 	-fno-jump-tables -fpatchable-function-entry=16,16
-	-fno-delete-null-pointer-checks -O2 -fno-allow-store-data-races
-	-fstack-protector-strong -fomit-frame-pointer
+	-fno-delete-null-pointer-checks -O2 \\
+	-fno-allow-store-data-races
+	-fstack-protector-strong -fomit-frame-pointer \\
 	-fno-stack-clash-protection -falign-functions=16
-	-fno-strict-overflow -fno-stack-check -fconserve-stack
-	-Wall -Wundef -Werror=implicit-function-declaration
-	-Werror=implicit-int -Werror=return-type -Werror=strict-prototypes
+	-fno-strict-overflow -fno-stack-check \\
+	-fconserve-stack
+	-Wall -Wundef -Werror=implicit-function-declaration \\
+	-Werror=implicit-int -Werror=return-type -Werror=strict-prototypes \\
 	-Wno-format-security -Wno-trigraphs -Wno-frame-address
-	-Wno-address-of-packed-member -Wframe-larger-than=2048 -Wno-main
-	-Wno-unused-but-set-variable -Wno-unused-const-variable -Wvla
-	-Wno-pointer-sign -Wcast-function-type -Wno-array-bounds
-	-Wno-alloc-size-larger-than -Wimplicit-fallthrough=5
+	-Wno-address-of-packed-member \\
+	-Wframe-larger-than=2048 -Wno-main
+	-Wno-unused-but-set-variable \\
+	-Wno-unused-const-variable -Wvla
+	-Wno-pointer-sign -Wcast-function-type \\
+	-Wno-array-bounds
+	-Wno-alloc-size-larger-than -Wimplicit-fallthrough=5 \\
 	-Werror=date-time -Werror=incompatible-pointer-types
-	-Werror=designated-init -Wenum-conversion
-	-Wno-unused-but-set-variable -Wno-unused-const-variable
+	-Werror=designated-init \\
+	-Wenum-conversion
+	-Wno-unused-but-set-variable -Wno-unused-const-variable \\
 	-Wno-restrict -Wno-packed-not-aligned -Wno-format-overflow
-	-Wno-format-truncation -Wno-stringop-overflow
-	-Wno-stringop-truncation -Wno-missing-field-initializers
+	-Wno-format-truncation \\
+	-Wno-stringop-overflow
+	-Wno-stringop-truncation -Wno-missing-field-initializers \\
 	-Wno-type-limits -Wno-shift-negative-value
-	-Wno-maybe-uninitialized -Wno-sign-compare
-	-DKBUILD\_MODFILE='"kernel/rcu/tree"' -DKBUILD\_BASENAME='"tree"'
-	-DKBUILD\_MODNAME='"tree"' -D\_\_KBUILD\_MODNAME=kmod\_tree -c
-	-o kernel/rcu/tree.o kernel/rcu/tree.c
+	-Wno-maybe-uninitialized \\
+	-Wno-sign-compare
+	-DKBUILD\_MODFILE='"kernel/rcu/tree"'
+	-DKBUILD\_BASENAME='"tree"' \\
+	-DKBUILD\_MODNAME='"tree"' -D\_\_KBUILD\_MODNAME=kmod\_tree \\
+	-c -o kernel/rcu/tree.o kernel/rcu/tree.c
 	}
 }
 
@@ -2849,7 +2883,7 @@ not in any way constitute agreement with anything in this paper.
 % @@@ TODO:
 % Construct interleaved OOTA examples (see sheets of paper).
 % Check cmbc on nondeterministic i++.
-% Use LKMM as check for dependencies?  Check invented-load litmus tests.
+% Use LKMM as check for dependencies?
 
 % Objections:
 % "Atomic operations are not observable behavior."
