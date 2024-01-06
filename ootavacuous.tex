@@ -412,19 +412,29 @@ by the C++ implementation.\footnote{
 
 Note well that C++ implementations can and do act as if portions of
 the source code was duplicated in order to apply specialization
-optimizations, in which case any nondeterminism might also be
-duplicated.
+optimizations, in which case any non-determinism might also be
+a function of a given execution.
 
 Many projects' coding guidelines prohibit side effects in expressions,
 their goal being to obtain portable code whose behavior does not depend
 on arbitrary choices on the part of the implementation.
 However, the above code nevertheless conforms to the standard.
 
+Compiler-based C++ implementions make their non-deterministic choices
+at compile time, so that the object code is deterministic, at least
+on a per-execution basis.
+
 \subsubsection{Semantic Dependencies And Optimization}
 \label{sec:Semantic Dependencies And Optimization}
 
-But suppose that the implementation can prove that at any time that
-the above statement might execute, \co{y} is equal to \co{z}?
+Consider again the following:
+
+\begin{quote}
+	\co{x = y + z;}
+\end{quote}
+
+Suppose that the implementation can prove that at any time that
+the above statement might execute, \co{y} is equal to \co{z}.
 That would allow the implementation to optimize, that is, to act as if
 the source code was instead as follows:
 
@@ -580,7 +590,7 @@ Given this command-line argument, there is always a semantic dependency
 from the \co{foo()} function's argument to its return value.
 So score one for at least some implementations' users.
 
-Please see Appendix~\ref{sec:User Influence Over Language Semantics}
+Please see Appendix~\ref{app:User Influence Over Language Semantics}
 for more examples of user control over semantics, including semantic
 dependencies.
 
@@ -1023,7 +1033,7 @@ is temporal.
 \label{sec:C++ Implementations: Optimization}
 
 C++ implementations undertake a wide variety of optimizations, in
-some cases taking advantage of nondeterminism and in others applying
+some cases taking advantage of non-determinism and in others applying
 the results of code analysis to produce faster code.
 The changes can be profound, for example, with large computations being
 replaced by simple constants.
@@ -1039,9 +1049,9 @@ In C++ implementations using compilers, non-determinism of a given
 (post-optimization) code path is ``frozen'' into the resulting binary,
 which greatly simplifies analysis of semantic dependencies.
 Other c++ implementations (for example, those using interpreters or JITs)
-might need to directly model any nondeterminism.
+might need to directly model any non-determinism.
 This latter situation might motivate additional C++ projects to ban
-nondeterminism in favor of portable code.
+non-determinism in favor of portable code.
 
 Another question is how to prove that a given optimization is valid.
 This has been a hard question in the past, and is likely to remain so
@@ -1304,25 +1314,85 @@ This appendix evaluates a number of OOTA-related litmus tests.
 The evaluations are carried out using the \co{herd7} tool and also
 using manual analysis.
 
-The manual analysis uses the informal rule that a semantic dependency
-exists between a set of relaxed atomic loads and a store on any execution
-where different values loaded would change the address stored to, the
-value stored, or the whether or not that store would be executed in
-the first place, with the proviso that stores of the same value to the
-same address having the same ordering properties are fungible.
-Producing a precise formal statement of this rule turns out to be quite
-challenging, but as noted earlier, there is considerable work along
-various
-lines~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA}.
-For examples of the challenges, please see
-Section~\ref{sec:On OOTA Definitions}.
-
+Appendix~\ref{app:Informal Definition of Semantic Dependency}
+outlines the informal informal definition of ``semantic dependency''
+used to evaluate the litmus tests in this section,
 Appendix~\ref{app:Litmus Tests from “Causality Test Cases"}
 evaluates the obligatory litmus tests from the JMM Causality Test
 Cases, and
 Appendix~\ref{app:Additional Litmus Tests}
 evaluates some additional litmus tests that affected our thinking or
 otherwise gave us pause.
+
+\subsection{Informal Definition of Semantic Dependency}
+\label{app:Informal Definition of Semantic Dependency}
+
+The manual analysis uses the informal rule that a semantic dependency
+exists between a set of relaxed atomic loads and a store on any execution
+where different values loaded would change the address stored to, the
+value stored, or the whether or not that store would be executed in
+the first place, with the proviso that stores of the same value to the
+same address having the same ordering properties are fungible.
+
+Producing a precise formal statement of this rule turns out to be quite
+challenging, but as noted earlier, there is considerable work along
+various
+lines~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA}.
+For examples of the challenges, please see
+Section~\ref{sec:On OOTA Definitions}.
+Our informal definition meets these challenges as follows:
+
+\begin{enumerate}
+\item	Section~\ref{sec:Semantic Dependencies Are Per Execution}
+	is responsible for the phrase ``on any execution'' as well
+	as the proviso regarding fungible loads.
+\item	Section~\ref{sec:Semantic Dependencies Depend on Context}'s
+	challenges are met by looking at the full context within
+	a given thread.
+\item	Section~\ref{sec:Semantic Dependencies Can Be Nondeterministic}'s
+	non-determinism challenges are avoided by avoiding litmus tests
+	exhibiting non-deterministic behavior.
+	Again, note that most production C++ code uses compiler-based C++
+	implementations, which make their non-deterministic choices at
+	compile time.
+\item	Section~\ref{sec:Semantic Dependencies And Optimization}'s
+	optimization-choice challenges are met by using the C++
+	implementation's choice of semantic dependency based on the
+	optimizations that the implementation actually applied.
+\item	Section~\ref{sec:Semantic Dependencies and I/O}'s
+	I/O challenges are met by again noting that I/O is observed
+	behavior.
+	And by avoiding litmus tests involving I/O, given that relatively
+	few of the available tools handle I/O.
+\item	Section~\ref{sec:Semantic Dependencies Can Be Complex}'s
+	complexity challenges are met by looking at what the code
+	actually does.
+	For example, if an as-yet unproven mathematical conjecture
+	holds, the code will act consistently with that conjecture,
+	and vice versa.
+\item	Section~\ref{sec:Implementers and Users Influence Semantic-Dependencies Definition}'s
+	implementer-/user-choice challenges are met by accounting for
+	those choices.
+	For example, if a user has specified \co{-funsigned-char},
+	then the actual executions will be consistent with that choice.
+	For more examples, please see
+	Appendix~\ref{app:User Influence Over Language Semantics}.
+\end{enumerate}
+
+In short, we are treating ``semantic dependency'' in a manner similar
+to our treatment of the laws of physics.
+We let the actual executions provide an empirical basis for the analysis.
+
+We do not expect this approach to please everyone.
+However, those who are displeased might do well to reflect on the fact
+that the C++ standard is not mathematical in nature, which implies that
+any mathematical model of C++ is inherently an approximation.
+We look forward to the day when the standard gains more mathematical
+rigor, and perhaps the C++ memory model is a first step in that
+direction.\footnote{
+	But if so, the OOTA situation should be a caution!}
+Nevertheless, until that day, we must live with the standard in its
+current decidedly non-mathematical form.
 
 \subsection{Litmus Tests from “Causality Test Cases"}
 \label{app:Litmus Tests from “Causality Test Cases"}
@@ -2524,7 +2594,7 @@ absence of other ordering from stronger atomic memory accesses or
 \clearpage
 
 \section{User Influence Over Language Semantics}
-\label{sec:User Influence Over Language Semantics}
+\label{app:User Influence Over Language Semantics}
 
 As noted earlier, the exact definition of a computer language is subject
 to some debate, with standards, implementations, and users all having
@@ -2778,7 +2848,6 @@ not in any way constitute agreement with anything in this paper.
 
 % @@@ TODO:
 % Construct interleaved OOTA examples (see sheets of paper).
-% Construct nondeterminism example, for example, based on i++.
 % Check cmbc on nondeterministic i++.
 % Use LKMM as check for dependencies?  Check invented-load litmus tests.
 
