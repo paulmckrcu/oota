@@ -2055,8 +2055,8 @@ Doing so permits the OOTA-like outcome of \co{r3 == r4 == 1}.
 
 The implementation might also drop the load from \co{y}, whose value
 is now unused except by the \co{exists} clause.
-However, we use the convention that the \co{exists} clause is observable
-behavior.
+However, the \co{exists} clause is considered to be observable behavior,
+which means that the load from \co{y} must remain.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-unused-load.litmus @@
@@ -2079,20 +2079,30 @@ the previously discarded value in \co{r0}.
 There are a number of possible reactions to this situation:
 
 \begin{enumerate}
-\item	Attempts to use real-world constraints to prevent OOTA cycles
-	are futile.
-	What to do instead?
-\item	Implementations should not invent uses for values from
-	non-volatile relaxed atomic loads.
-	But are there any useful optimizations that invent such uses?
-	(One can argue that in all such cases, the loads should instead
-	be fused into a single load.)
 \item	Listing~\ref{lst:Inventing Atomic Loads}
 	looks like it has an OOTA cycle, but there is in fact no
 	semantic dependency.
-	But then how exactly does one identify a semantic dependency?
-\item	What other equally interesting situations might come to light?
-\item	Your reaction here!
+\item	Attempts to use real-world constraints to prevent OOTA cycles
+	are futile.
+	(But see Section~\ref{sec:But What About Non-Volatile Atomics?}.)
+\item	Implementations should not invent uses for values from
+	non-volatile relaxed atomic loads.
+	If it turns out that there are useful optimizations that invent
+	such uses, then such optimizations must be applied only with
+	careful attention to the as-if rule.
+	Some might argue that inventing comparisons between a pair of
+	non-volatile relaxed atomic loads from the same object should
+	be permitted only if the two loads could be reordered to be
+	adjacent to each other.
+\item	Any time an impolementation might be tempted to invent uses from
+	values from non-volatile relaxed atomic loads, the loads should
+	instead be fused into a single load.
+	This reaction might be attractive to those who carefully consider
+	the pointlessness of keeping two loads that return the same value
+	on the one hand or the cache-miss overhead involved should two
+	closely spaced loads from the same object return different values
+	on the other.
+\item	What other interesting situations might come to light?
 \end{enumerate}
 
 \clearpage
