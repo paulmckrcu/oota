@@ -1303,17 +1303,19 @@ C++ implementation, your hardware, or your alternate universe.
 This appendix evaluates a number of OOTA-related litmus tests.
 The evaluations are carried out using the \co{herd7} tool and also
 using manual analysis.
+
 The manual analysis uses the informal rule that a semantic dependency
-exists between a given relaxed atomic load and store on any execution
-where a different value loaded would change the address stored to, the
+exists between a set of relaxed atomic loads and a store on any execution
+where different values loaded would change the address stored to, the
 value stored, or the whether or not that store would be executed in
-the first place.
+the first place, with the proviso that stores of the same value to the
+same address having the same ordering properties are fungible.
 Producing a precise formal statement of this rule turns out to be quite
-challenging.
-For but one example, identical stores are fungible, so that if all
-executions always execute one of several equivalently positioned stores
-having identical addresses and values, there is no semantic dependency
-from any load to any of those stores~\cite{Howells2009membartxt}.
+challenging, but as noted earlier, there is considerable work along
+various
+lines~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA}.
+For examples of the challenges, please see
+Section~\ref{sec:On OOTA Definitions}.
 
 Appendix~\ref{app:Litmus Tests from “Causality Test Cases"}
 evaluates the obligatory litmus tests from the JMM Causality Test
@@ -1901,7 +1903,7 @@ Listing~\ref{lst:Causality Test Case 4}
 (discussed in
 Appendix~\ref{app:Causality Test Case 4})
 from two processes to three processes.
-The \co{herd7} tool finds OOTA values, but in a rather odd manner.
+The \co{herd7} tool finds OOTA values, as expected.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-3proc.litmus @@
@@ -2073,7 +2075,7 @@ Listing~\ref{lst:Unused Extra Atomic Load}?\footnote{
 	template metaprograms.}
 In this case, the transformation to
 Listing~\ref{lst:Atomic Loads Invented}
-would not require inventing a load, but instead merely making use of
+would not require inventing a load, but instead merely inventing a use of
 the previously discarded value in \co{r0}.
 
 There are a number of possible reactions to this situation:
