@@ -2287,6 +2287,10 @@ There are a number of possible reactions to these situations:
 	the pointlessness of keeping two loads that return the same value
 	on the one hand or the cache-miss overhead incurred when closely
 	spaced loads return different values on the other.
+\item	Implementations that invent non-volatile atomic loads or invent
+	new uses for non-volatile atomic loads can adversely affect
+	observed behavior, for example, by introducing error into code
+	attempting to do statistical sampling.
 \item	What other interesting situations might come to light?
 \end{enumerate}
 
