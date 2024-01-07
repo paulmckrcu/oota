@@ -2100,11 +2100,11 @@ mind of Alan Stern.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-no-invented-load.litmus @@
-\caption{Inventing Atomic Loads}
-\label{lst:Inventing Atomic Loads}
+\caption{No Invented Atomic Loads}
+\label{lst:No Invented Atomic Loads}
 \end{listing}
 
-First, consider Listing~\ref{lst:Inventing Atomic Loads}.
+First, consider Listing~\ref{lst:No Invented Atomic Loads}.
 At first glance, this might appear straightforward.
 \co{P0()}'s store to \co{z} clearly depends on its load from \co{y},
 and \co{P1()}'s store to \co{y} clearly depends on its load from \co{z}.
@@ -2123,7 +2123,7 @@ duplicate \co{P0()}'s load from \co{x} and then make use of both loads'
 values?
 If this is permitted, then the implementation would be within its rights
 to transform
-Listing~\ref{lst:Inventing Atomic Loads}
+Listing~\ref{lst:No Invented Atomic Loads}
 into
 Listing~\ref{lst:Atomic Loads Invented}.
 
@@ -2165,7 +2165,7 @@ the previously discarded value in \co{r0}.
 There are a number of possible reactions to this situation:
 
 \begin{enumerate}
-\item	Listing~\ref{lst:Inventing Atomic Loads}
+\item	Listing~\ref{lst:No Invented Atomic Loads}
 	looks like it has an OOTA cycle, but there is in fact no
 	semantic dependency.
 \item	Attempts to use real-world constraints to prevent OOTA cycles
