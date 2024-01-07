@@ -30,7 +30,7 @@ BEGIN {
 	print bs "scriptsize";
 	print bs "begin{verbatim}";
 	print "___EOF___";
-	print "grep -v " sq "^[( ]" bs "*" sq " < " path " | c2latex.sh";
+	print "grep -v " sq "^[(/ ]" bs "*" sq " < " path " | c2latex.sh";
 	print "cat << " sq "___EOF___" sq;
 	print bs "end{verbatim}";
 	print "}";
@@ -43,7 +43,7 @@ BEGIN {
 	print bs "scriptsize";
 	print bs "begin{verbatim}";
 	print "___EOF___";
-	print "grep -v " sq "^[( ]" bs "*" sq " < " path " | c2latex.sh";
+	print "grep -v " sq "^[(/ ]" bs "*" sq " < " path " | c2latex.sh";
 	print "cat << " sq "___EOF___" sq;
 	print bs "end{verbatim}";
 	print "";

@@ -52,7 +52,7 @@ Maged Michael\\\email{maged.michael@gmail.com} \and
 Alan Stern\\\email{stern@rowland.harvard.edu} \and
 The Indefatigible TBD
 }
-\date{December 15, 2023 (Pre-Tokyo)}
+\date{January 7, 2024 (Pre-Tokyo)}
 \maketitle{}
 
 Audience: SG1
@@ -63,16 +63,19 @@ Audience: SG1
 	consternation over the years.
 	Attempts to create memory models that rule out OOTA behaviors
 	have either been non-executable, complex, or unloved by C++
-	implementers.
+	implementers, and this paper summarizes some of the challenges.
 	But at the same time, there are no known instances of OOTA
 	behavior in real C++ implementations.
 
 	This paper refactors the commonly used condition for detecting
 	OOTA behavior, which permits bringing to bear constraints from
 	long-standing laws of physics and on hardware systems.
-	These constraints prevent OOTA from occurring in correctly
-	constructed C++ programs running on correctly constructed C++
-	implementations in our current universe.
+	These constraints prevent OOTA cycles containing only volatile
+	atomics from occurring in correctly constructed C++ programs
+	running on correctly constructed C++ implementations in our
+	current universe.
+	Given current optimizations, these constraints also prevent
+	OOTA cycles involving non-volatile atomics.
 
 	In this, OOTA behaviors are similar to the issues surrounding
 	undecidability and its real-world counterpart, high complexity.
@@ -80,6 +83,8 @@ Audience: SG1
 	to OOTA, but also the same \emph{code} applies, both for C++
 	implementations and for associated tooling.
 \end{abstract}
+
+\pagebreak
 
 \section{Background}
 \label{sec:Background}
@@ -116,8 +121,8 @@ values of the global shared variables \co{x} and \co{y} to zero.
 Lines~7-13 define the first process, \co{P0()}, and lines~15-21
 define the second process, \co{P1()}.
 The arguments to both \co{P0()} and \co{P1()} specify which of
-the global shared variables each process may access.
-In this case, both processes may access both \co{x} and \co{y}.
+the global shared variables each process may access, in this case, \co{x}
+and \co{y}.
 The body of each process specifies a limited subset of C++ code,
 which also happens to be a somewhat less limited subset of C code.
 
@@ -128,6 +133,8 @@ The \co{0:} prefix specifies a variable local to \co{P0()} and
 the \co{1:} prefix specifies a variable local to \co{P1()}.
 The \co{/\\} specifies a boolean AND, and the \co{=} specifies
 an equality comparison.
+If a variable appears in an \co{exists} clause, then the final value of
+that variable constitutes observable behavior.
 
 \begin{listing}[tbp]
 @@ RunLitmus litmus/oota-ctrl.litmus @@
@@ -162,7 +169,7 @@ This paper focuses instead on OOTA cycles.
 All OOTA workers owe a debt to the foundational work in the infamous
 ``Causality Test Cases'',\footnote{
 	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
-which may be found in
+which also may be found in
 Appendix~\ref{app:Litmus Tests from “Causality Test Cases"}.
 
 Some executable C++ memory models correctly flag at least some executions
@@ -186,13 +193,15 @@ stores~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Laha
 but this requires real instructions be executed, consuming real
 time and real electrical power to solve a strictly theoretical
 problem.
+This might have been acceptable in the 1960s of my youth, but it is now
+the year 2024.
 
 Other workers recommend various procedures to identify and avoid OOTA
 cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA},
 but none of these have been looked upon favorably by C++ implementers.
 
 Goldblatt looked at interactions between OOTA cycles and
-UB~\cite{DavidGoldblatt2019NoElegantOOTAfix}.
+UB~\cite{DavidGoldblatt2019NoElegantOOTAfix}, and
 Appendix~\ref{app:Aside on Undefined Behavior}
 analyzes the examples and notes ways to separate UB and OOTA-cycle
 concerns.
@@ -211,7 +220,7 @@ instead focuses on proving that OOTA cannot occur.
 \subsection{On OOTA Definitions}
 \label{sec:On OOTA Definitions}
 
-Prior work defines ``OOTA cycle'' by example, without a precise
+The earliest work defines ``OOTA cycle'' by example, without a precise
 definition.
 Sometimes ``causal cycle'' is used as if it was a definition, but
 without a clear decision process for what does and does not
@@ -220,7 +229,7 @@ P0442R0 defines an OOTA cycle as a fixed-point computation that is
 destroyed by perturbations, which makes perfect sense to that paper's
 authors, but has left others unsatisfied.
 Still others argue (perhaps correctly) that it is impossible to provide
-a general definition of ``OOTA cycle'', but even accepting this raises
+a general definition of ``OOTA cycle'', but this simply raises
 the question of whether a \emph{useful} definition can be formulated.
 
 The C++ standard says this in 33.5.4p8
@@ -241,11 +250,10 @@ This is a fine definition, and is consistent with the words in the C++
 standard, except that it simply shunts all the complexity onto the
 term ``semantic dependency''.
 
-The current authors deviate slightly from this tradition by instead
-defining an OOTA cycle as a cycle in sdep $\cup$ rfe (or
-\co{acyclic(sdep ; rfe)} in \co{herd7} notation), where rfe is the
-set of store-to-load links, but excluding intra-thread rfi links, which
-are instead considered to be part of sdep.
+We deviate slightly from this tradition by instead defining an OOTA cycle
+as a cycle in sdep $\cup$ rfe (or \co{acyclic(sdep ; rfe)} in \co{herd7}
+notation), where rfe is the set of store-to-load links, but excluding
+intra-thread rfi links, which are instead considered to be part of sdep.
 Although this does shunt even more complexity onto the term
 ``semantic dependency'', it also enables us to bring to bear
 laws of physics and properties of hardware onto correct real-world
@@ -281,11 +289,11 @@ statement and act as if later accesses to \co{x} were instead the
 constant zero, at least up to the next assignment to \co{x}.
 
 Worse yet, suppose that both \co{y} and \co{z} are zero.
-Then there is no semantic dependency from either to \co{x} unless both
-\co{y} and \co{z} change.
+Then there is no semantic dependency from either \co{y} or \co{z} to
+\co{x} unless both \co{y} and \co{z} change.
 Alternatively, when both \co{y} and \co{z} are zero, there is no semantic
 dependency from either \co{y} or \co{z} to \co{x}, but rather a semantic
-dependency from the combination of \co{y} and \co{z} to \co{x}.
+dependency from the combination of \co{y} \emph{and} \co{z} to \co{x}.
 This means that precise definitions of sdep cannot always rely on
 single-variable perturbations.
 
@@ -295,14 +303,15 @@ Consider also:
 	\co{x = y + z;}
 \end{quote}
 
-There is a semantic dependency from both \co{y} and \co{z} if and only
-if these values do not cancel.
+There are semantic dependencies from \co{y} to \co{x} and from \co{z}
+to \co{x}.
 However, if the implementation knows that the value of \co{y} is always
-the negative of \co{x}, there is no semantic dependency and the
+the negative of \co{z}, there is no semantic dependency and the
 implementation can again act as if later accesses to \co{x} were
-instead the constant zero.
+instead the constant zero, again, at least until the next assignment
+to \co{x}.
 
-Finally, consider this:
+Also, consider this:
 
 \begin{quote}
 	\co{r1 = x;} \\
@@ -343,8 +352,9 @@ A similar caution applies to loads:
 	\co{z = r2;}
 \end{quote}
 
-The two loads from \co{y} are fungible, and one should therefore expect
-a compiler to replace this \co{if} statement with a single load from \co{y}.
+The two loads from \co{y} are fungible, and so a C++ implementation
+could behave as if this \co{if} statement had instead been a single load
+from \co{y}.
 
 These examples demonstrate a key point: Although in some cases sdep can
 be a strict function of the source code, \emph{in general, sdep must be
@@ -456,6 +466,12 @@ In this case, is the semantic dependency from \co{y} to \co{x},
 from \co{z} to \co{x}, or both \co{y} and \co{z} to \co{x}?
 The answer is that this is a free choice on the part of the
 implementation.
+Those wishing to change the value of \co{y} or \co{z} externally
+(for example, using a debugger) would do well to avail themselves
+of the \co{volatile} keyword.
+
+\emph{Semantic dependencies can be a free choice on the part of the
+C++ implementation.}
 
 \subsubsection{Semantic Dependencies and I/O}
 \label{sec:Semantic Dependencies and I/O}
@@ -531,15 +547,15 @@ consumes more than half of the available memory, there is reason to
 believe that the above code fragment will always assign the value 1 to
 \co{x}.
 Except that this reason for belief is based on the Collatz conjecture,
-which is unproven and might never be proven.
+which is currently unproven and might never be proven (or disproven).
 
 A similar example could be constructed from Fermat's Last Theorem
 (FLT),\footnote{
 \url{https://en.wikipedia.org/wiki/Fermat\%27s_Last_Theorem}}
 which was first stated in the year 1637 and finally proved more than
 300~years later, in 1994.
-This of course means that it was only after 1994 that code relying on
-FLT was known not to have a semantic dependency.
+Therefore, it was only after 1994 that code relying on FLT was known
+not to have a semantic dependency.
 
 Many analysis tools would respond to these examples by failing, for example,
 by consuming all available CPU and memory.
@@ -570,7 +586,7 @@ especially the implementation.
 However, consider the following code:
 
 \begin{quote}
-	\co{void foo(char c} \\
+	\co{void foo(char c)} \\
 	\co{\{} \\
 	\co{\ \ \ \ return c + 128;} \\
 	\co{\}}
@@ -689,8 +705,8 @@ light to be finite.
 This paper will therefore assume that the speed of light is finite, and
 that the maximum speed at which information can propagate is also finite.
 
-If empirical evidence continues to validate this assumption, it is
-not possible to form causal loops based on infinite-speed propagation
+As long as empirical evidence continues to validate this assumption, it
+is not possible to form causal loops based on infinite-speed propagation
 of information.
 
 \subsubsection{Non-Zero Sized Atoms}
@@ -699,7 +715,7 @@ of information.
 If atoms were of zero size, a zero-sized computer might be constructed.
 In such a computer, even given finite speed of light, information could
 propagate among computing elements in zero time.
-This situation would also permit a load to return the value stored by
+This situation would again permit a load to return the value stored by
 some other thread at the exact instant that the store executed, which
 would again in turn remove propagation delay as a factor preventing
 causal loops such as OOTA cycles from forming.
@@ -721,7 +737,8 @@ In other words, the reads-from relation is temporal in nature.
 
 In contrast, the C++11 modification-order relation is atemporal,
 because computing systems can and observably do determine the
-modification order of a set of concurrent stores long after the fact.
+modification order of a set of concurrent stores long after the fact
+(see Appendix~\ref{app:Inter-Process Communications}).
 This means that the store that executed earlier in global time
 might appear later in the stored-to object's modification
 order~\cite{McKenney20xxParallelProgramming}.
@@ -773,7 +790,7 @@ Therefore, non-speculative loads are prohibited from loading values from
 speculative stores.
 And yes, this does mean that hardware can produce OOTA cycles during
 speculative execution, but the hardware is required to prevent all such
-speculative exection from ever committing.
+speculative OOTA cycles from ever committing.
 
 As a special case of this prohibition, a value stored speculatively must
 not be exposed to non-speculative loads from other threads.
@@ -787,9 +804,9 @@ Applying this to Listing~\ref{lst:OOTA Cycle}, because values from
 speculative stores cannot be visible to non-speculative loads, lines~10
 and~12 cannot be committed until after the load in line~8 completes
 and the conditional on line~9 is evaluated non-speculatively.\footnote{
-	Alternatively, one could imagine that both the speculation
-	and the squashing of failed speculation might span multiple
-	threads.
+	Alternatively, and as noted earlier, one could imagine that both
+	the speculation and the squashing of failed speculation might
+	span multiple threads.
 	This might make sense for multiple hardware threads sharing
 	a core.}
 Similarly, lines~18 and~20 cannot be committed until after lines~16
@@ -802,7 +819,7 @@ However, in this case, the two stores on lines~10 and~12 are storing
 distinct values, preventing the hoisting.
 
 Note also that some architectures provide conditional-move instructions,
-which allows line~7 to avoid emitting a conditional branch.
+which allows line~9 to avoid emitting a conditional branch.
 However, such architectures would still treat a store of the
 target of the conditional-move instructions as speculative until
 such time as the conditional moves (and any loads that they depend
@@ -813,6 +830,10 @@ multi-threaded core as well as between cores.
 This means that for any set of speculative accesses to be committed,
 all loads in that set must have been confirmed by corresponding
 non-speculative stores.
+
+The key point is that a store having a semantic dependency on a given
+set of loads must execute after the completion of the last of those
+loads in global time.
 
 \subsection{Constraints of the Standard}
 \label{sec:Constraints of the Standard}
@@ -849,7 +870,8 @@ additional:
 \end{enumerate}
 
 The discussion of these two constraints is followed by a discussion of
-when redundant atomic stores may safely be omitted.
+when redundant atomic stores may safely be omitted and on fusing of
+non-volatile atomic loads from adjacent objects.
 
 It is also important to note that implementations and users have a
 surprising degree of influence over language
@@ -922,7 +944,19 @@ of the program with the first of a back-to-back pair of non-volatile
 relaxed atomic stores omitted is essentially a valid execution of the
 program with the store present.
 
-For more discussion along these lines, please see
+\paragraph{Loads From Adjacent Non-Volatile Atomic Objects}
+
+Suppose there are a pair of adjacent non-volatile atomic objects,
+and that these objects taken together are machine-word aligned
+and machine-word sized.
+Suppose further that the source code contains a pair of atomic
+loads, one from each of these objects, with the last of the pair
+being a relaxed load.
+Then the C++ implementation could choose to act as if the source code
+had instead contained a single atomic load from the combined
+pair of objects, with the memory-ordering semantics of the first load.
+
+For more discussion of potential optimizations, please see
 Section~\ref{sec:But What About Non-Volatile Atomics?}.
 
 \subsection{C++ Implementations}
@@ -962,7 +996,7 @@ a thread.
 In this case, the analysis stops at loads to objects that were last
 stored to by other threads (``rfe''), stores to objects where the next
 and/or previous stores in that object's modification order were executed
-by other threads (``coe'')), and loads from objects for which the value
+by other threads (``coe''), and loads from objects for which the value
 returned by a given load was overwritten by some other thread
 (``fre'').\footnote{
 	See Appendix~\ref{app:Inter-Process Communications} for more
@@ -1013,7 +1047,8 @@ behavior for the execution at hand of the corresponding code.
 The second row depicts the case where the implementation misclassifies
 the dependency as non-semantic, which will result in an incorrect
 execution.
-In this case, the proper course of action is to fix that bug.
+In this case, the proper course of action is to fix that bug, which is
+most likely a bug even in the absence of OOTA cycles.
 The third row depicts the case where the implementation misclassifies
 the dependency as semantic, thus missing a chance to optimize.
 The resulting execution is nevertheless correct, and is also temporal.
@@ -1062,7 +1097,7 @@ the binary output~\cite{ThomasSewell2013L4binaryVerification}.
 In C++ implementations using compilers, non-determinism of a given
 (post-optimization) code path is ``frozen'' into the resulting binary,
 which greatly simplifies analysis of semantic dependencies.
-Other c++ implementations (for example, those using interpreters or JITs)
+Other C++ implementations (for example, those using interpreters or JITs)
 might need to directly model any non-determinism.
 This latter situation might motivate additional C++ projects to ban
 non-determinism in favor of portable code.
@@ -1138,10 +1173,11 @@ sufficient warning message.
 However, there is an important special case for tools that are closely
 associated with a C++ implementation.
 Such tools can simply use that implementation's classification of
-dependencies as semantic on the one hand or non-semantic on the other,
-whether by working with that implementation's intermediate representations,
-binaries produced by that implementation, or by tracing the program's
-execution.
+dependencies as semantic on the one hand or non-semantic on the
+other, whether by working with that implementation's intermediate
+representations, binaries produced by that implementation, by tracing
+the program's execution, or, in the case of dynamic tools, by actually
+executing the program.
 While taking this approach sacrifices significant generality, it has the
 significant benefit of greatly reducing the cost of dependency analysis,
 potentially all the way down to zero.
@@ -1149,10 +1185,14 @@ potentially all the way down to zero.
 \section{How to Form an OOTA Cycle?}
 \label{sec:How to Form an OOTA Cycle?}
 
-Rather than look at how to prevent an implementation from forming
-an OOTA cycle, this section instead looks at how to form one.
-This will lead to the conclusion that a correct real-world C++
-implementation cannot form an OOTA cycle.
+Rather than look at how to prevent an implementation from forming an
+OOTA cycle, this section instead looks at how to form one.
+This will lead to the conclusion that a correct real-world C
+implementation cannot form OOTA cycles,\footnote{
+	Keep in mind that C does not have non-volatile atomic
+	operations.}
+and provide guidance on how to avoid OOTA cycles for non-volatile relaxed
+atomics in C++ implementations.
 
 Again, an OOTA cycle consists of loads from other threads' stores where
 a given store's address or value depends on the value returned by
@@ -1259,9 +1299,11 @@ Perhaps in the fullness of time, such examples will be considered to be
 simple optimizations rather than full-on OOTA cycles, but in the meantime
 C++ implementations might wish to prohibit such behavior.
 
-One way to accomplish this while still permitting optimization of code
-containing non-volatile atomics is to model non-volatile behavior on that
-of volatile atomics, but with these specific weakenings:
+Keeping in mind that some early C++ implementations treated non-volatile
+atomic operations as if they were volatile, one way to accomplish this
+while still permitting optimization of code containing non-volatile
+atomics is to model non-volatile behavior on that of volatile atomics,
+but with some specific weakenings, for example:
 
 \begin{itemize}
 \item	Loads that do not affect observable behavior can be omitted,
@@ -1275,6 +1317,18 @@ of volatile atomics, but with these specific weakenings:
 	be reordered to be adjacent to each other, the first of the pair
 	can be omitted.
 	This is termed \emph{store fusing}.
+\item	Suppose the source code contains a pair of non-volatile atomic
+	loads from objects that are adjacent in memory.
+	Suppose further that these loads can be reordered to be adjacent
+	to each other, and that the last of the two is a relaxed load.
+	Then this pair of loads can be replaced with a single load
+	from both objects using the first load's memory order.
+\item	Suppose the source code contains a pair of non-volatile atomic
+	stores to objects that are adjacent in memory.
+	Suppose further that these stores can be reordered to be adjacent
+	to each other, and that the first of the two is a relaxed load.
+	Then this pair of loads can be replaced with a single store
+	to both objects using the last store's memory order.
 \item	If an expression can be proven to always result in a constant,
 	that constant can be substituted for that expression.
 	Note well that combining this with specialization optimizations
@@ -1294,6 +1348,10 @@ In practice, this means that fusing can be used to unroll loops, but
 not to hoist atomic loads or stores out of loops than cannot be proven
 to be always finite.
 
+Note also that many users would consider it to be an extremely unfriendly
+act for the C++ implemenation to combine loads or stores to adjacent
+objects where each object \co{is_lock_free()}, but the combination is not.
+
 These optimizations are examples, not necessarily a full set.
 Additional optimizations might be added over time, but great care will
 of course be required.
@@ -1301,10 +1359,12 @@ of course be required.
 \subsection{Correct Implementations Cannot Form OOTA Cycles}
 \label{sec:Correct Implementations Cannot Form OOTA Cycles}
 
-This section has shown that an implementation that correctly
-handles the memory model, observable behavior, and the as-if rule
-cannot form OOTA cycles when running on real systems in this
+This section has shown that an implementation that correctly handles
+the memory model, observable behavior, and the as-if rule cannot form
+OOTA cycles from volatile atomics when running on real systems in this
 universe.
+It has also presented a substantial list of optimizations that avoid
+creation of OOTA cycles from non-volatile atomics.
 
 \section{Conclusion}
 \label{sec:Conclusion}
@@ -1312,11 +1372,9 @@ universe.
 This paper has added temporal reasoning to OOTA analysis of the C++
 memory model.
 This work shows that correct real-world C++ implementations are inherently
-incapable of producing OOTA cycles.
-
-Therefore, if your C++ implementation produces OOTA cycles, you have bugs.
-And you need to fix those bugs, regardless of whether they are in your
-C++ implementation, your hardware, or your alternate universe.
+incapable of producing OOTA cycles from volatile atomics.
+It has also presented a substantial list of optimizations that avoid
+OOTA cycles on non-volatile atomics.
 
 \clearpage
 \appendix
@@ -1367,8 +1425,8 @@ Our informal definition meets these challenges as follows:
 	non-determinism challenges are avoided by avoiding litmus tests
 	exhibiting non-deterministic behavior.
 	Again, note that most production C++ code uses compiler-based C++
-	implementations, which make their non-deterministic choices at
-	compile time.
+	implementations, which freeze their non-deterministic choices
+	into the binary at compile time.
 \item	Section~\ref{sec:Semantic Dependencies And Optimization}'s
 	optimization-choice challenges are met by using the C++
 	implementation's choice of semantic dependency based on the
@@ -2162,7 +2220,49 @@ Listing~\ref{lst:Atomic Loads Invented}
 would not require inventing a load, but instead merely inventing a use of
 the previously discarded value in \co{r0}.
 
-There are a number of possible reactions to this situation:
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-invent-int-load.litmus @@
+\caption{Inventing Non-Boolean Atomic Loads}
+\label{lst:Unused Inventing Non-Boolean Atomic Loads}
+\end{listing}
+
+This is not restricted to booleans, as can be seen in
+Listing~\ref{lst:Unused Inventing Non-Boolean Atomic Loads}.
+This example is more straightforward in that it does not make quite so
+creative use of the multiple values loaded.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/inc.litmus @@
+\caption{Only Atomic Increment}
+\label{lst:Only Atomic Increment}
+\end{listing}
+
+But suppose that we drop the single-thread-analysis constraint for
+the moment, and suppose that the C++ implementation is able to prove
+that the only modification of a given atomic variable is to atomically
+increment it, as is the case for \co{y} in
+Listing~\ref{lst:Only Atomic Increment}.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/inc-range.litmus @@
+\caption{Only Atomic Increment, Optimized}
+\label{lst:Only Atomic Increment, Optimized}
+\end{listing}
+
+Is a C++ implementation within its rights to behave as if the code
+shown in
+Listing~\ref{lst:Only Atomic Increment}
+was instead as shown in
+Listing~\ref{lst:Only Atomic Increment, Optimized}?
+One argument in favor is that the value of \co{y} must have
+passed through the value 42 in the case where \co{r0} and \co{r1}
+bracket that value.
+Arguments against might cite the added overhead of the invented load
+in Listing~\ref{lst:Only Atomic Increment, Optimized}, or that the
+possibility that the check for the value 42 is intended for statistical
+sampling.
+
+There are a number of possible reactions to these situations:
 
 \begin{enumerate}
 \item	Listing~\ref{lst:No Invented Atomic Loads}
@@ -2180,14 +2280,13 @@ There are a number of possible reactions to this situation:
 	non-volatile relaxed atomic loads from the same object should
 	be permitted only if the two loads could be reordered to be
 	adjacent to each other.
-\item	Any time an impolementation might be tempted to invent uses from
-	values from non-volatile relaxed atomic loads, the loads should
-	instead be fused into a single load.
+\item	Any time an implementation might be tempted to invent uses from
+	values from non-volatile relaxed atomic loads from the same
+	object, the loads should instead be fused into a single load.
 	This reaction might be attractive to those who carefully consider
 	the pointlessness of keeping two loads that return the same value
-	on the one hand or the cache-miss overhead involved should two
-	closely spaced loads from the same object return different values
-	on the other.
+	on the one hand or the cache-miss overhead incurred when closely
+	spaced loads return different values on the other.
 \item	What other interesting situations might come to light?
 \end{enumerate}
 
@@ -2279,10 +2378,10 @@ This section attempts to apply the lessons
 of Appendix~\ref{sec:Unreachability-Based Undefined Behavior} to
 Goldblatt's unreachability-UB example.
 
-Inserting \co{std::observable()} at line~12
-as shown in Listing~\ref{lst:Alignment-Based Undefined Behavior Fix}
-avoids confusing the compiler into assuming that the value of \co{local}
-must necessarily be zero.
+The \co{std::observable()} at line~12 of
+Listing~\ref{lst:Alignment-Based Undefined Behavior Fix}
+avoids confusing the compiler, instead forcing it to assume that the
+value of \co{local} might not be zero.
 
 \begin{listing}[tbp]
 \begin{verbatim}
@@ -2307,7 +2406,7 @@ must necessarily be zero.
 \label{lst:Unreachability-Based Undefined Behavior Fix}
 \end{listing}
 
-By the same reasoning, Goldblatt's \co{misbhave} example that
+By the same reasoning, Goldblatt's \co{misbehave} example that
 also involves unreachability can also be addressed through insertion
 of the proposed \co{std::observable()}.
 
@@ -2326,7 +2425,7 @@ and state, and the result of that logic expression is \co{true} if that
 program has a bug, for example, if it is possible for that C program to
 trigger an assertion or execute an out-of-bounds array reference.
 The tool then hands this expression to a SAT solver, and if this solver
-finds a satisfying set of values, the tool uses that set to provide
+finds a satisfying set of values, the tool uses those values provide
 the execution path to the bug.
 
 \begin{listing}[tbp]
@@ -2397,9 +2496,17 @@ This indicates that there are different values of \co{x} and \co{limit}
 that yield different values of \co{y}, that is, that there can be
 a semantic dependency.
 
+\begin{listing}[tbp]
+@@ DisplayLitmus cbmc/sdep-quadratic.c @@
+\caption{Full Code for cbmc-Based Evaluation of sdep}
+\label{lst:Full Code for cbmc-Based Evaluation of sdep}
+\end{listing}
+
 However, $x^2 + 2x + 2$ has a minimum value of 1 at $x=-1$, so
 forcing \co{limit} to (say) zero should eliminate this static
-dependency:
+dependency:\footnote{
+	See Listing~\ref{lst:Full Code for cbmc-Based Evaluation of sdep}
+	for the full \path{cbmc/sdep-quadratic.c} program.}
 
 \begin{quote}
 	\scriptsize
@@ -2487,6 +2594,8 @@ Thread~1 came first in coe order, followed by those of Threads~2 and ~3.
 There is thus a coe link from Thread~1's store to every other store,
 from Thread~0's store to those of Threads~2 and~3, and from Thread~2's
 store to that of Thread~3.
+This situation can occur due to the initial placement and subsequent
+movement of cache lines.
 
 Thread~3's load reads the value stored by Thread~0's store, so there is
 an rfe link from that store to that load.  There is also an fre link from
@@ -2564,7 +2673,7 @@ Note well that most of the data falls into negative time, that is to say,
 the last load of the old value executes about 50 timestamp periods (about
 20~nanoseconds) \emph{after} the store that overwrote that same old value.
 That is, fre links can and do go backwards in time.
-This corresponds to the fre link between Thread~3 an Thread~2 depicted in
+This corresponds to the fre link between Thread~3 and Thread~2 depicted in
 Figure~\ref{fig:IPC Diagram for coe, fre, and rfe}.
 
 \begin{figure}[tb]
@@ -2596,7 +2705,7 @@ Figure~\ref{fig:Propagation Delay and Temporal Properties of coe, fre, and rfe}
 shows how the temporal properties of coe, fre, and rfe are explained
 by propagation delay.
 In the case of coe, the two stores take time to propagate across the
-system, and their ordering can and is decided after the fact.
+system, and their ordering can be and often is decided after the fact.
 In the case of fre, the store again takes time to propagate across
 the system, and so a load might execute later in global time than
 did the store, but not late enough to return that store's value.
@@ -2699,9 +2808,12 @@ This choice prevents a class of bugs, and also allows the kernel to make
 reliable use of the uppermost bit of variables of type \co{char}.
 It also affects the definition of ``semantic dependency'' by changing
 the arithmetic proporties of this type.
-In theory, the standard could specify the signedness of \co{char},
-but presumably the variety of existing practice in the 1980s prevented
-this from being done.
+In theory, the standard could specify the signedness of \co{char}, but the
+variety of existing practice in the 1980s prevented this.
+Plus machine instructions were much more expensive back then, so the
+signedness of \co{char} was much more of a performance concern than
+it is toda than
+it is todayy.
 
 The \co{-mno-sse} prevents GCC from making use of the SSE hardware.
 This is done for performance reasons, as it avoids the overhead of
@@ -2881,6 +2993,7 @@ not in any way constitute agreement with anything in this paper.
 % Will Deacon: ARM hardware, C++, and OOTA.
 
 % @@@ TODO:
+% Create nice bell graph for coe, or at least try!
 % Construct interleaved OOTA examples (see sheets of paper).
 % Check cmbc on nondeterministic i++.
 % Use LKMM as check for dependencies?
