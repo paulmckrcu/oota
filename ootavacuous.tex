@@ -1369,12 +1369,19 @@ creation of OOTA cycles from non-volatile atomics.
 \section{Conclusion}
 \label{sec:Conclusion}
 
-This paper has added temporal reasoning to OOTA analysis of the C++
-memory model.
-This work shows that correct real-world C++ implementations are inherently
-incapable of producing OOTA cycles from volatile atomics.
-It has also presented a substantial list of optimizations that avoid
-OOTA cycles on non-volatile atomics.
+This paper has refined the definition of ``OOTA cycle'' from
+\co{acyclic(sdep; rf)} to \co{acyclic(sdep; rfe)}, which enables the
+application of temporal reasoning to OOTA analysis of the C++ memory
+model.
+This reasoning shows that correct real-world C++ implementations relying
+on single-threaded analyses are inherently incapable of producing OOTA
+cycles from UB-free programs using volatile atomics.
+
+C++ implementations that additionally refrain from inventing atomic loads
+and that also ensure that each atomic load that is executed corresponds
+to a specific load in the abstract machine are incapable of producing
+OOTA cycles from UB-free programs using non-volatile as well as volatile
+atomics.
 
 \clearpage
 \appendix
