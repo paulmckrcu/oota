@@ -1308,14 +1308,14 @@ but with some specific weakenings, for example:
 \begin{itemize}
 \item	Loads that do not affect observable behavior can be omitted,
 	along with any computations based on their return values.
-\item	Given a pair of relaxed loads from the same object that can
-	be reordered to be adjacent to each other, one of the pair can
-	be omitted with uses of the omitted load instead using the value
-	returned by the surviving load.
+\item	Given a pair of loads from the same object that can be
+	reordered to be adjacent to each other, if one of the pair is a
+	relaxed load, it can be omitted, with uses of the omitted load
+	instead using the value returned by the surviving load.
 	This is termed \emph{load fusing}.
-\item	Given a pair of relaxed stores to the same object that can
-	be reordered to be adjacent to each other, the first of the pair
-	can be omitted.
+\item	Given a pair of stores to the same object that can be reordered
+	to be adjacent to each other, if the first of the pair is a
+	relaxed store, it can be omitted.
 	This is termed \emph{store fusing}.
 \item	Suppose the source code contains a pair of non-volatile atomic
 	loads from objects that are adjacent in memory.
@@ -1323,12 +1323,14 @@ but with some specific weakenings, for example:
 	to each other, and that the last of the two is a relaxed load.
 	Then this pair of loads can be replaced with a single load
 	from both objects using the first load's memory order.
+	This is termed \emph{load consolidation}.
 \item	Suppose the source code contains a pair of non-volatile atomic
 	stores to objects that are adjacent in memory.
 	Suppose further that these stores can be reordered to be adjacent
 	to each other, and that the first of the two is a relaxed load.
 	Then this pair of loads can be replaced with a single store
 	to both objects using the last store's memory order.
+	This is termed \emph{store consolidation}.
 \item	If an expression can be proven to always result in a constant,
 	that constant can be substituted for that expression.
 	Note well that combining this with specialization optimizations
