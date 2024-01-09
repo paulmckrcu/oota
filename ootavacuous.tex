@@ -71,17 +71,11 @@ Audience: SG1
 	OOTA behavior, which permits bringing to bear constraints from
 	long-standing laws of physics and on hardware systems.
 	These constraints prevent OOTA cycles containing only volatile
-	atomics from occurring in correctly constructed C++ programs
-	running on correctly constructed C++ implementations in our
-	current universe.
+	atomics from occurring in UB-free executions of C++ programs
+	running on correctly constructed C++ single-thread analysis
+	implementations in our current universe.
 	Given current optimizations, these constraints also prevent
 	OOTA cycles involving non-volatile atomics.
-
-	In this, OOTA behaviors are similar to the issues surrounding
-	undecidability and its real-world counterpart, high complexity.
-	So similar, in fact, that not only the same strategies apply
-	to OOTA, but also the same \emph{code} applies, both for C++
-	implementations and for associated tooling.
 \end{abstract}
 
 \pagebreak
@@ -1377,13 +1371,13 @@ application of temporal reasoning to OOTA analysis of the C++ memory
 model.
 This reasoning shows that correct real-world C++ implementations relying
 on single-threaded analyses are inherently incapable of producing OOTA
-cycles from UB-free programs using volatile atomics.
+cycles in UB-free executions of programs using volatile atomics.
 
 C++ implementations that additionally refrain from inventing atomic loads
 and that also ensure that each atomic load that is executed corresponds
 to a specific load in the abstract machine are incapable of producing
-OOTA cycles from UB-free programs using non-volatile as well as volatile
-atomics.
+OOTA cycles in UB-free executions of programs using non-volatile as well
+as volatile atomics.
 
 \clearpage
 \appendix
