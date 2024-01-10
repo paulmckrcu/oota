@@ -2209,7 +2209,7 @@ If the implementation is further permitted to make a runtime choice
 between the two values loaded from \co{x}, it could always choose the
 one that was equal to the value loaded from \co{y}, as shown by the
 \co{if} statement on line~13.
-This would mean that the store to \co{z} was always the constant one,
+This would mean that the store to \co{z} was always the constant 1,
 which would permit the store to be ordered before the load from \co{y},
 as shown in lines~14 and~15.
 Doing so permits the OOTA-like outcome of \co{r3 == r4 == 1}.
@@ -2389,6 +2389,56 @@ dependencies as well as the need for an improved definition of ``semantic
 dependency''.
 We propose expanding the traditional definition to include dependencies
 extending from groups of loads to a single store.
+
+\subsubsection{OOTA From Undefined-Behavior Optimizations}
+\label{app:OOTA From Undefined-Behavior Optimizations}
+
+Many C++ implementations carry out optimizations based on the assumption
+that UB cannot happen, and these optimizations can result in OOTA cycles,
+with a simple example shown in
+Listing~\ref{lst:OOTA Due To Divide-By-Zero UB}.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-div-ub.litmus @@
+\caption{OOTA Due To Divide-By-Zero UB}
+\label{lst:OOTA Due To Divide-By-Zero UB}
+\end{listing}
+
+On line~14 of this listing, the value of \co{r2} must be either zero
+or one due to the comparison on line~13.
+If it is the value one, then there is a divide-by-zero error, which
+enables the C++ implementation to assume that the value of \co{r1} is
+always zero.
+This in turn allows the implementation to behave as if the expression
+stored to \co{y} on line~14 was the constant 1, at which point there
+is no semantic dependency from the load from \co{x} on line~13 to the
+store to \co{y} on line~14.
+
+The implementation is then within its rights to act as if lines~13 and~14
+were interchanged.
+At which point, the order of execution could be as follows:
+
+\begin{enumerate}
+\item	Line~14 stores the constant 1 to \co{y}.
+\item	Line~8 loads the constant 1 from \co{y}, setting \co{r1} to 1.
+\item	Line~9 stores the constant 1 to \co{x}.
+\item	Line~8 loads the constant 1 from \co{x}, setting \co{r2} to 1.
+\end{enumerate}
+
+Please note that the OOTA-like cycle called out in the \co{exists}
+clause can happen even though the program never actually executes any
+code that would have resulted in division-by-zero UB.
+It is tempting to consider using the techniques described in
+Appendix~\ref{app:Aside on Undefined Behavior}
+that prevent back-propagation of UB, but these are ineffective in this
+case because the C++ implementation can detect and exploit UB when
+considering line~14 in isolation.
+Once the constant 1 is substituted for line~14's expression, the
+hardware is free to reorder lines~13 and~14 even if a compiler-based
+C++ implementation refrains from doing so.
+
+Therefore, this paper focuses on UB-free programs, rare though these
+beasts might be among large-scale C++ programs running in production.
 
 \clearpage
 
