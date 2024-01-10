@@ -64,18 +64,20 @@ Audience: SG1
 	Attempts to create memory models that rule out OOTA behaviors
 	have either been non-executable, complex, or unloved by C++
 	implementers, and this paper summarizes some of the challenges.
-	But at the same time, there are no known instances of OOTA
-	behavior in real C++ implementations.
+	But at the same time, we know of no instances of OOTA behavior
+	in real C++ implementations.
 
-	This paper refactors the commonly used condition for detecting
+	This paper refactors the commonly used condition for classifying
 	OOTA behavior, which permits bringing to bear constraints from
-	long-standing laws of physics and on hardware systems.
-	These constraints prevent OOTA cycles containing only volatile
-	atomics from occurring in UB-free executions of C++ programs
-	running on correctly constructed C++ single-thread analysis
-	implementations in our current universe.
-	Given current optimizations, these constraints also prevent
-	OOTA cycles involving non-volatile atomics.
+	long-standing laws of physics and from hardware systems.
+	We present informal arguments that these constraints prevent
+	OOTA cycles containing only volatile atomics from occurring
+	in UB-free C++ programs running on correctly constructed C++
+	implementations that are restricted to single-threaded analysis
+	in our current universe.
+	We further conjecture that, given current optimizations, these
+	constraints also prevent OOTA cycles involving non-volatile
+	atomics.
 \end{abstract}
 
 \pagebreak
@@ -1373,12 +1375,12 @@ application the laws of physics (and thus of temporal reasoning) to OOTA
 analysis of the C++ memory model.
 This reasoning shows that correct real-world C++ implementations relying
 on single-threaded analyses are inherently incapable of producing OOTA
-cycles in UB-free executions of programs using volatile atomics.
+cycles in UB-free programs using volatile atomics.
 
 C++ implementations that additionally refrain from inventing atomic loads
 and that also ensure that each atomic load that is executed corresponds
 to a specific load in the abstract machine are incapable of producing
-OOTA cycles in UB-free executions of programs using non-volatile as well
+OOTA cycles in UB-free programs using non-volatile as well
 as volatile atomics.
 
 This paper also uncovers some shortcomings in typical definitions of
@@ -2436,6 +2438,10 @@ considering line~14 in isolation.
 Once the constant 1 is substituted for line~14's expression, the
 hardware is free to reorder lines~13 and~14 even if a compiler-based
 C++ implementation refrains from doing so.
+Note that this OOTA-like cycle can appear even if all of the atomic
+operations in
+Listing~\ref{lst:OOTA Due To Divide-By-Zero UB}
+were converted to be volatile.
 
 Therefore, this paper focuses on UB-free programs, rare though these
 beasts might be among large-scale C++ programs running in production.
