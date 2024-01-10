@@ -290,6 +290,8 @@ dependency from either \co{y} or \co{z} to \co{x}, but rather a semantic
 dependency from the combination of \co{y} \emph{and} \co{z} to \co{x}.
 This means that precise definitions of sdep cannot always rely on
 single-variable perturbations.
+See Appendix~\ref{app:Non-Trivial Semantic Dependencies}
+for examples and additional discussion.
 
 Consider also:
 
@@ -1345,7 +1347,7 @@ not to hoist atomic loads or stores out of loops than cannot be proven
 to be always finite.
 
 Note also that many users would consider it to be an extremely unfriendly
-act for the C++ implemenation to combine loads or stores to adjacent
+act for a C++ implementation to combine loads or stores to adjacent
 objects where each object \co{is_lock_free()}, but the combination is not.
 
 These optimizations are examples, not necessarily a full set.
@@ -1357,18 +1359,18 @@ of course be required.
 
 This section has shown that an implementation that correctly handles
 the memory model, observable behavior, and the as-if rule cannot form
-OOTA cycles from volatile atomics when running on real systems in this
-universe.
-It has also presented a substantial list of optimizations that avoid
-creation of OOTA cycles from non-volatile atomics.
+OOTA cycles from volatile atomics when running UB-free programs on real
+systems in this universe.
+It has also presented a substantial list of optimizations that can be
+applied to non-volatile atomics without the risk of creating OOTA cycles.
 
 \section{Conclusion}
 \label{sec:Conclusion}
 
 This paper has refined the definition of ``OOTA cycle'' from
 \co{acyclic(sdep; rf)} to \co{acyclic(sdep; rfe)}, which enables the
-application of temporal reasoning to OOTA analysis of the C++ memory
-model.
+application the laws of physics (and thus of temporal reasoning) to OOTA
+analysis of the C++ memory model.
 This reasoning shows that correct real-world C++ implementations relying
 on single-threaded analyses are inherently incapable of producing OOTA
 cycles in UB-free executions of programs using volatile atomics.
@@ -1378,6 +1380,13 @@ and that also ensure that each atomic load that is executed corresponds
 to a specific load in the abstract machine are incapable of producing
 OOTA cycles in UB-free executions of programs using non-volatile as well
 as volatile atomics.
+
+This paper also uncovers some shortcomings in typical definitions of
+``semantic dependency'', pointing out examples where a single semantic
+dependency extends from multiple loads to a store, but not from any one
+of those loads to that same store.
+We therefore propose that the definition of semantic dependency be
+extended accordingly.
 
 \clearpage
 \appendix
@@ -1403,11 +1412,16 @@ otherwise gave us pause.
 \label{app:Informal Definition of Semantic Dependency}
 
 The manual analysis uses the informal rule that a semantic dependency
-exists between a set of relaxed atomic loads and a store on any execution
-where different values loaded would change the address stored to, the
-value stored, or the whether or not that store would be executed in
-the first place, with the proviso that stores of the same value to the
-same address having the same ordering properties are fungible.
+exists between a set of relaxed atomic loads\footnote{
+	Please see
+	Appendix~\ref{app:Non-Trivial Semantic Dependencies}
+	for examples showing why this is a set of loads rather than a
+	single load.}
+and a store on any execution where different values loaded would change
+the address stored to, the value stored, or the whether or not that store
+would be executed in the first place, with the proviso that stores of
+the same value to the same address having the same ordering properties
+are fungible.
 
 Producing a precise formal statement of this rule turns out to be quite
 challenging, but as noted earlier, there is considerable work along
@@ -2296,6 +2310,85 @@ There are a number of possible reactions to these situations:
 	attempting to do statistical sampling.
 \item	What other interesting situations might come to light?
 \end{enumerate}
+
+\subsubsection{Non-Trivial Semantic Dependencies}
+\label{app:Non-Trivial Semantic Dependencies}
+
+Most of the examples in this paper involve simple semantic dependencies
+connecting a single load to a single store.
+One exception appears in
+Appendix~\ref{app:Non-LB Litmus Tests},
+but this section will present a more difficult example.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-mult-0.litmus @@
+\caption{OOTA Multiplication Example, Initial Value Zero}
+\label{lst:OOTA Multiplication Example, Initial Value Zero}
+\end{listing}
+
+Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
+shows an example that builds on the multiplication-by-zero
+discussion in
+Section~\ref{sec:Semantic Dependencies Are Per Execution}.
+Line~11 of \co{P0()} stores to \co{z} the product of the values loaded from
+\co{x} and \co{y} on lines~9 and~10, respectively.
+Similarly, lines~16 and~17 store to \co{x} and \co{y}, respectively,
+the value that line~15 loads from \co{z}.
+Because all three variables are initialized to zero, changes to the value
+loaded from \co{x} cannot affect the value stored by line~11 to \co{z}
+unless there is also a change loaded from \co{y} and vice versa.
+However, if both \co{x} and \co{y} change, the value stored to \co{z}
+will change.
+
+Therefore, as noted in
+Section~\ref{sec:Semantic Dependencies Are Per Execution},
+there is no semantic dependency from the load from \co{x} to the
+store to \co{z}, nor is there a semantic dependency from the load
+from \co{y} to the store to \co{z}.
+However, there \emph{is} a semantic dependency from the \emph{combination}
+of the loads from \co{x} and \co{y} to the store to \co{z}.
+
+This situation poses a challenge to current work on semantic dependencies,
+which typically restricts such dependencies to a single load and store.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-mult-1.litmus @@
+\caption{OOTA Multiplication Example, Initial Value 1}
+\label{lst:OOTA Multiplication Example, Initial Value of One}
+\end{listing}
+
+In contrast, consider
+Listing~\ref{lst:OOTA Multiplication Example, Initial Value of One},
+which differs from
+Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
+only in the initial values (1 instead of 0) and the \co{exists}
+clause (0 instead of 1).
+
+Because the values loaded from \co{x} and \co{y} on lines~9 and~10
+are non-zero, changes to either \co{x} or \co{y} will affect the
+value stored to \co{z} by line~11.
+There is therefore a separate semantic dependency from the load from
+\co{x} to the store to \co{z} and from the load from \co{y} to the store
+to \co{z}, which matches typical definitions of semantic dependency.
+Yet
+Listing~\ref{lst:OOTA Multiplication Example, Initial Value of One}
+and
+Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
+can be thought of as being merely two different executions of the same
+program.
+
+One might ask why semantic dependencies can be non-trivial when hardware
+address, control, and data dependencies are much more straightforward.
+Answers include:
+(1)~Respecting dependencies even when they reduce to a constant,
+(2)~Less-aggressive optimizations, and
+(3)~Lack of undefined behavior.
+
+This situation further underscores the per-execution nature of semantic
+dependencies as well as the need for an improved definition of ``semantic
+dependency''.
+We propose expanding the traditional definition to include dependencies
+extending from groups of loads to a single store.
 
 \clearpage
 
