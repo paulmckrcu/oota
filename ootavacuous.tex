@@ -1372,6 +1372,54 @@ These optimizations are examples, not necessarily a full set.
 Additional optimizations might be added over time, but great care will
 of course be required.
 
+\subsection{But What About Multi-Thread Optimizations?}
+\label{sec:But What About Multi-Thread Optimizations?}
+
+Although this paper mostly ignores multi-threaded implementations,
+JMM Causality Test Cases 1, 8, 9, and 9a discuss inter-thread
+analysis or constraints on thread scheduling.
+This topic is therefore worth a short discussion.
+
+In order to set context, it is important to note that an oracular C++
+implementation could in theory read a program and its input, and then
+perform a sequence of observable behaviors consistent with that program
+running on that input without actually executing that program's code.
+This admittedly extreme example shows that it is not unreasonable to
+impose some real-world constraints on a real C++ implementation, and
+limiting analysis to a single thread is one of the constraints that we
+have chosen.
+
+At the same time, it is worth calling out some optimizations based on
+multi-threaded analysis that can be introduced without risk of
+introducing OOTA cycles.
+
+First, given a variable that the implementation can prove is always equal
+to some constant, the implementation may act as if the program's uses of
+that variable's value instead used that constant.
+
+Second, given a pair of variables that the implementation can prove always
+have a given algebraic relation to each other, the implementation can
+act as if that program's uses of one of the variable's values instead
+used the corresponding function of the other variable's value.
+However, if the values of those variables are subject to change, there
+must be some form of synchronization in effect to prevent accesses
+to those variables' values during times when a given modification has
+changed the value of one of the variables but not yet that of the other.
+If there is no such synchronization, then this optimization cannot
+be applied.
+
+Third, given that the implementation can prove that one thread always
+terminates before another thread starts, and if one or another of the
+threads does nothing related to thread identity, the implementation
+may act as if these two threads had been fused into a single thread.
+
+Fourth and finally, if the implementation can prove that a given thread
+never executes, the implementation may act as if code specific to that
+thread had been omitted from the program.
+
+Although these last two examples might appear to be a bit utopian,
+the first two provide ample room for multi-threaded analysis.
+
 \subsection{Correct Implementations Cannot Form OOTA Cycles}
 \label{sec:Correct Implementations Cannot Form OOTA Cycles}
 
@@ -1505,7 +1553,8 @@ current decidedly non-mathematical form.
 \label{app:Litmus Tests from “Causality Test Cases"}
 
 These tests might be two decades old, but they are still quite
-relevant.
+relevant.\footnote{
+	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
 
 \subsubsection{Causality Test Case 1}
 \label{app:Causality Test Case 1}
