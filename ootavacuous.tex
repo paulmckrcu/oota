@@ -364,6 +364,18 @@ defined on a per-execution basis}.% \footnote{
 % 	Thanks to Alan Stern for the examples in this section and
 % 	in the preceding one.}
 
+But what if you really need a definition of semantic dependency
+for a given code fragment that covers all executions?
+One approach is to take the union of semantic dependencies across
+all executions, which might be useful when carrying out static analysis.
+On the other hand, many C++ implementations carry out specialization
+optimizations, which consider groups of executions.
+For example, an implementation might special-case a \co{NULL} pointer when
+considering several inline functions that take early exits in that case.
+Tools working with such implementations might therefore choose to focus
+on executions corresponding to a given specialization when generating
+semantic dependencies for code corresponding to that specialization.
+
 \subsubsection{Semantic Dependencies Depend on Context}
 \label{sec:Semantic Dependencies Depend on Context}
 
