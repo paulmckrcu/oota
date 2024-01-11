@@ -1354,7 +1354,8 @@ but with some specific weakenings, for example:
 	and control dependencies order only later stores.\footnote{
 		Yes, yes, the C++ standard does not mention address or
 		data dependencies, and mandates control dependencies
-		only indirectly.
+		only indirectly (via the prohibition against introducing
+		data races).
 		Such dependencies nevertheless still exist.}
 \end{itemize}
 
@@ -1372,8 +1373,8 @@ These optimizations are examples, not necessarily a full set.
 Additional optimizations might be added over time, but great care will
 of course be required.
 
-\subsection{But What About Multi-Thread Optimizations?}
-\label{sec:But What About Multi-Thread Optimizations?}
+\subsection{But What About Multi-Threaded Optimizations?}
+\label{sec:But What About Multi-Threaded Optimizations?}
 
 Although this paper mostly ignores multi-threaded implementations,
 JMM Causality Test Cases 1, 8, 9, and 9a discuss inter-thread
