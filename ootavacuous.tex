@@ -2416,17 +2416,39 @@ from \co{y} to the store to \co{z}.
 However, there \emph{is} a semantic dependency from the \emph{combination}
 of the loads from \co{x} and \co{y} to the store to \co{z}.
 
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-mult-0-cond.litmus @@
+\caption{OOTA Conditional Multiplication Example, Initial Value Zero}
+\label{lst:OOTA Conditional Multiplication Example, Initial Value Zero}
+\end{listing}
+
+For further evidence that there is no semantic dependency from \co{y}
+to \co{z} when \co{x} is zero, see the equivalent\footnote{
+	But equivalent only because the atomics are all non-volatile!}
+program shown in
+Listing~\ref{lst:OOTA Conditional Multiplication Example, Initial Value Zero}.
+Here, there is not even a load from \co{y} when \co{x} is zero, so there
+cannot possibly be a semantic dependency involving this non-existent load.
+A similar transformation would load \co{x} only if \co{y} was non-zero,
+emphasizing the lack of any semantic dependency between \co{x} and \co{y}.
+
+In both
+Listings~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
+and~\ref{lst:OOTA Conditional Multiplication Example, Initial Value Zero},
+an OOTA cycle would need to affect both the \co{x} and the \co{y} branches
+of this compound semantic dependency.
+
 This situation poses a challenge to current work on semantic dependencies,
 which typically restricts such dependencies to a single load and store.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-mult-1.litmus @@
 \caption{OOTA Multiplication Example, Initial Value 1}
-\label{lst:OOTA Multiplication Example, Initial Value of One}
+\label{lst:OOTA Multiplication Example, Initial Value 1}
 \end{listing}
 
 In contrast, consider
-Listing~\ref{lst:OOTA Multiplication Example, Initial Value of One},
+Listing~\ref{lst:OOTA Multiplication Example, Initial Value 1},
 which differs from
 Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
 only in the initial values (1 instead of 0) and the \co{exists}
@@ -2438,12 +2460,12 @@ value stored to \co{z} by line~11.
 There is therefore a separate semantic dependency from the load from
 \co{x} to the store to \co{z} and from the load from \co{y} to the store
 to \co{z}, which matches typical definitions of semantic dependency.
+Further
 Yet
-Listing~\ref{lst:OOTA Multiplication Example, Initial Value of One}
-and
 Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
-can be thought of as being merely two different executions of the same
-program.
+and
+Listing~\ref{lst:OOTA Multiplication Example, Initial Value 1}
+are merely two different executions of the same program.
 
 Much more elaborate examples can be constructed, for example,
 involving sums of products of values loaded.
