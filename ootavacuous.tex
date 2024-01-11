@@ -41,7 +41,7 @@
 \floatname{listing}{Listing}
 
 \begin{document}
-\title{D3064R0: Bringing the Laws of Physics and Computer-System Constraints to Bear on the OOTA Problem}
+\title{D3064R0: Bringing the Laws of Physics, Computer-System Constraints, and Compilers to Bear on the OOTA Problem}
 
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
@@ -1485,10 +1485,9 @@ exists between a set of relaxed atomic loads\footnote{
 	for examples showing why this is a set of loads rather than a
 	single load.}
 and a store on any execution where different values loaded would change
-the address stored to, the value stored, or the whether or not that store
-would be executed in the first place, with the proviso that stores of
-the same value to the same address having the same ordering properties
-are fungible.
+the address stored to, the value stored, or the number of times that
+store would be executed, with the proviso that stores of the same value
+to the same address having the same ordering properties are fungible.
 
 Producing a precise formal statement of this rule turns out to be quite
 challenging, but as noted earlier, there is considerable work along
