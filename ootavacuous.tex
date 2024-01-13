@@ -2406,14 +2406,19 @@ Line~11 of \co{P0()} stores to \co{z} the product of the values loaded from
 \co{x} and \co{y} on lines~9 and~10, respectively.
 Similarly, lines~16 and~17 store to \co{x} and \co{y}, respectively,
 the value that line~15 loads from \co{z}.
-Because all three variables are initialized to zero, changes to the value
-loaded from \co{x} cannot affect the value stored by line~11 to \co{z}
-unless there is also a change loaded from \co{y} and vice versa.
-However, if both \co{x} and \co{y} change, the value stored to \co{z}
-will change.
+Because all three variables are initialized to zero, and because loads
+can be ordered before any store, there is an execution in which all
+three loads return the value zero, in which case all three stores will
+of course store the value zero.
+In any related execution where the value loaded from \co{y} remains zero,
+non-zero values loaded from \co{x} cannot affect the value stored by
+line~11 to \co{z}.
+Only executions in which differ in the values loaded from both \co{x} and
+\co{y} can cause the value stored to \co{z} to change to a non-zero value.
 
 Therefore, as noted in
 Section~\ref{sec:Semantic Dependencies Are Per Execution},
+in an execution where the loads from both \co{x} and \co{y} return zero,
 there is no semantic dependency from the load from \co{x} to the
 store to \co{z}, nor is there a semantic dependency from the load
 from \co{y} to the store to \co{z}.
@@ -2427,20 +2432,24 @@ of the loads from \co{x} and \co{y} to the store to \co{z}.
 \end{listing}
 
 For further evidence that there is no semantic dependency from \co{y}
-to \co{z} when \co{x} is zero, see the equivalent\footnote{
+to \co{z} in executions where the load from \co{x} is zero, see the
+equivalent\footnote{
 	But equivalent only because the atomics are all non-volatile!}
 program shown in
 Listing~\ref{lst:OOTA Conditional Multiplication Example, Initial Value Zero}.
-Here, there is not even a load from \co{y} when \co{x} is zero, so there
-cannot possibly be a semantic dependency involving this non-existent load.
-A similar transformation would load \co{x} only if \co{y} was non-zero,
-emphasizing the lack of any semantic dependency between \co{x} and \co{y}.
+Here, there is not even a load from \co{y} in executions where the
+load from \co{x} returns zero, so there cannot possibly be a semantic
+dependency involving this non-existent load.
+A similar transformation would load \co{x} only in executions where the
+load from \co{y} returned non-zero, emphasizing the lack of any semantic
+dependency between \co{x} and \co{z}.
 
 In both
 Listings~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
 and~\ref{lst:OOTA Conditional Multiplication Example, Initial Value Zero},
-an OOTA cycle would need to affect both the \co{x} and the \co{y} branches
-of this compound semantic dependency.
+an OOTA cycle (such as the one indicated by their \co{exists} clauses)
+would need to affect both the \co{x} and the \co{y} components of this
+compound semantic dependency.
 However, we again conjecture that tools designed to find OOTA cycles could
 satisfy themselves with having found either of the two resulting cycles.
 
@@ -2460,13 +2469,13 @@ Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
 only in the initial values (1 instead of 0) and the \co{exists}
 clause (0 instead of 1).
 
-Because the values loaded from \co{x} and \co{y} on lines~9 and~10
-are non-zero, changes to either \co{x} or \co{y} will affect the
+Starting with the intuitive execution where the values loaded from \co{x}
+and \co{y} on lines~9 and~10 are non-zero, executions that differ only
+in the value loaded from either \co{x} or \co{y} will still affect the
 value stored to \co{z} by line~11.
 There is therefore a separate semantic dependency from the load from
 \co{x} to the store to \co{z} and from the load from \co{y} to the store
 to \co{z}, which matches typical definitions of semantic dependency.
-Further
 Yet
 Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
 and
