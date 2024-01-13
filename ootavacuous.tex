@@ -2413,8 +2413,9 @@ of course store the value zero.
 In any related execution where the value loaded from \co{y} remains zero,
 non-zero values loaded from \co{x} cannot affect the value stored by
 line~11 to \co{z}.
-Only executions in which differ in the values loaded from both \co{x} and
-\co{y} can cause the value stored to \co{z} to change to a non-zero value.
+Only executions which load different (that is, non-zero) values from
+both \co{x} and \co{y} can cause the value stored to \co{z} to change
+from zero to a non-zero value.
 
 Therefore, as noted in
 Section~\ref{sec:Semantic Dependencies Are Per Execution},
@@ -2424,6 +2425,8 @@ store to \co{z}, nor is there a semantic dependency from the load
 from \co{y} to the store to \co{z}.
 However, there \emph{is} a semantic dependency from the \emph{combination}
 of the loads from \co{x} and \co{y} to the store to \co{z}.
+For example, the (forbidden) execution that satisfies the \co{exists}
+clause, which would be an OOTA cycle.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-mult-0-cond.litmus @@
@@ -2441,8 +2444,8 @@ Here, there is not even a load from \co{y} in executions where the
 load from \co{x} returns zero, so there cannot possibly be a semantic
 dependency involving this non-existent load.
 A similar transformation would load \co{x} only in executions where the
-load from \co{y} returned non-zero, emphasizing the lack of any semantic
-dependency between \co{x} and \co{z}.
+load from \co{y} returned non-zero, which similarly emphasizes the lack
+of any semantic dependency between \co{x} and \co{z}.
 
 In both
 Listings~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
@@ -2452,7 +2455,6 @@ would need to affect both the \co{x} and the \co{y} components of this
 compound semantic dependency.
 However, we again conjecture that tools designed to find OOTA cycles could
 satisfy themselves with having found either of the two resulting cycles.
-
 This situation poses a challenge to current work on semantic dependencies,
 which typically restricts such dependencies to a single load and store.
 
@@ -2468,19 +2470,41 @@ which differs from
 Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
 only in the initial values (1 instead of 0) and the \co{exists}
 clause (0 instead of 1).
+Note that an execution satisfying the \co{exists} clause is again
+a (forbidden) OOTA cycle.
 
 Starting with the intuitive execution where the values loaded from \co{x}
-and \co{y} on lines~9 and~10 are non-zero, executions that differ only
-in the value loaded from either \co{x} or \co{y} will still affect the
-value stored to \co{z} by line~11.
-There is therefore a separate semantic dependency from the load from
-\co{x} to the store to \co{z} and from the load from \co{y} to the store
-to \co{z}, which matches typical definitions of semantic dependency.
+and \co{y} on lines~9 and~10 are the value 1 (that is, non-zero), executions
+that differ only in the value loaded from either \co{x} or \co{y} will
+still affect the value stored to \co{z} by line~11.
+There is therefore one semantic dependency from the load from \co{x}
+to the store to \co{z} and another separate semantic dependency from
+the load from \co{y} to the store to \co{z}, which matches typical
+definitions of semantic dependency.
 Yet
 Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
 and
 Listing~\ref{lst:OOTA Multiplication Example, Initial Value 1}
-are merely two different executions of the same program.
+can be thought of as being merely two different executions of the same
+program.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-mult3-0.litmus @@
+\caption{OOTA Three-Factor Multiplication Example, Initial Value Zero}
+\label{lst:OOTA Three-Factor Multiplication Example, Initial Value Zero}
+\end{listing}
+
+Because the only two solutions to $x^2 = x$ are the values zero and one,
+Listings~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
+and~\ref{lst:OOTA Multiplication Example, Initial Value 1}
+each have but one OOTA cycle, and an execution having non-zero non-one
+initial values could have at most two OOTA cycles, all of which are
+(again) forbidden by the C++ language.
+Listing~\ref{lst:OOTA Three-Factor Multiplication Example, Initial Value Zero}
+addressses this limitation by multiplying the values obtained from three
+different loads.
+Because $x^3 = x$ has three solutions ($\left\{ -1, 0, 1 \right\}$),
+this execution could have up to three (yet again, forbidden) OOTA cycles.
 
 Much more elaborate examples can be constructed, for example,
 involving sums of products of values loaded.
