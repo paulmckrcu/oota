@@ -1,4 +1,12 @@
 C oota-causality-3
+(*
+ * Result: Sometimes (but requires modeling the compiler)
+ *
+ * http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html
+ *
+ * Decision: Allowed, since redundant read elimination could result in
+ *	simplification of r1 == r2 to true, allowing y = 1 to be moved early.
+ *)
 {
 	[x] = 0;
 	[y] = 0;

@@ -33,3 +33,7 @@ P1(atomic_int *x, atomic_int *y) {
 }
 
 exists(0:r0=42 /\ 1:r1=42)
+(*
+ * Above "exists" clause gives OOTA cycle, plus:
+ * exists(0:r0=S1 /\ 1:r1=S1)
+ *)

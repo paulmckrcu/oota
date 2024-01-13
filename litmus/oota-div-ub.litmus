@@ -1,4 +1,7 @@
 C oota-div-ub
+(*
+ * Example generation of OOTA-like cycles via undefined behavior.oota-ctrl
+ *)
 {
 	[x] = 0;
 	[y] = 0;
@@ -15,3 +18,4 @@ P1(atomic_int *x, atomic_int *y) {
 }
 
 exists(0:r1=1 /\ 1:r2=1)
+(* No additional OOTA cycles *)

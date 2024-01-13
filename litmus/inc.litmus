@@ -1,4 +1,9 @@
 C inc
+(*
+ * If a variable is known to be updated only by being incremented by 1,
+ * can invented-load or invented-load-use optimizations take advantage of
+ * this knowledge?  This is the before-optimization litmus test.
+ *)
 {
 	[x] = 0;
 	[y] = 0;
@@ -18,3 +23,4 @@ P1(atomic_int *x, atomic_int *y) {
 
 locations [x;y]
 exists(0:r0=0 /\ 1:r1=0)
+(* No OOTA cycles *)

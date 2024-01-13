@@ -24,3 +24,7 @@ P2(atomic_int *x, atomic_int *y, atomic_int *z) {
 
 locations [0:r0;0:r1;0:r2;1:r3;2:r4]
 exists(x=42 /\ y=21 /\ z=21)
+(*
+ * Above "exists" clause gives OOTA cycle, plus:
+ * exists(x=2*S1 /\ y=S1 /\ z=S1)
+ *)

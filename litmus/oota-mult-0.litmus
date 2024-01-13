@@ -18,3 +18,4 @@ P1(atomic_int *x, atomic_int *y, atomic_int *z) {
 }
 
 exists(0:r1=1 /\ 0:r2=1 /\ 1:r3=1)
+(* No additional OOTA cycles *)
