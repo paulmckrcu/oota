@@ -424,12 +424,18 @@ that context.}
 Consider this example, with \co{i} initially zero:
 
 \begin{quote}
-	\co{y = ++i / ++i;} \\
+	\co{int foo(int a, int b)} \\
+	\co{\{} \\
+	\co{\ \ \ \ return a / b;} \\
+	\co{\}} \\
+	\\
+	\co{y = foo(++i, ++i);} \\
 	\co{x = y * z;}
 \end{quote}
 
-The standard does not specify the order of evaluation, so the resulting
-value of \co{y} might be zero ($\frac{1}{2}$ truncated) or two
+Because early C~implementers could not come to agreement, standard
+does not specify the order of evaluation of function arguments, so the
+resulting value of \co{y} might be zero ($\frac{1}{2}$ truncated) or two
 ($\frac{2}{1}$).
 In the former case, there is no semantic dependency from \co{z} to
 \co{x}, but in the latter case there is.
