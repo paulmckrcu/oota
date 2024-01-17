@@ -3180,6 +3180,103 @@ definition of ``semantic dependency''.
 
 \clearpage
 
+\section{Load/Store Ordering: Hardware View for Software Hackers}
+\label{sec:Load/Store Ordering: Hardware View for Software Hackers}
+
+% @@@ Get citations
+
+Both the ARM and PowerPC memory models permit reordering prior loads
+against subsequent stores, but actual tests on recent hardware fail to
+produce any evidence of any such reordering.
+Nevertheless, thus far neither ARM nor PowerPC hardware architects
+have been willing to strengthen their memory models so as to forbid
+such reordering.
+% @@@ Cite Gristenthwaite
+
+This appendix offers some possible reasons for this odd juxtaposition
+of negative test results and flat refusal.
+
+One key point is that some hardware (including ARM and PowerPC) provides
+precise exceptions.
+For example, if a given load results in a segmentation violation
+exception, that exception will occur before any instructions following
+that load have committed.
+This means that a given load instruction's execution must have proceeded
+beyond the point where an exception might occur before any subsequent
+store can be permitted to commit, even if that store is completely
+unrelated to that load.
+For example, the later store cannot commit until all prior loads' address
+translations have completed successfully.
+
+However, if that load suffers a cache miss, address translation will have
+completed long before the load returns its value, meaning that a later
+store might well commit before the load completes.
+In fact, that later store might commit before the store that supplies the
+value returned by that load!
+Which explains why some older hardware systems really do reorder prior
+loads and later stores.
+
+The question then becomes ``Why would weakly ordered systems fail to
+reorder prior loads with later stores?''
+
+One possible explanation is ECC errors.
+
+If correctable ECC errors were fixed up in hardware, then only uncorrectable
+ECC errors would be directly visible to software.
+If the only possible reaction to an uncorrectable ECC error was to terminate
+the program suffering that ECC error, there would be no problem.
+
+However, some code has ways of handling even uncorrectable errors.
+Operating-system kernels encountering an ECC error might note that the
+affected data was being used by only one process, and might react by
+killing that process.
+Some user applications might be note that the affected data affected only
+a particular computation, and might react by restarting that computation.
+Both the kernel and the user application would need to continue execution,
+and might thus desire an exact exception.
+
+Systems that offload processing of correctable ECC errors to software
+also require exact exceptions.
+After all, the software is going to need to be able to correct the
+error and then fix up state as if the load had returned the fixed-up
+value.
+
+ECC errors are detected near the end of their corresponding load
+instructions' execution, so that any need for exact exceptions rules
+out the commiting of any subsequent stores before the load has fetched
+its value.
+
+So why are hardware architects reluctant to tighten their memory models
+to forbid reordering of earlier loads and later stores?
+
+If you would like an authoratative answer to this question, you should of
+course ask your friendly local hardware architect.
+In the meantime, here is some semi-informed speculation on this topic:
+
+\begin{enumerate}
+\item	Some hardware might choose to forego ECC, for example, in order to
+	reduce cost or to improve energy efficiency.
+\item	ECC error correction might still be done in hardware, avoiding
+	the need for precise software-visible exceptions.
+\item	Some systems might prefer to immediately shut down, forbidding
+	software from continuing after an uncorrectable ECC error,
+	perhaps due to safety considerations.
+\item	Someone might come up with a clever way of correcting ECC errors
+	in firmware, avoiding the need for precise software-visible
+	exceptions.
+\item	As late as early 2024, some GPUs have been observed reordering
+	earlier loads against later stores.
+	Other hardware architects might therefore feel the need to keep
+	this option open for their own systems.
+\end{enumerate}
+
+So although it is not unreasonable to continue asking hardware vendors
+to tighten their memory models so as to prohibit reordering of earlier
+loads and later stores, it also would not be too surprising for them to
+continue to refuse.
+
+\clearpage
+
 \section{Debates on Causality}
 \label{sec:Debates on Causality}
 
