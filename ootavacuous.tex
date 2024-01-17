@@ -600,20 +600,18 @@ especially the implementation.
 However, consider the following code:
 
 \begin{quote}
-	\co{void foo(char c)} \\
+	\co{void foo(int x, char c)} \\
 	\co{\{} \\
-	\co{\ \ \ \ return c + 128;} \\
+	\co{\ \ \ \ return x * (c >= 0);} \\
 	\co{\}}
 \end{quote}
 
 The standard does not specify whether or not type \co{char} is signed,
 leaving that choice to the implementations, which follow the lead
 of the architects of a given CPU family.
-Therefore, the code above is undefined behavior on systems choosing
-signed \co{char} and having 8-bit bytes (so that there is no semantic
-dependency from the \co{foo()} function's argument to its return value),
-but perfectly well-defined on systems having unsigned \co{char}
-(so that there is a semantic dependency).
+Therefore, the code above has a a semantic dependency when run on systems
+choosing signed \co{char}, but not when run on systems choosing unsigned
+\co{char}.
 So score one for the implementers, albeit by conscious choice on the
 part of the standards committee.
 
@@ -3254,6 +3252,8 @@ insightful question at the right time, his insights on combinations of
 OOTA and UB, and for his ``Deathstation 9000'' demonic CPU.
 % Alan Stern located many unclear statements and gaps in reasoning.
 Martin Uecker contributed valuable insights on backwards-propagating UB.
+Gonzalo Brito Gadeschi shared an alternative way of handling non-volatile
+atomic operations.
 Richard Grisenthwaite patiently explained the architectural constraints
 that prevent hardware OOTA.
 
