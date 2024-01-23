@@ -453,6 +453,12 @@ Many projects' coding guidelines prohibit side effects in expressions,
 their goal being to obtain portable code whose behavior does not depend
 on arbitrary choices on the part of the implementation.
 However, the above code nevertheless conforms to the standard.
+Note that side effects in expressions lacking sequence points is
+undefined behavior, however, there are proposals to define it in
+the C++ and C languages, allowing implementations to nevertheless reorder
+evaluation when permitted by the as-if rule.\footnote{
+	\url{https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0145r3.pdf}
+	\url{https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3203.htm}}
 
 Compiler-based C++ implementions make their non-deterministic choices
 at compile time, so that the object code is deterministic, at least
