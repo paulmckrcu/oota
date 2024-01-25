@@ -89,7 +89,7 @@ Audience: SG1
 \section{Background}
 \label{sec:Background}
 
-This section provides a brief overview of the OOTA problem, followed
+@@@ This section provides a brief overview of the OOTA problem, followed
 by an equally brief summary of prior work in this area, and ending
 with a quick review of a few of the challenges for general definitions of
 ``OOTA cycle''.
@@ -97,71 +97,112 @@ with a quick review of a few of the challenges for general definitions of
 \subsection{Brief OOTA Overview}
 \label{sec:Brief OOTA Overview}
 
-OOTA occurs when a group of threads load from each others' stores,
-but where each thread's store depends on the value returned by that
-thread's load.
-A given out-of-thin-air value passes around the resulting cycle.
-Because there is a cycle, on a real system, at least one of the links
-must be atemporal, that is, either a load returns a value before
-that value is stored, or a store's address or value is computed before
-a prior load returns a value used in that computation.
+OOTA occurs when a group of threads load from each others' stores to
+each of a group of objects, but where each thread's store depends on
+the value returned by that thread's load.
+A given out-of-thin-air value passes around the resulting \emph{OOTA cycle}.
+
+\subsubsection{Simple Reordering}
+\label{sec:Simple Reordering}
+
+However, it is important to distinguish OOTA cycles from the simple
+reordering exemplified by
+Listing~\ref{lst:Simple Reordering}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
+Both the C++ implementation\footnote{
+	This paper will use ``C++ implementation'' both excluding the
+	CPU, as here, and including the CPU.
+	Explicit disambiguation is added when necessary.}
+and the CPU are within their rights to reorder lines~12 and~13, which
+can result in all of \co{x}, \co{y}, \co{r1}, and \co{r2} having the
+value 42 as follows:
+
+\begin{enumerate}
+\item   Line~13 stores 42 to \co{x}.
+\item   Line~6 loads 42 from \co{x} into \co{r1}.
+\item   Line~7 stores \co{r1}, and thus 42, to \co{y}.
+\item   Line~12 loads 42 from \co{y} to \co{r2}.
+\end{enumerate}
+
+Current C++ implementations can and do exhibit this simple-reordering
+behavior.
+
+\subsubsection{Simple OOTA Cycle}
+\label{sec:Simple OOTA Cycle}
+
+In contrast,
+Listing~\ref{lst:Simple OOTA}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
+shows a simple example where an OOTA cycle might result in all of \co{x},
+\co{y}, \co{r1}, and \co{r2} have final values of 42, despite the fact
+that there is nothing in the code or in the initial values that would
+support such an outcome:
+
+\begin{enumerate}
+\item   Line~6 loads from \co{x} into \co{r1}, somehow obtaining the
+	value 42, never mind the \co{x}'s initial value of zero.
+\item   Line~7 stores \co{r1}, and thus 42, to \co{y}.
+\item   Line~12 loads 42 from \co{y} to \co{r2}.
+\item   Line~13 stores 42 to \co{x}, justifying the value loaded by
+	line~6 after the fact.
+\end{enumerate}
+
+Fortunately, the C++ standard prohibits such OOTA cycles in 33.5.4p8
+(\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
+
+\begin{quote}
+	Implementations should ensure that no “out-of-thin-air” values
+	are computed that circularly depend on their own computation.
+\end{quote}
+
+This paper will follow P2055R0~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
+in using the term \emph{full C++} to denote the standard including the
+above prohibition, and the term \emph{strict C++} to denote a hypothetical
+standard that excluded this prohibition, but was otherwise identical
+to full C++.
+Unqualified \emph{C++} means full C++.
+
+The next section looks at how prior work has refined this prohibition.
 
 \begin{listing}[tbp]
-@@ DisplayLitmus litmus/oota-ctrl.litmus @@
-\caption{OOTA Cycle}
-\label{lst:OOTA Cycle}
+\begin{verbatim}
+ 1 atomic<int> x(0);
+ 2 atomic<int> y(0);
+ 3
+ 4 void thread1()
+ 5 {
+ 6   unsigned long r1 = x.load(memory_order_relaxed);
+ 7   y.store(r1, memory_order_relaxed);
+ 8 }
+ 9
+10 void thread2()
+11 {
+12   unsigned long r2 = y.load(memory_order_relaxed);
+13   x.store(42, memory_order_relaxed);
+14 }
+\end{verbatim}
+\caption{Simple Reordering}
+\label{lst:Simple Reordering}
 \end{listing}
-
-Listing~\ref{lst:OOTA Cycle}
-shows an OOTA cycle.
-The first line identifies it as a C-language litmus test and gives it
-a name.
-Lines~2-5 initialize variables, in this case setting the initial
-values of the global shared variables \co{x} and \co{y} to zero.
-Lines~7-13 define the first process, \co{P0()}, and lines~15-21
-define the second process, \co{P1()}.
-The arguments to both \co{P0()} and \co{P1()} specify which of
-the global shared variables each process may access, in this case, \co{x}
-and \co{y}.
-The body of each process specifies a limited subset of C++ code,
-which also happens to be a somewhat less limited subset of C code.
-
-Finally, line~23 specifies an \co{exists} clause, which gives a
-condition to check for the final value of the specified local
-variables.
-The \co{0:} prefix specifies a variable local to \co{P0()} and
-the \co{1:} prefix specifies a variable local to \co{P1()}.
-The \co{/\\} specifies a boolean AND, and the \co{=} specifies
-an equality comparison.
-If a variable appears in an \co{exists} clause, then the final value of
-that variable constitutes observable behavior.
 
 \begin{listing}[tbp]
-@@ RunLitmus litmus/oota-ctrl.litmus @@
-\caption{OOTA Cycle, \co{herd7} Output}
-\label{lst:OOTA Cycle, herd7 Output}
+\begin{verbatim}
+ 1 atomic<int> x(0);
+ 2 atomic<int> y(0);
+ 3
+ 4 void thread1()
+ 5 {
+ 6   unsigned long r1 = x.load(memory_order_relaxed);
+ 7   y.store(r1, memory_order_relaxed);
+ 8 }
+ 9
+10 void thread2()
+11 {
+12   unsigned long r2 = y.load(memory_order_relaxed);
+13   x.store(r2, memory_order_relaxed);
+14 }
+\end{verbatim}
+\caption{Simple OOTA}
+\label{lst:Simple OOTA}
 \end{listing}
-
-Listing~\ref{lst:OOTA Cycle, herd7 Output} shows the corresponding output
-of the \co{herd7} tool.
-Lines~3 and~4 show the possible states, with line~4 showing the
-counterintuitive outcome where both processes load the value 42.
-As we will see, this outcome is not possible in real-world implementations
-due to physical constraints of which \co{herd7} is (by design) unaware.
-Line~9 contains \co{Sometimes} (as opposed to \co{Never} or \co{Always}),
-indicating that some executions satisfy the \co{exists} clause and
-others do not.
-
-Other OOTA-related litmus tests may be found in
-Appendix~\ref{app:OOTA-Related Litmus Tests}.
-
-Note that C++ implementations are permitted to evaluate to a more
-general notion of OOTA values in cases involving unspecified or undefined
-behavior (UB), such as use of uninitialized objects.
-However, these situations do not involve OOTA cycles, but rather user
-errors and other issues that can lead to unfriendly optimizations that
-in turn result in unpredictable output.
-This paper focuses instead on OOTA cycles.
 
 \subsection{Prior Work}
 \label{sec:Prior Work}
@@ -214,8 +255,175 @@ problem.
 Which might explain why no known real-world C++ implementation results
 in OOTA executions.
 
-This paper therefore drops the question of how OOTA can be avoided and
-instead focuses on proving that OOTA cannot occur.
+This paper therefore digs more deeply into OOTA cycles in the light
+of these real-world constraints.
+
+\subsection{Code-Analysis Tool}
+\label{sec:Code-Analysis Tool}
+
+This paper will use the \co{herd7} tool to analyze fragments of C++ code.
+This tool carries out the moral equivalent of full state-space searches
+of concurrent code fragments, and further has some understanding of OOTA.
+
+\begin{listing}[tbp]
+@@ DisplayLitmus litmus/oota-ctrl.litmus @@
+\caption{OOTA Cycle}
+\label{lst:OOTA Cycle}
+\end{listing}
+
+Listing~\ref{lst:OOTA Cycle}
+shows a code fragment that in strict C++ would have an OOTA cycle.
+This section describes this fragment, thus giving an overview of
+the \co{herd7} tool.
+
+The first line identifies it as a C-language litmus test and gives it
+a name.
+Lines~2-5 initialize variables, in this case setting the initial
+values of the global shared variables \co{x} and \co{y} to zero.
+Lines~7-13 define the first process, \co{P0()}, and lines~15-21
+define the second process, \co{P1()}.
+The arguments to both \co{P0()} and \co{P1()} specify which of
+the global shared variables each process may access, in this case, \co{x}
+and \co{y}.
+The body of each process specifies a limited subset of C++ code,
+which also happens to be a somewhat less limited subset of C code.
+
+Finally, line~23 specifies an \co{exists} clause, which gives a
+condition to check for the final value of the specified local
+variables.
+The \co{0:} prefix specifies a variable local to \co{P0()} and
+the \co{1:} prefix specifies a variable local to \co{P1()}.
+The \co{/\\} specifies a boolean AND, and the \co{=} specifies
+an equality comparison.
+If a variable appears in an \co{exists} clause, then the final value of
+that variable constitutes observable behavior.
+
+\begin{listing}[tbp]
+@@ RunLitmus litmus/oota-ctrl.litmus @@
+\caption{OOTA Cycle, \co{herd7} Output}
+\label{lst:OOTA Cycle, herd7 Output}
+\end{listing}
+
+Listing~\ref{lst:OOTA Cycle, herd7 Output} shows the corresponding output
+of the \co{herd7} tool.
+Lines~3 and~4 show the possible states, with line~4 showing the
+counterintuitive outcome where both processes load the value 42.
+As we will see, this outcome is not possible in real-world implementations
+due to physical constraints of which \co{herd7} is (by design) unaware.
+Line~9 contains \co{Sometimes} (as opposed to \co{Never} or \co{Always}),
+indicating that some executions satisfy the \co{exists} clause and
+others do not.
+
+The earlier examples shown in
+Listings~\ref{lst:Simple Reordering}
+and~\ref{lst:Simple OOTA}
+can be recast as similar \co{herd7} litmus tests, which areas shown in
+Listing~\ref{lst:Simple Reordering as Litmus Test}
+on page~\pageref{lst:Simple Reordering as Litmus Test}
+and Listing~\ref{lst:Causality Test Case 4}
+on page~\pageref{lst:Causality Test Case 4}, respectively.
+Other OOTA-related litmus tests may be found in
+Appendix~\ref{app:OOTA-Related Litmus Tests}.
+
+\section{Semantic Dependencies, Executions, and OOTA}
+\label{sec:Semantic Dependencies; Executions; and OOTA}
+
+@@@
+
+\subsection{Semantic Dependencies}
+\label{sec:Semantic Dependencies}
+
+The standard's prohibition of OOTA is of course important, but those of us
+writing code in the real world must rely on actual C++ implementations.
+And in these implementations, this prohibition is in fact enforced by TSO
+ordering in strongly ordered systems and by data dependency ordering in
+weakly ordered systems.
+Real-world implementations cannot store something until after they load
+it, and this \emph{semantic dependency} results in compilers emitting
+instructions such that the hardware enforcement applies.\footnote{
+	The need to prohibit simple OOTA is one reason why compiler-based
+	value speculation optimizations are frowned upon.}
+Roughly speaking, there is semantic dependency from a given load to
+a given store when a change in the value loaded that can change the
+value stored.
+
+\subsection{OOTA: rf vs. rfe}
+\label{sec:OOTA: rf vs. rfe}
+
+However, the ordering implied by the semantic dependency is only one
+type of link in an OOTA cycle.
+The other link extends from a given store to the load that returns the
+value stored.
+It is tempting to make the intuitive argument that this store must precede
+this load in global time, and then to combine this with the notion that
+any real C++ implementation must consume global time when computing a
+semantic dependency.
+This combination suggests that such implementations cannot exhibit
+OOTA cycles.
+This combination has been formalized by defining an OOTA cycle as a cycle
+in sdep $\cup$ rf, where sdep is the set of semantic dependencies within
+each thread and rf is the set of store-to-load links, whether intra-thread
+(rfi) or between threads (rfe).\footnote{
+	See Appendix~\ref{app:Inter-Process Communications} for definitions
+	and properies of rf, rfe, and rfi.}
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-3-2-proc.litmus @@
+\caption{OOTA With an Intra-Process Store-Load Link}
+\label{lst:OOTA With an Intra-Process Store-Load Link}
+\end{listing}
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-3-2-proc-opt.litmus @@
+\caption{OOTA With an Intra-Process Store-Load Link, Optimized}
+\label{lst:OOTA With an Intra-Process Store-Load Link, Optimized}
+\end{listing}
+
+This is a fine definition, and is consistent with the words in the C++
+standard, except for code fragments exemplified by
+Listing~\ref{lst:OOTA With an Intra-Process Store-Load Link}.
+This is an elaboration of
+Listing~\ref{lst:Simple OOTA}
+that adds \co{z} and adds lines~15 and~16 to \co{thread2()}.
+The problem is that the C++ implementation is within its rights to
+note that line~16 might well execute immediately after line~15, so that
+no other thread had a chance to modify \co{z}.
+Such an implementation might therefore behave as if the source code
+had instead been as shown in
+Listing~\ref{lst:OOTA With an Intra-Process Store-Load Link, Optimized},
+with line~16 optimized away in favor of line~17 storing the value
+in \co{r2} that was loaded from \co{y}.
+And given that the load from \co{z} no longer exists, it cannot possibly
+act as a temporal constraint.
+
+In order to avoid these backwards-in-time rfi links, we substitute rfe
+for rf, thus defining an OOTA cycle as a cycle in sdep $\cup$ rfe (or
+\co{acyclic(sdep ; rfe)} in \co{herd7} notation), where rfe is the set
+of store-to-load links, but excluding intra-thread rfi links, which are
+instead considered to be part of sdep.
+Although this does shunt additional complexity onto the term
+``semantic dependency'', it also enables us to cleanly separate
+the inter-thread and intra-thread portions of any given OOTA cycle.
+% \footnote{
+%	Thanks to Alan Stern for providing a litmus test that demonstrated
+%	that we had unwittingly (but productively!) shifted our definition
+%	to sdep $\cup$ rfe.}
+@@@ Please see
+Appendix~\ref{app:Informal Definition of Semantic Dependency}
+for more a more detailed (albeit quite informal) definition.
+
+@@@ Because there is a cycle, on a real system, at least one of the links
+must be atemporal, that is, either a load returns a value before
+that value is stored, or a store's address or value is computed before
+a prior load returns a value used in that computation.
+
+Note that C++ implementations are permitted to evaluate to a more
+general notion of OOTA values in cases involving unspecified or undefined
+behavior (UB), such as use of uninitialized objects.
+However, these situations do not involve OOTA cycles, but rather user
+errors and other issues that can lead to unfriendly optimizations that
+in turn result in unpredictable output.
+This paper focuses instead on OOTA cycles.
 
 \subsection{On OOTA Definitions}
 \label{sec:On OOTA Definitions}
@@ -232,39 +440,13 @@ Still others argue (perhaps correctly) that it is impossible to provide
 a general definition of ``OOTA cycle'', but this simply raises
 the question of whether a \emph{useful} definition can be formulated.
 
-The C++ standard says this in 33.5.4p8
+@@@ The C++ standard says this in 33.5.4p8
 (\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
 
 \begin{quote}
 	Implementations should ensure that no “out-of-thin-air” values
 	are computed that circularly depend on their own computation.
 \end{quote}
-
-Others have defined an OOTA cycle as a cycle in sdep $\cup$ rf, where
-sdep is the set of semantic dependencies within each thread and rf is
-the set of store-to-load links, whether intra-thread (rfi) or between
-threads (rfe).\footnote{
-	See Appendix~\ref{app:Inter-Process Communications} for definitions
-	and properies of rf, rfe, and rfi.}
-This is a fine definition, and is consistent with the words in the C++
-standard, except that it simply shunts all the complexity onto the
-term ``semantic dependency''.
-
-We deviate slightly from this tradition by instead defining an OOTA cycle
-as a cycle in sdep $\cup$ rfe (or \co{acyclic(sdep ; rfe)} in \co{herd7}
-notation), where rfe is the set of store-to-load links, but excluding
-intra-thread rfi links, which are instead considered to be part of sdep.
-Although this does shunt even more complexity onto the term
-``semantic dependency'', it also enables us to bring to bear
-laws of physics and properties of hardware onto correct real-world
-C++ implementations.
-% \footnote{
-%	Thanks to Alan Stern for providing a litmus test that demonstrated
-%	that we had unwittingly (but productively!) shifted our definition
-%	to sdep $\cup$ rfe.}
-Please see
-Appendix~\ref{app:Informal Definition of Semantic Dependency}
-for more a more detailed (albeit quite informal) definition.
 
 The following sections discuss properties of and constraints on
 useful definitions of ``semantic dependency''.
@@ -2086,6 +2268,20 @@ cycle cannot form in a correct real-world C++ implementation.
 These litmus tests helped illuminate important aspects of the problem
 of defining sdep and identifying OOTA cycles.
 
+\subsubsection{Simple Reordering as Litmus Test}
+\label{app:Simple Reordering as Litmus Test}
+
+Listing~\ref{lst:Simple Reordering as Litmus Test}
+shows how
+Listing~\ref{lst:Simple Reordering}
+can be recast into a \co{herd7} litmus test.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/simple-reordering.litmus @@
+\caption{Simple Reordering as Litmus Test}
+\label{lst:Simple Reordering as Litmus Test}
+\end{listing}
+
 \subsubsection{Non-LB Litmus Tests}
 \label{app:Non-LB Litmus Tests}
 
@@ -2159,9 +2355,16 @@ OOTA cycle on correct real-world C++ implementations.
 \subsubsection{Why rfe Instead of Tried-And-True rf?}
 \label{app:Why rfe Instead of Tried-And-True rf?}
 
+Although the examples presented in
+Section~\ref{sec:OOTA: rf vs. rfe}
+demonstrate that rf can be atemporal, they demonstrate neither
+OOTA cycles nor OOTA-like behavior in full C++ implementations.
+This appendix provides more involved examples that can be optimized
+so as to demonstrate OOTA-like behavior.
+
 Listing~\ref{lst:Why rfe Instead of Tried-And-True rf?}
 revises
-Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4}
+Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4 With Max and Min}
 so that the value stored to \co{y} is forced to be at most the
 value 17, and the value stored to \co{z} is forced to be at least the
 value 17.
