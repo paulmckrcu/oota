@@ -89,10 +89,10 @@ Audience: SG1
 \section{Background}
 \label{sec:Background}
 
-@@@ This section provides a brief overview of the OOTA problem, followed
+This section provides a brief overview of the OOTA problem, followed
 by an equally brief summary of prior work in this area, and ending
-with a quick review of a few of the challenges for general definitions of
-``OOTA cycle''.
+with a quick overview of the \co{herd7} tool that will be used to
+evaluate litmus tests.
 
 \subsection{Brief OOTA Overview}
 \label{sec:Brief OOTA Overview}
@@ -105,8 +105,9 @@ A given out-of-thin-air value passes around the resulting \emph{OOTA cycle}.
 \subsubsection{Simple Reordering}
 \label{sec:Simple Reordering}
 
-However, it is important to distinguish OOTA cycles from the simple
-reordering exemplified by
+However, it is important to distinguish OOTA cycles from the OOTA-like
+behavior that can be caused by simple reordering.
+An example of simple reordering is shown in
 Listing~\ref{lst:Simple Reordering}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
 Both the C++ implementation\footnote{
 	This paper will use ``C++ implementation'' both excluding the
@@ -240,11 +241,13 @@ the year 2024.
 Other workers recommend various procedures to identify and avoid OOTA
 cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA},
 but none of these have been looked upon favorably by C++ implementers.
+Some of these workers appear to have abandoned this effort, but as of
+early 2024, Mark Batty is persisting with modular relaxed dependencies.
 
 Goldblatt looked at interactions between OOTA cycles and
 UB~\cite{DavidGoldblatt2019NoElegantOOTAfix}, and
 Appendix~\ref{app:Aside on Undefined Behavior}
-analyzes the examples and notes ways to separate UB and OOTA-cycle
+analyzes his examples and notes ways to separate UB and OOTA-cycle
 concerns.
 The remainder of this document will focus on examples lacking UB.
 
@@ -272,7 +275,8 @@ of concurrent code fragments, and further has some understanding of OOTA.
 \end{listing}
 
 Listing~\ref{lst:OOTA Cycle}
-shows a code fragment that in strict C++ would have an OOTA cycle.
+shows a code fragment that in strict C++ would have an OOTA cycle (but
+that is of course prohibited in full C++).
 This section describes this fragment, thus giving an overview of
 the \co{herd7} tool.
 
@@ -288,7 +292,10 @@ and \co{y}.
 The body of each process specifies a limited subset of C++ code,
 which also happens to be a somewhat less limited subset of C code.
 
-Finally, line~23 specifies an \co{exists} clause, which gives a
+Line~23 gives an example of a \co{locations} clause, which causes
+\co{herd7} to dump out the final value of \co{x} and \co{y}.
+
+Finally, line~24 specifies an \co{exists} clause, which gives a
 condition to check for the final value of the specified local
 variables.
 The \co{0:} prefix specifies a variable local to \co{P0()} and
@@ -308,6 +315,10 @@ Listing~\ref{lst:OOTA Cycle, herd7 Output} shows the corresponding output
 of the \co{herd7} tool.
 Lines~3 and~4 show the possible states, with line~4 showing the
 counterintuitive outcome where both processes load the value 42.
+Normally these states would include only those variables mentioned
+in the \co{exists} clause, but because of the \co{locations} clause
+on line~23, the values of \co{x} and \co{y} is also included, which
+can be helpful when debugging.
 As we will see, this outcome is not possible in real-world implementations
 due to physical constraints of which \co{herd7} is (by design) unaware.
 Line~9 contains \co{Sometimes} (as opposed to \co{Never} or \co{Always}),
@@ -342,7 +353,9 @@ Real-world implementations cannot store something until after they load
 it, and this \emph{semantic dependency} results in compilers emitting
 instructions such that the hardware enforcement applies.\footnote{
 	The need to prohibit simple OOTA is one reason why compiler-based
-	value speculation optimizations are frowned upon.}
+	value speculation optimizations require checks on such
+	speculation, and these checks must be based on actual values
+	loaded.}
 Roughly speaking, there is semantic dependency from a given load to
 a given store when a change in the value loaded that can change the
 value stored.
@@ -350,8 +363,7 @@ value stored.
 \subsection{OOTA: rf vs. rfe}
 \label{sec:OOTA: rf vs. rfe}
 
-However, the ordering implied by the semantic dependency is only one
-type of link in an OOTA cycle.
+However, semantic dependencies are only one type of link in an OOTA cycle.
 The other link extends from a given store to the load that returns the
 value stored.
 It is tempting to make the intuitive argument that this store must precede
@@ -380,14 +392,14 @@ each thread and rf is the set of store-to-load links, whether intra-thread
 \end{listing}
 
 This is a fine definition, and is consistent with the words in the C++
-standard, except for code fragments exemplified by
+standard, but has an intra-thread problem exemplified by
 Listing~\ref{lst:OOTA With an Intra-Process Store-Load Link}.
 This is an elaboration of
 Listing~\ref{lst:Simple OOTA}
 that adds \co{z} and adds lines~15 and~16 to \co{thread2()}.
 The problem is that the C++ implementation is within its rights to
-note that line~16 might well execute immediately after line~15, so that
-no other thread had a chance to modify \co{z}.
+note that line~16 might well execute immediately after line~15, giving
+threads no chance to modify \co{z}.
 Such an implementation might therefore behave as if the source code
 had instead been as shown in
 Listing~\ref{lst:OOTA With an Intra-Process Store-Load Link, Optimized},
@@ -396,7 +408,7 @@ in \co{r2} that was loaded from \co{y}.
 And given that the load from \co{z} no longer exists, it cannot possibly
 act as a temporal constraint.
 
-In order to avoid these backwards-in-time rfi links, we substitute rfe
+In order to avoid these rfi links, we substitute rfe
 for rf, thus defining an OOTA cycle as a cycle in sdep $\cup$ rfe (or
 \co{acyclic(sdep ; rfe)} in \co{herd7} notation), where rfe is the set
 of store-to-load links, but excluding intra-thread rfi links, which are
@@ -408,9 +420,12 @@ the inter-thread and intra-thread portions of any given OOTA cycle.
 %	Thanks to Alan Stern for providing a litmus test that demonstrated
 %	that we had unwittingly (but productively!) shifted our definition
 %	to sdep $\cup$ rfe.}
+
 @@@ Please see
 Appendix~\ref{app:Informal Definition of Semantic Dependency}
 for more a more detailed (albeit quite informal) definition.
+Maybe eventually have an appendix that lists all the definitions
+of both ``OOTA cycle'' and ``semantic dependency''.
 
 @@@ Because there is a cycle, on a real system, at least one of the links
 must be atemporal, that is, either a load returns a value before
