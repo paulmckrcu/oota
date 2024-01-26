@@ -154,10 +154,30 @@ Fortunately, the C++ standard prohibits such OOTA cycles in 33.5.4p8
 	are computed that circularly depend on their own computation.
 \end{quote}
 
+The standard's prohibition of OOTA is of course important, but those of us
+writing code in the real world must rely on actual C++ implementations.
+And in these implementations, this prohibition is in fact enforced by TSO
+ordering in strongly ordered systems and by data dependency ordering in
+weakly ordered systems.
+Real-world implementations cannot store something until after they load
+it, so there is a \emph{semantic dependency} from line~6 to line~7 and
+another from line~12 to line~13 in
+Listing~\ref{lst:Simple OOTA}.
+These semantic dependencies cause compilers to emit instructions such
+that the hardware enforcement applies.\footnote{
+	The need to prohibit simple OOTA is one reason why compiler-based
+	value speculation optimizations require checks on such
+	speculation, and these checks must be based on actual values
+	loaded.}
+
+Roughly speaking, \emph{there is semantic dependency from a given load
+to a given store when a change in the value loaded that can change the
+value stored.}
+
 This paper will follow P2055R0~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
 in using the term \emph{full C++} to denote the standard including the
 above prohibition, and the term \emph{strict C++} to denote a hypothetical
-standard that excluded this prohibition, but was otherwise identical
+standard that excludes this prohibition, but is otherwise identical
 to full C++.
 Unqualified \emph{C++} means full C++.
 
@@ -339,26 +359,7 @@ Appendix~\ref{app:OOTA-Related Litmus Tests}.
 \section{Semantic Dependencies, Executions, and OOTA}
 \label{sec:Semantic Dependencies; Executions; and OOTA}
 
-@@@
-
-\subsection{Semantic Dependencies}
-\label{sec:Semantic Dependencies}
-
-The standard's prohibition of OOTA is of course important, but those of us
-writing code in the real world must rely on actual C++ implementations.
-And in these implementations, this prohibition is in fact enforced by TSO
-ordering in strongly ordered systems and by data dependency ordering in
-weakly ordered systems.
-Real-world implementations cannot store something until after they load
-it, and this \emph{semantic dependency} results in compilers emitting
-instructions such that the hardware enforcement applies.\footnote{
-	The need to prohibit simple OOTA is one reason why compiler-based
-	value speculation optimizations require checks on such
-	speculation, and these checks must be based on actual values
-	loaded.}
-Roughly speaking, there is semantic dependency from a given load to
-a given store when a change in the value loaded that can change the
-value stored.
+@@@ Fill in roadmap when sectioning is finalized.
 
 \subsection{OOTA: rf vs. rfe}
 \label{sec:OOTA: rf vs. rfe}
@@ -427,51 +428,45 @@ for more a more detailed (albeit quite informal) definition.
 Maybe eventually have an appendix that lists all the definitions
 of both ``OOTA cycle'' and ``semantic dependency''.
 
-@@@ Because there is a cycle, on a real system, at least one of the links
-must be atemporal, that is, either a load returns a value before
-that value is stored, or a store's address or value is computed before
-a prior load returns a value used in that computation.
+\subsection{Where Do Loaded Values Come From?}
+\label{sec:Where Do Loaded Values Come From?}
 
-Note that C++ implementations are permitted to evaluate to a more
-general notion of OOTA values in cases involving unspecified or undefined
-behavior (UB), such as use of uninitialized objects.
-However, these situations do not involve OOTA cycles, but rather user
-errors and other issues that can lead to unfriendly optimizations that
-in turn result in unpredictable output.
-This paper focuses instead on OOTA cycles.
-
-\subsection{On OOTA Definitions}
-\label{sec:On OOTA Definitions}
-
-The earliest work defines ``OOTA cycle'' by example, without a precise
-definition.
-Sometimes ``causal cycle'' is used as if it was a definition, but
-without a clear decision process for what does and does not
-constitute a causal cycle.
-P0442R0 defines an OOTA cycle as a fixed-point computation that is
-destroyed by perturbations, which makes perfect sense to that paper's
-authors, but has left others unsatisfied.
-Still others argue (perhaps correctly) that it is impossible to provide
-a general definition of ``OOTA cycle'', but this simply raises
-the question of whether a \emph{useful} definition can be formulated.
-
-@@@ The C++ standard says this in 33.5.4p8
-(\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
+Relying on any rf link, whether the intra-thread rfi links or the
+inter-thread rfe links, raises the question of what restrictions
+might apply to C++ implementations' choice of value loaded.
+For non-volatile atomic loads, this is question is answered by
+the C++ standard in 6.9.2p14
+\co{[intro.races]}~\cite{ThomasKoeppe2023N4950}:
 
 \begin{quote}
-	Implementations should ensure that no “out-of-thin-air” values
-	are computed that circularly depend on their own computation.
+	The value of an atomic object M, as determined by evaluation B,
+	shall be the value stored by some side effect A that modifies M,
+	where B does not happen before A.
 \end{quote}
 
-The following sections discuss properties of and constraints on
-useful definitions of ``semantic dependency''.
+This wording presumably includes the initial value of M as one of the
+possible side effects.
+This means that an implementation might determine that a given atomic
+object always has a given value, and such an implementation might
+skip the load in favor of that value.\footnote{
+	There is some work starting to forbid the implementation
+	from using this assumption, for example, by requiring that
+	the implementation assume that there is at least one thread
+	that it does not know about.}
 
-\subsubsection{Semantic Dependencies Are Per Execution}
-\label{sec:Semantic Dependencies Are Per Execution}
+Please note that this does not apply to volatile atomic objects,
+for which the implementation is forbidden from assuming that the
+value loaded has any relationship whatsoever to any initialization
+or any values stored.
 
-One aspect of this complexity is the fact that semantic dependencies
-are a function not strictly of the source code, but of a particular
-execution.
+\subsection{Semantic Dependencies and Source Code}
+\label{sec:Semantic Dependencies and Source Code}
+
+Some discussions of semantic dependencies assume that semantic
+dependencies are a strict function of the source code.
+Although there are some ways of making this work, many uses of
+semantic dependencies require them to be a function of particular
+executions.
 Consider for example:
 
 \begin{quote}
@@ -564,7 +559,10 @@ defined on a per-execution basis}.% \footnote{
 But what if you really need a definition of semantic dependency
 for a given code fragment that covers all executions?
 One approach is to take the union of semantic dependencies across
-all executions, which might be useful when carrying out static analysis.
+all executions, so that if any execution has a semantic dependency,
+the source code fragment has a semantic dependency.
+This approach might be useful when carrying out static analysis.
+
 On the other hand, many C++ implementations carry out specialization
 optimizations, which consider groups of executions.
 For example, an implementation might special-case a \co{NULL} pointer when
@@ -572,6 +570,58 @@ considering several inline functions that take early exits in that case.
 Tools working with such implementations might therefore choose to focus
 on executions corresponding to a given specialization when generating
 semantic dependencies for code corresponding to that specialization.
+
+Other tools might need to take the intersection of semantic dependencies
+across all executions, so that the source code fragment has a semantic
+dependency only if all executions have a semantic dependency.
+This approach might be useful when analyzing ordering properties
+of that code fragment.
+
+Nevertheless, in general, sdep must be defined on a per-execution basis.
+
+\subsection{@@@ This marks the end of the reworked material}
+
+@@@ Because there is a cycle, on a real system, at least one of the links
+must be atemporal, that is, either a load returns a value before
+that value is stored, or a store's address or value is computed before
+a prior load returns a value used in that computation.
+
+@@@ Note that C++ implementations are permitted to evaluate to a more
+general notion of OOTA values in cases involving unspecified or undefined
+behavior (UB), such as use of uninitialized objects.
+However, these situations do not involve OOTA cycles, but rather user
+errors and other issues that can lead to unfriendly optimizations that
+in turn result in unpredictable output.
+This paper focuses instead on OOTA cycles.
+
+\subsection{On OOTA Definitions}
+\label{sec:On OOTA Definitions}
+
+The earliest work defines ``OOTA cycle'' by example, without a precise
+definition.
+Sometimes ``causal cycle'' is used as if it was a definition, but
+without a clear decision process for what does and does not
+constitute a causal cycle.
+P0442R0 defines an OOTA cycle as a fixed-point computation that is
+destroyed by perturbations, which makes perfect sense to that paper's
+authors, but has left others unsatisfied.
+Still others argue (perhaps correctly) that it is impossible to provide
+a general definition of ``OOTA cycle'', but this simply raises
+the question of whether a \emph{useful} definition can be formulated.
+
+@@@ The C++ standard says this in 33.5.4p8
+(\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
+
+\begin{quote}
+	Implementations should ensure that no “out-of-thin-air” values
+	are computed that circularly depend on their own computation.
+\end{quote}
+
+The following sections discuss properties of and constraints on
+useful definitions of ``semantic dependency''.
+
+\subsubsection{@@@ Semantic Dependencies Are Per Execution}
+\label{sec:Semantic Dependencies Are Per Execution}
 
 \subsubsection{Semantic Dependencies Depend on Context}
 \label{sec:Semantic Dependencies Depend on Context}
@@ -1705,7 +1755,7 @@ Section~\ref{sec:On OOTA Definitions}.
 Our informal definition meets these challenges as follows:
 
 \begin{enumerate}
-\item	Section~\ref{sec:Semantic Dependencies Are Per Execution}
+\item	Section~\ref{sec:Semantic Dependencies and Source Code}
 	is responsible for the phrase ``on any execution'' as well
 	as the proviso regarding fungible loads.
 \item	Section~\ref{sec:Semantic Dependencies Depend on Context}'s
@@ -2629,7 +2679,7 @@ but this section will present a more difficult example.
 Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
 shows an example that builds on the multiplication-by-zero
 discussion in
-Section~\ref{sec:Semantic Dependencies Are Per Execution}.
+Section~\ref{sec:Semantic Dependencies and Source Code}.
 Line~11 of \co{P0()} stores to \co{z} the product of the values loaded from
 \co{x} and \co{y} on lines~9 and~10, respectively.
 Similarly, lines~16 and~17 store to \co{x} and \co{y}, respectively,
@@ -2646,7 +2696,7 @@ both \co{x} and \co{y} can cause the value stored to \co{z} to change
 from zero to a non-zero value.
 
 Therefore, as noted in
-Section~\ref{sec:Semantic Dependencies Are Per Execution},
+Section~\ref{sec:Semantic Dependencies and Source Code},
 in an execution where the loads from both \co{x} and \co{y} return zero,
 there is no semantic dependency from the load from \co{x} to the
 store to \co{z}, nor is there a semantic dependency from the load
