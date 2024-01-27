@@ -1419,9 +1419,11 @@ On the other hand, many C++ implementations carry out specialization
 optimizations, which consider groups of executions.
 For example, an implementation might special-case a \co{NULL} pointer when
 considering several inline functions that take early exits in that case.
-Tools working with such implementations might therefore choose to focus
-on executions corresponding to a given specialization when generating
-semantic dependencies for code corresponding to that specialization.
+For another example, an implementation might produce separate code for
+cases where an integer is negative, zero, and positive.
+Tools working with such implementations might therefore choose to group
+executions by specialization, and then separately analyze semantic
+dependencies for code corresponding to each specialize execution.
 
 Other tools might need to take the intersection of semantic dependencies
 across all executions, so that the source code fragment has a semantic
