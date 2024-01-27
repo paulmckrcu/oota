@@ -88,6 +88,12 @@ Audience: SG1
 
 \pagebreak
 
+\section{Introduction}
+\label{sec:Introduction}
+
+@@@ Add brief description and roadmap of paper, including the simplifications
+and restrictions.
+
 \section{Background}
 \label{sec:Background}
 
@@ -168,15 +174,18 @@ that the hardware enforcement applies.\footnote{
 	speculation, and these checks must be based on actual values
 	loaded.}
 
-Roughly speaking and all other things being equal, \emph{there is semantic
-dependency from a given load to a given store when a change in the value
-loaded can change the value stored.}
+Roughly speaking, \emph{there is semantic dependency from a given load
+to a given store when, all other things being equal a change in the
+value loaded can change the value stored.}
 
 This paper will follow P2055R0~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
 in using the term \emph{full C++} to denote the standard including the
-above prohibition, and the term \emph{strict C++} to denote a hypothetical
-standard that excludes this prohibition, but is otherwise identical
-to full C++.
+above prohibition, and the term \emph{strict C++}\footnote{
+	@@@ Future bikeshedding of name.}
+% @@@ Alternatives thus far: OOTA-prone C++, OOTA-enabled C++,
+% @@@ relaxed C++, OOTA C++, OOTA-agnostic C++.
+to denote a hypothetical standard that excludes this prohibition, but
+is otherwise identical to full C++.
 Unqualified \emph{C++} means full C++.
 
 The next section looks at how prior work has refined this prohibition.
@@ -282,10 +291,14 @@ of these real-world constraints.
 \subsection{Code-Analysis Tool}
 \label{sec:Code-Analysis Tool}
 
-This paper will use the \co{herd7} tool to analyze fragments of C++ code.
+This paper will use the \co{herd7}\footnote{
+	Available at \path{https://github.com/herd/herdtools7}.}
+tool to analyze fragments of C++ code.
 This tool carries out the moral equivalent of full state-space searches
-of concurrent code fragments, and further will in some cases identify
-OOTA cycles.
+of concurrent code fragments.
+In some cases its output will include executions with OOTA cycles,
+on occasion reporting undefined values for the variables involved in
+the cycle.
 
 \begin{listing}[tbp]
 @@ DisplayLitmus litmus/oota-ctrl.litmus @@
@@ -439,7 +452,10 @@ for more a more detailed (albeit quite informal) definition.
 Maybe eventually have an appendix that lists all the definitions
 of both ``OOTA cycle'' and ``semantic dependency''.
 
-\subsection{Semantic Dependencies and Source Code}
+\subsection{Properties of Semantic Dependencies}
+\label{sec:Properties of Semantic Dependencies}
+
+\subsubsection{Semantic Dependencies and Source Code}
 \label{sec:Semantic Dependencies and Source Code}
 
 Some discussions of semantic dependencies assume that semantic
@@ -461,7 +477,7 @@ In that case, the implementation is within its rights to discard this
 statement and act as if later accesses to \co{x} were instead the
 constant zero, at least up to the next assignment to \co{x}.
 
-\subsection{Semantic Dependencies Can Be Many To One}
+\subsubsection{Semantic Dependencies Can Be Many To One}
 \label{sec:Semantic Dependencies Can Be Many To One}
 
 Suppose that both \co{y} and \co{z} are zero in the previous example.
@@ -493,7 +509,7 @@ from \co{acyclic(sdep ; rfe)} to:
 	stores in a different thread.
 \end{quote}
 
-\subsection{Semantic Dependencies Affected by Optimizations}
+\subsubsection{Semantic Dependencies Affected by Optimizations}
 \label{sec:Semantic Dependencies Affected by Optimizations}
 
 Consider the following:
@@ -513,9 +529,9 @@ the constant zero, again, at least until the next assignment to \co{x}.
 Please note that this leaves aside the question of how the compiler
 would know this if \co{y} and \co{z} are atomic objects that cannot be
 updated pairwise atomically and are subject to change at any time by
-other threads.
+other threads (a point we will return to).
 
-\subsection{Semantic Dependencies Affected by \co{if} Statements}
+\subsubsection{Semantic Dependencies Affected by \co{if} Statements}
 \label{sec:Semantic Dependencies Affected by if Statements}
 
 Consider the following simple \co{if} statement:
@@ -563,11 +579,12 @@ identical values to identical addresses, one could equally well regard
 the two statements as performing two different stores or as performing
 (for all intents and purposes) a single store.
 Although software projects relying on ordering from load-to-store control
-dependencies and using a variety of compilers should take the single-store
-viewpoint~\cite{Howells2009membartxt},
-the fact remains that these two viewpoints lead to differing conclusions
-about whether this code represents one execution or two.
-It is the compiler's choice.
+dependencies and using a variety of compilers should should err on the
+side of caution by assuming there is no semantic
+dependency~\cite{Howells2009membartxt},
+the fact remains that reasonable C++ implementations might disagree as
+to whether this code represents one execution or two.
+It is the implementations's choice.
 
 A similar caution applies to loads:
 
