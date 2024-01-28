@@ -3685,33 +3685,39 @@ completed long before the load returns its value, meaning that a later
 store might well commit before the load completes.
 In fact, that later store might commit before the store that supplies the
 value returned by that load!
-Which explains why some older hardware systems really do reorder prior
-loads and later stores.
+Which explains why some hardware systems really do reorder prior loads
+and later stores.
 
 The question then becomes ``Why would weakly ordered systems fail to
 reorder prior loads with later stores?''
 
-One possible explanation is ECC errors.
+One explanation is ECC errors.
 
 If correctable ECC errors were fixed up in hardware, then only uncorrectable
 ECC errors would be directly visible to software.
-If the only possible reaction to an uncorrectable ECC error was to terminate
-the program suffering that ECC error, there would be no problem.
+If the only possible reaction to an uncorrectable ECC error was to
+terminate the program suffering that ECC error, it would be safe to
+allow subsequent stores to commit as soon as all prior loads' address
+translations had completed successfully.
 
-However, some code has ways of handling even uncorrectable errors.
+However, some kernels and applications have ways of handling even
+uncorrectable errors.
 Operating-system kernels encountering an ECC error might note that the
-affected data was being used by only one thread, and might react by
-killing that thread.
+affected data was being used by only one user process, and might react by
+killing that user process.
 Some user applications might be note that the affected data affected only
 a particular computation, and might react by restarting that computation.
-Both the kernel and the user application would need to continue execution,
-and might thus desire an exact exception.
+In both cases, it is only reasonable to react to an uncorrectable ECC
+error in a load from a read-only mapped file by re-reading that data
+from that file, then restarting that load instruction.
+In all cases, the kernel and the user application would need to continue
+execution, and would thus require an exact exception.
 
 Systems that offload processing of correctable ECC errors to software
 also require exact exceptions.
-After all, the software is going to need to be able to correct the
-error and then fix up state as if the load had returned the fixed-up
-value.
+After all, the software is going to need to be able to correct the error
+and then fix up the state to make it appear that the load had returned
+the fixed-up value.
 
 ECC errors are detected near the end of their corresponding load
 instructions' execution, so that any need for exact exceptions rules
