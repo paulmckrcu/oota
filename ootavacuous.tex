@@ -455,6 +455,8 @@ of both ``OOTA cycle'' and ``semantic dependency''.
 \subsection{Properties of Semantic Dependencies}
 \label{sec:Properties of Semantic Dependencies}
 
+@@@ Roadmap
+
 \subsubsection{Semantic Dependencies and Source Code}
 \label{sec:Semantic Dependencies and Source Code}
 
@@ -508,6 +510,11 @@ from \co{acyclic(sdep ; rfe)} to:
 	such that each $R_{i,j}$ reads from one of the $W_k$
 	stores in a different thread.
 \end{quote}
+
+This definition makes OOTA more complicated than a simple cycle but
+we will continue to refer to it as an OOTA cycle out of habit.
+Note that this new definition includes and generalizes our previous
+\co{acyclic(sdep ; rfe)} definition.
 
 \subsubsection{Semantic Dependencies Affected by Optimizations}
 \label{sec:Semantic Dependencies Affected by Optimizations}
@@ -847,16 +854,13 @@ semantic dependencies must be defined in terms of executions, it makes
 sense to lower our sights from full generality.
 We therefore restrict ourselves to a specific context:
 traditional compilers.
-Not only that, we will take the notion of semantic dependence (and thus
-OOTA) to be per-compiler rather than absolute.
+It will then turn out to be necessary to take the notion of semantic
+dependence, and thus OOTA, to be compiler-relative rather than absolute.
 
-For the special case of non-volatile atomic operations, we will further
-restrict ourselves to compilers that do single-threaded analysis, with
-the possible addition of specific constraints deduced from multi-threaded
-analysis.
-For volatile atomic operations, compilers are prohibited from inventing
-loads, and we will restrict ourselves to compilers that extend that
-prohibition to non-volatile atomic loads.
+We will show that programs built using strict C++ compilers that treat all
+atomic operations as volatile can never exhibit OOTA, and the same is true
+for compilers obeying the weaker constraint that atomic accesses may not
+invented, provided the compiler does not perform multi-thread analysis.
 
 @@@ LTO?
 
