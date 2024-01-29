@@ -105,16 +105,18 @@ evaluate litmus tests.
 \subsection{Brief OOTA Overview}
 \label{sec:Brief OOTA Overview}
 
-OOTA occurs when a group of threads load from each others' stores to
-each of a group of objects, but where each thread's store depends on
-the value returned by that thread's load.
-A given out-of-thin-air value passes around the resulting \emph{OOTA cycle}.
+In broad terms,
+OOTA occurs when a group of threads load from each others' stores
+and each thread's store depends on the value returned by that thread's load.
+The collection of loads and stores forms an \emph{OOTA cycle}.
+In the most extreme cases a nonsensical value can pop up ``out of thin air'',
+but this is not necessary.
 
 \subsubsection{Simple Reordering}
 \label{sec:Simple Reordering}
 
-However, it is important to distinguish OOTA cycles from the OOTA-like
-behavior that can be caused by simple reordering.
+It is important to distinguish true OOTA cycles from OOTA-like
+behavior caused by simple reordering.
 An example of simple reordering is shown in
 Listing~\ref{lst:Simple Reordering}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
 Both the C++ compiler and the CPU are within their rights to reorder
@@ -128,8 +130,8 @@ and \co{r2} having the value 42 as follows:
 \item   Line~12 loads 42 from \co{y} to \co{r2}.
 \end{enumerate}
 
-Current C++ implementations can and do exhibit this simple-reordering
-behavior.
+\noindent
+Current C++ implementations can and do exhibit this reordering behavior.
 
 \subsubsection{Simple OOTA Cycle}
 \label{sec:Simple OOTA Cycle}
@@ -137,20 +139,21 @@ behavior.
 In contrast,
 Listing~\ref{lst:Simple OOTA}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
 shows a simple example where an OOTA cycle might result in all of \co{x},
-\co{y}, \co{r1}, and \co{r2} have final values of 42, despite the fact
-that there is nothing in the initial values or the executable code that
-would support such an outcome:
+\co{y}, \co{r1}, and \co{r2} having final values of 42, despite the fact
+that there is nothing in the initial values or the executable code to
+support such an outcome:
 
 \begin{enumerate}
-\item   Line~6 loads from \co{x} into \co{r1}, somehow obtaining the
-	value 42, never mind the \co{x}'s initial value of zero.
+\item   Line~6 loads from \co{x} into \co{r1}, claiming to read
+	the value of line~13's store rather than \co{x}'s initial value
+	and somehow obtaining 42.
 \item   Line~7 stores \co{r1}, and thus 42, to \co{y}.
 \item   Line~12 loads 42 from \co{y} to \co{r2}.
-\item   Line~13 stores 42 to \co{x}, justifying the value loaded by
-	line~6 after the fact.
+\item   Line~13 stores 42 to \co{x}, justifying the value loaded by line~6.
 \end{enumerate}
 
-Fortunately, the C++ standard prohibits such OOTA cycles in 33.5.4p8
+Because nothing else in the C++ memory model rules out such OOTA cycles,
+the C++ standard explicitly prohibits them in 33.5.4p8
 (\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
 
 \begin{quote}
@@ -158,29 +161,38 @@ Fortunately, the C++ standard prohibits such OOTA cycles in 33.5.4p8
 	are computed that circularly depend on their own computation.
 \end{quote}
 
+\noindent
 The standard's prohibition of OOTA is of course important, but those of us
 writing code in the real world must rely on actual C++ implementations.
 And in these implementations, this prohibition is in fact enforced by TSO
 ordering in strongly ordered systems and by data dependency ordering in
-weakly ordered systems.
-Real-world implementations cannot store something until after they load
-it, so there is a \emph{semantic dependency} from line~6 to line~7 and
-another from line~12 to line~13 in
-Listing~\ref{lst:Simple OOTA}.
-These semantic dependencies cause compilers to emit instructions such
-that the hardware enforcement applies.\footnote{
+weakly ordered systems.\footnote{
 	The need to prohibit simple OOTA is one reason why compiler-based
 	value speculation optimizations require checks on such
 	speculation, and these checks must be based on actual values
 	loaded.}
 
-Roughly speaking, \emph{there is semantic dependency from a given load
-to a given store when, all other things being equal a change in the
-value loaded can change the value stored.}
+In Listing~\ref{lst:Simple OOTA}
+there is a \emph{semantic dependency} from line~6 to line~7 and
+another from line~12 to line~13.
+(Roughly speaking, there is a semantic dependency from a given load
+to a given store when \emph{all other things being equal, a change in the
+value loaded can change the value stored or prevent the store from
+occurring at all.}
+Here the dependencies are trivial, because the values stored simply
+\emph{are} the values that were loaded.)
+Since real-world CPUs cannot store something
+until they have determined its value,\footnote{
+	Another way of saying this is that real-world CPUs do not
+	speculate stores.}
+the stores in lines~7 and~13 cannot take place until the CPU
+knows what values are loaded by lines~6 and~12, respectively.
+Thus the hardware orders these stores after their corresponding loads,
+and this ordering prevents the OOTA result.
 
 This paper will follow P2055R0~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
 in using the term \emph{full C++} to denote the standard including the
-above prohibition, and the term \emph{strict C++}\footnote{
+prohibition above, and the term \emph{strict C++}\footnote{
 	@@@ Future bikeshedding of name.}
 % @@@ Alternatives thus far: OOTA-prone C++, OOTA-enabled C++,
 % @@@ relaxed C++, OOTA C++, OOTA-agnostic C++.
@@ -188,7 +200,7 @@ to denote a hypothetical standard that excludes this prohibition, but
 is otherwise identical to full C++.
 Unqualified \emph{C++} means full C++.
 
-The next section looks at how prior work has refined this prohibition.
+The next section looks at how prior work has refined these issues.
 
 \begin{listing}[tbp]
 \begin{verbatim}
@@ -276,16 +288,15 @@ undefined behavior (UB)~\cite{DavidGoldblatt2019NoElegantOOTAfix}, and
 Appendix~\ref{app:Aside on Undefined Behavior}
 analyzes his examples and notes ways to separate UB and OOTA-cycle
 concerns.
-The remainder of this document will focus on examples lacking UB.
+The remainder of this document will concentrate on examples lacking UB.
 
-All this work focused on either identifying OOTA or on how C++
+All this work focused on either identifying OOTA or seeing how C++
 implementations could avoid it.
-None of this work applied real-world hardware ordering to the problem
-of avoiding OOTA cycles.
-Which might explain why no known real-world C++ implementation results
-in OOTA executions.
-
-This paper therefore digs more deeply into OOTA cycles in the light
+None applied real-world hardware ordering constraints to the problem
+of avoiding OOTA cycles,
+yet doing so might help explain why no known real-world C++ implementation
+results in OOTA behavior.
+We therefore dig more deeply into OOTA cycles in the light
 of these real-world constraints.
 
 \subsection{Code-Analysis Tool}
@@ -298,7 +309,9 @@ This tool carries out the moral equivalent of full state-space searches
 of concurrent code fragments.
 In some cases its output will include executions with OOTA cycles,
 on occasion reporting undefined values for the variables involved in
-the cycle.
+the cycle.\footnote{
+	This happens only some of the time because of idiosyncrasies
+	in the algorithm used by \co{herd7}'s self-consistency solver.}
 
 \begin{listing}[tbp]
 @@ DisplayLitmus litmus/oota-ctrl.litmus @@
@@ -307,36 +320,34 @@ the cycle.
 \end{listing}
 
 Listing~\ref{lst:OOTA Cycle}
-shows a code fragment that in strict C++ would have an OOTA cycle (but
-that is of course prohibited in full C++).
-This section describes this fragment, thus giving an overview of
+shows a code fragment that under strict C++ has an OOTA cycle (although
+the cycle is of course prohibited in full C++).
+This section describes the fragment, thereby giving an overview of
 the \co{herd7} tool.
 
 The first line identifies it as a C-language litmus test and gives it
 a name.
-Lines~2-5 initialize variables, in this case setting the initial
+Lines~2--5 initialize variables, in this case setting the initial
 values of the global shared variables \co{x} and \co{y} to zero.
-Lines~7-13 define the first thread, \co{P0()}, and lines~15-21
+Lines~7--13 define the first thread, \co{P0()}, and lines~15--21
 define the second thread, \co{P1()}.\footnote{
 	The ``P'' stands for ``process'', which is \co{herd7}'s name
 	for ``thread''.}
 The arguments to both \co{P0()} and \co{P1()} specify which of
 the global shared variables each thread may access, in this case, \co{x}
 and \co{y}.
-The body of each thread specifies a limited subset of C++ code,
-which also happens to be a somewhat less limited subset of C code.
+The body of each thread contains a limited subset of C++ code
+(written in a slightly stilted manner to keep the load operations separate
+from the rest).
 
-Line~23 gives an example of a \co{locations} clause, which causes
-\co{herd7} to dump out the final value of \co{x} and \co{y}.
-
+Line~23 has a \co{locations} clause, which causes
+\co{herd7} to dump out the final values of \co{x} and \co{y}.
 Finally, line~24 specifies an \co{exists} clause, which gives a
-condition to check for the final value of the specified local
-variables.
-The \co{0:} prefix specifies a variable local to \co{P0()} and
-the \co{1:} prefix specifies a variable local to \co{P1()}.
-The \co{/\\} specifies a boolean AND, and the \co{=} specifies
-an equality comparison.
-If a variable appears in an \co{exists} clause, then the final value of
+condition to check for the final values of the specified variables.
+The \co{0:} prefix denotes a variable local to \co{P0()} and
+the \co{1:} prefix denotes a variable local to \co{P1()}.
+The \co{/\\} is a boolean AND, and the \co{=} signs are equality comparisons.
+If a variable appears in the \co{exists} clause then the final value of
 that variable constitutes observable behavior.
 
 \begin{listing}[tbp]
@@ -349,10 +360,10 @@ Listing~\ref{lst:OOTA Cycle, herd7 Output} shows the corresponding output
 of the \co{herd7} tool.
 Lines~3 and~4 show the possible states, with line~4 showing the
 counterintuitive outcome where both threads load the value 42.
-Normally these states would include only those variables mentioned
+Normally these lines would include only those variables mentioned
 in the \co{exists} clause, but because of the \co{locations} clause
-on line~23, the values of \co{x} and \co{y} is also included, which
-can be helpful when debugging.
+the values of \co{x} and \co{y} are also listed, which
+can be helpful for debugging.
 % @@@ As we will see, this outcome is not possible in real-world
 % @@@ implementations due to physical constraints of which \co{herd7}
 % @@@ is (by design) unaware.
@@ -363,7 +374,7 @@ others do not.
 The earlier examples shown in
 Listings~\ref{lst:Simple Reordering}
 and~\ref{lst:Simple OOTA}
-can be recast as similar \co{herd7} litmus tests, which areas shown in
+can be recast as similar \co{herd7} litmus tests, as shown in
 Listing~\ref{lst:Simple Reordering as Litmus Test}
 on page~\pageref{lst:Simple Reordering as Litmus Test}
 and Listing~\ref{lst:Causality Test Case 4}
@@ -371,32 +382,32 @@ on page~\pageref{lst:Causality Test Case 4}, respectively.
 Other OOTA-related litmus tests may be found in
 Appendix~\ref{app:OOTA-Related Litmus Tests}.
 
-\section{Semantic Dependencies, Executions, and OOTA}
-\label{sec:Semantic Dependencies; Executions; and OOTA}
+\section{OOTA, Semantic Dependencies, and Executions}
+\label{sec:OOTA; Semantic Dependencies; and Executions}
 
 @@@ Fill in roadmap when sectioning is finalized.
 
 \subsection{OOTA: rf vs. rfe}
 \label{sec:OOTA: rf vs. rfe}
 
-However, semantic dependencies are only one type of link in an OOTA cycle.
-The other link extends from a given store to the load that returns the
+Semantic dependencies are only one type of link in an OOTA cycle.
+The other type extends from a given store to the load that returns the
 value stored.
-It is tempting to make the intuitive argument that this store must precede
-this load in global time, and then to combine this with the notion that
+It is tempting to make the intuitive argument that the store must precede
+the load in global time, and then to combine this with the notion that
 any real C++ implementation must consume global time when computing a
 semantic dependency.
-This combination suggests that such implementations cannot exhibit
-OOTA cycles.
-This combination has been formalized by defining an OOTA cycle as a cycle
-in sdep $\cup$ rf, where sdep is the set of semantic dependencies within
-each thread and rf is the set of store-to-load links, whether intra-thread
+This combination suggests that OOTA cycles cannot occur.
+The idea has been formalized by defining an OOTA cycle as a cycle
+in sdep $\cup$ rf [@@@ Reference needed],
+where sdep is the set of semantic dependencies within
+each thread and rf is the set of store-to-load ``reads-from'' links,
+whether intra-thread
 (rfi) or between threads (rfe).\footnote{
 	See Appendix~\ref{app:Inter-Process Communications} for definitions
 	and properies of rf, rfe, and rfi.}
-
-This is a fine definition, and is consistent with the words in the C++
-standard, but has an intra-thread problem exemplified by the following
+This is a fine definition and is consistent with the words in the C++
+standard, but it has an intra-thread problem exemplified by the following
 code:
 
 \begin{quote}
@@ -409,12 +420,13 @@ code:
 \end{verbatim}
 \end{quote}
 
+\noindent
 This is an elaboration of \co{thread2()} from
 Listing~\ref{lst:Simple OOTA}
-that adds \co{z} along with lines~2 and~3.
-The problem is that the C++ implementation is within its rights to
+that adds \co{z} along with lines~3 and~4.
+The problem is that a C++ implementation is within its rights to
 note that line~3 might well execute immediately after line~2, giving
-threads no chance to modify \co{y}.
+other threads no chance to modify \co{y} in between.
 Such an implementation might therefore behave as if the source code
 had instead been as follows:
 
@@ -428,18 +440,18 @@ had instead been as follows:
 \end{verbatim}
 \end{quote}
 
-Here line~3 has been optimized away in favor of line~4 storing the value
-in \co{r2} that was loaded from \co{y} by line~2.
-And given that the load from \co{z} no longer exists, it cannot possibly
+\noindent
+Here line~3 has been optimized away in favor of line~4 storing the same value
+in \co{r2} that was stored to \co{y} by line~2.
+And given that the load from \co{y} no longer exists, it cannot possibly
 act as a temporal constraint.
 
-In order to avoid these rfi links, we substitute rfe
-for rf, thus defining an OOTA cycle as a cycle in sdep $\cup$ rfe (or
-\co{acyclic(sdep ; rfe)} in \co{herd7} notation), where rfe is the set
-of store-to-load links, but excluding intra-thread rfi links, which are
-instead considered to be part of sdep.
+In order to avoid these rfi links we will substitute rfe
+for rf, defining an OOTA cycle---for now---as a cycle in sdep $\cup$ rfe,
+where rfe is the set of store-to-load links excluding intra-thread rfi links.
+Any rfi links in a cycle can instead be interpreted as part of sdep.
 Although this does shunt additional complexity onto the term
-``semantic dependency'', it also enables us to cleanly separate
+``semantic dependency'', it also enables us to separate cleanly
 the inter-thread and intra-thread portions of any given OOTA cycle.
 % \footnote{
 %	Thanks to Alan Stern for providing a litmus test that demonstrated
@@ -460,11 +472,10 @@ of both ``OOTA cycle'' and ``semantic dependency''.
 \subsubsection{Semantic Dependencies and Source Code}
 \label{sec:Semantic Dependencies and Source Code}
 
-Some discussions of semantic dependencies assume that semantic
-dependencies are a strict function of the source code.
-Although there are some ways of making this work, many uses of
-semantic dependencies require them to be a function of particular
-executions.
+Some discussions of semantic dependencies assume that they
+are strictly functions of the source code.
+Although there are ways of making this work, many instances of
+semantic dependency must be considered functions of particular executions.
 Consider for example:
 
 \begin{quote}
@@ -473,75 +484,78 @@ x = y * z;
 \end{verbatim}
 \end{quote}
 
+\noindent
 As long as \co{z} is zero, and all else being equal, changes in the
-value of \co{y} will not cause changes to the value of \co{x}.
-In that case, the implementation is within its rights to discard this
-statement and act as if later accesses to \co{x} were instead the
-constant zero, at least up to the next assignment to \co{x}.
+value of \co{y} will not cause a change in the value stored to \co{x}.
+As a result, the semantic dependency from \co{y} to \co{x} exists only
+in executions where \co{z} is nonzero,
+which shows it is a property of the execution, not just of the source code.
 
 \subsubsection{Semantic Dependencies Can Be Many To One}
 \label{sec:Semantic Dependencies Can Be Many To One}
 
-Suppose that both \co{y} and \co{z} are zero in the previous example.
-Then changes to either but not both of \co{y} or \co{z} (again, all
-else being equal) will not cause changes to the value of \co{x}.
-In other words, there is no semantic dependency from either \co{y}
-or \co{z} to \co{x} unless both \co{y} and \co{z} change.
-Alternatively, when both \co{y} and \co{z} are zero, there is no semantic
-dependency from either \co{y} or \co{z} to \co{x}, but rather a semantic
-dependency from the combination of \co{y} \emph{and} \co{z} to \co{x}.
-This means that precise definitions of sdep cannot always rely on
-single-variable perturbations.
+Suppose that in some execution of the previous example,
+both \co{y} and \co{z} are zero.
+Then changes to either \co{y} or \co{z} (again, all
+else being equal) will not cause a change in the value stored to \co{x}.
+In other words, in this execution there is no semantic dependency
+from either \co{y} or \co{z} to \co{x}.
+But there \emph{is} a semantic dependency from the \emph{pair}
+\{\co{y},~\co{z}\} to \co{x},
+because changes to both \co{y} and \co{z}
+can cause the value stored in \co{x} to change.
+This means that accurate definitions of sdep cannot always rely on
+single-variable perturbations;
+they must consider changes to multiple variables.
 See Appendix~\ref{app:Non-Trivial Semantic Dependencies}
 for examples and additional discussion.
 
-Roughly speaking and all other things being equal, \emph{there is semantic
-dependency from a given set of loads to a given store when a change in
-the values loaded can change the value stored.}
-
-This definition allows the definition of an OOTA cycle to be expanded
-from \co{acyclic(sdep ; rfe)} to:
+Since we no longer regard sdep as always relating a single load to a store,
+the notion of a cycle involving sdep appears problematic.
+We are forced to change our definition of an OOTA cycle again;
+we will say that an execution is an instance of OOTA if in that execution:
 
 \begin{quote}
 	There are stores
-	$W_i (i = 0, ..., m)$,
+	$W_i$~($i = 0$, \ldots,~$m$),
 	where $W_i$ semantically depends on loads
-	$R_{i,j} (j = 0, ..., n_i)$,
+	$\{R_{i,j}\}$~($j = 0$, \ldots,~$n_i$),
 	such that each $R_{i,j}$ reads from one of the $W_k$
 	stores in a different thread.
 \end{quote}
 
-This definition makes OOTA more complicated than a simple cycle but
+\noindent
+This makes OOTA more complicated than a simple cycle but
 we will continue to refer to it as an OOTA cycle out of habit.
-Note that this new definition includes and generalizes our previous
-\co{acyclic(sdep ; rfe)} definition.
+Note that this new definition includes and generalizes the earlier
+``cycle in sdep $\cup$ rfe'' definition.
 
-\subsubsection{Semantic Dependencies Affected by Optimizations}
-\label{sec:Semantic Dependencies Affected by Optimizations}
+\subsubsection{Semantic Dependencies Affected by Cross-Thread Optimizations}
+\label{sec:Semantic Dependencies Affected by Cross-Thread Optimizations}
 
 Consider the following:
 
 \begin{quote}
 \begin{verbatim}
-x = y + z;
+x = y - z;
 \end{verbatim}
 \end{quote}
 
-There are semantic dependencies from \co{y} to \co{x} and from \co{z}
+\noindent
+There appear to be semantic dependencies from \co{y} to \co{x} and from \co{z}
 to \co{x}.
-However, if the implementation knows that the value of \co{y} is
-always the negative of \co{z} there is no semantic dependency and the
-implementation can again act as if later accesses to \co{x} were instead
-the constant zero, again, at least until the next assignment to \co{x}.
-Please note that this leaves aside the question of how the compiler
-would know this if \co{y} and \co{z} are atomic objects that cannot be
-updated pairwise atomically and are subject to change at any time by
+However, if the compiler somehow knows that \co{y} is
+always equal to \co{z} at this point then there is no semantic dependency;
+the compiler can act as if the statement were simply ``\co{x = 0;}''.
+We leave aside the question of how the compiler would know this,
+given that \co{y} and \co{z} cannot be updated simultaneously
+and are subject to change at any time by
 other threads (a point we will return to).
 
 \subsubsection{Semantic Dependencies Affected by \co{if} Statements}
 \label{sec:Semantic Dependencies Affected by if Statements}
 
-Consider the following simple \co{if} statement:
+Consider the following \co{if} statement:
 
 \begin{quote}
 \begin{verbatim}
@@ -553,13 +567,15 @@ else
 \end{verbatim}
 \end{quote}
 
+\noindent
 Here there is a semantic dependency from \co{x}, but in some executions
 it extends to \co{y} and in others to \co{z}.
-This is an example of the load affecting not the value or address of
+This is an example of the load affecting not the value of
 a given store, but rather whether or not that store is executed at all.
 
-Which raises the question:
-What exactly is an execution?
+We have seen several examples showing that semantic dependencies may vary
+according to the execution.
+This raises the question: What exactly is an execution?
 
 \subsection{What Exactly is an Execution?}
 \label{sec:What Exactly is an Execution?}
