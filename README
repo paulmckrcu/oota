@@ -1,0 +1,5 @@
+To build:
+
+	sh ootavacuous.sh
+
+This will produce an ootavacuous.pdf file.

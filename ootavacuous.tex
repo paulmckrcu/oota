@@ -3195,6 +3195,80 @@ By the same reasoning, Goldblatt's \co{misbehave} example that
 also involves unreachability can also be addressed through insertion
 of the proposed \co{std::observable()}.
 
+\subsection{Lifetime-Based Undefined Behavior}
+\label{sec:Lifetime-Based Undefined Behavior}
+
+Not all undefined behavior can be backstopped using
+\co{std::unreachable()}.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 int *foo(int *r)
+ 2 {
+ 3   b.store(r, memory_order_relaxed);
+ 4   return &global;
+ 5 }
+ 6
+ 7 int go(int *p)
+ 8 {
+ 9   int r;
+10   int *q = foo(&r);
+11
+12   r = 2;
+13   *p = 1;
+14   *q = r;
+15   return *q - r;
+16 }
+17
+18 void t1(void)
+19 {
+20   int r1 = go(a.load(memory_order_relaxed));
+21   printf("go() = %d\n", r1);
+22 }
+23
+24 void t2(void)
+25 {
+26   int *r2 = b.load(memory_order_relaxed);
+27   a.store(r2, memory_order_relaxed);
+28 }
+\end{verbatim}
+\caption{Lifetime-Based Undefined Behavior}
+\label{lst:Lifetime-Based Undefined Behavior}
+\end{listing}
+
+Listing~\ref{lst:Lifetime-Based Undefined Behavior}
+shows an example loosely based on one presented by Stephen Dolan\footnote{
+	\url{https://stedolan.net/talks/2024/loadstore}}
+in which function \co{go()} invokes \co{foo()} with a pointer to \co{go()}'s
+local variable \co{r}.
+However, \co{foo()} uses a relaxed store to place this pointer in
+an atomic variable \co{b}.
+Because this store is relaxed, it is not ordered against other code
+in \co{go()} and \co{t1()}, which means that \co{t2()} might well
+read this pointer from \co{b} either before the beginning or after
+the end of \co{r}'s lifetime, neither of which is well-defined.
+
+Of course, any attempt to dereference the pointer read from either
+\co{a} or \co{b} could result in undefined behavior.
+
+The lesson is clear:
+Properly synchronize reads and writes of pointers with the lifetime
+of the pointed-to object.
+
+This example could make lines~3 and~27 be \co{memory_order_release} and
+lines~20 and~26 be \co{memory_order_acquire} in order to avoid carrying
+a pointer to \co{r} before the lifetime of \co{r} has started.
+Note that \co{std::unreachable()} does not suffice because the CPU
+can also reorder relaxed stores.
+Note also that load-store ordering is not sufficient to prevent a
+pointer to \co{r} from being stored to \co{b} prior to the start of
+\co{r}'s lifetime because there is no atomic load between the start
+of that lifetime and the relaxed store to \co{b}.
+
+There are a number of ways to prevent carrying a pointer to \co{r} after
+the lifetime of \co{r} has ended, and these are left as an exercise for
+the reader.
+
 \clearpage
 
 \section{Evaluating sdep Using \co{cbmc}}
@@ -3704,7 +3778,8 @@ However, some kernels and applications have ways of handling even
 uncorrectable errors.
 Operating-system kernels encountering an ECC error might note that the
 affected data was being used by only one user process, and might react by
-killing that user process.
+killing that user process, taking care to account for memory shared with
+other processes.
 Some user applications might be note that the affected data affected only
 a particular computation, and might react by restarting that computation.
 In both cases, it is only reasonable to react to an uncorrectable ECC
@@ -3720,9 +3795,9 @@ and then fix up the state to make it appear that the load had returned
 the fixed-up value.
 
 ECC errors are detected near the end of their corresponding load
-instructions' execution, so that any need for exact exceptions rules
-out the commiting of any subsequent stores before the load has fetched
-its value.
+instructions' execution, so that any need for exact exceptions rules out
+the commiting of any subsequent stores until after the load has fetched
+(and possibly corrected) its value.
 
 So why are hardware architects reluctant to tighten their memory models
 to forbid reordering of earlier loads and later stores?
@@ -3733,7 +3808,8 @@ In the meantime, here is some semi-informed speculation on this topic:
 
 \begin{enumerate}
 \item	Some hardware might choose to forego ECC, for example, in order to
-	reduce cost or to improve energy efficiency.
+	reduce cost for low-end systems or to improve energy efficiency
+	for battery-powered systems.
 \item	ECC error correction might still be done in hardware, avoiding
 	the need for precise software-visible exceptions.
 \item	Some systems might prefer to immediately shut down, forbidding
@@ -3742,7 +3818,7 @@ In the meantime, here is some semi-informed speculation on this topic:
 \item	Someone might come up with a clever way of correcting ECC errors
 	in firmware, avoiding the need for precise software-visible
 	exceptions.
-\item	As late as early 2024, some GPUs have been observed reordering
+\item	As late as early 2024, some GPGPUs have been observed reordering
 	earlier loads against later stores.
 	Other hardware architects might therefore feel the need to keep
 	this option open for their own systems.
