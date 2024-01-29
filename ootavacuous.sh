@@ -30,7 +30,7 @@ BEGIN {
 	print bs "scriptsize";
 	print bs "begin{verbatim}";
 	print "___EOF___";
-	print "grep -v " sq "^[(/ ]" bs "*" sq " < " path " | c2latex.sh";
+	print "grep -v " sq "^[(/ ]" bs "*" sq " < " path " | ./c2latex.sh";
 	print "cat << " sq "___EOF___" sq;
 	print bs "end{verbatim}";
 	print "}";
@@ -43,14 +43,14 @@ BEGIN {
 	print bs "scriptsize";
 	print bs "begin{verbatim}";
 	print "___EOF___";
-	print "grep -v " sq "^[(/ ]" bs "*" sq " < " path " | c2latex.sh";
+	print "grep -v " sq "^[(/ ]" bs "*" sq " < " path " | ./c2latex.sh";
 	print "cat << " sq "___EOF___" sq;
 	print bs "end{verbatim}";
 	print "";
 	print "Analysis by " dq bs "co{herd7 -c11 " path dq "}:";
 	print bs "begin{verbatim}";
 	print "___EOF___";
-	print "herd7 -c11 " path " | grep -v " sq "^$" sq " | c2latex.sh ";
+	print "herd7 -c11 " path " | grep -v " sq "^$" sq " | ./c2latex.sh ";
 	print "cat << " sq "___EOF___" sq;
 	print bs "end{verbatim}";
 	print "}";
@@ -63,7 +63,7 @@ BEGIN {
 	print bs "scriptsize";
 	print bs "begin{verbatim}";
 	print "___EOF___";
-	print "herd7 -c11 " path " | grep -v " sq "^$" sq " | c2latex.sh ";
+	print "herd7 -c11 " path " | grep -v " sq "^$" sq " | ./c2latex.sh ";
 	print "cat << " sq "___EOF___" sq;
 	print bs "end{verbatim}";
 	print "}";
