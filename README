@@ -3,3 +3,12 @@ To build:
 	sh ootavacuous.sh
 
 This will produce an ootavacuous.pdf file.
+
+This will require the following packages:
+
+o	LaTeX
+
+o	inkscape
+
+o	herd7tools
+	https://github.com/herd/herdtools7
