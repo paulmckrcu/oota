@@ -184,7 +184,8 @@ Here the dependencies are trivial, because the values stored simply
 Since real-world CPUs cannot store something
 until they have determined its value,\footnote{
 	Another way of saying this is that real-world CPUs do not
-	speculate stores.}
+	make their stores visible to other CPUs until those stores
+	are no longer speculative.}
 the stores in lines~7 and~13 cannot take place until the CPU
 knows what values are loaded by lines~6 and~12, respectively.
 Thus the hardware orders these stores after their corresponding loads,
@@ -487,6 +488,9 @@ x = y * z;
 \end{quote}
 
 \noindent
+(Here and below, we have written shared-variable accesses without
+annotations, for brevity.  Please imagine they are all relaxed atomic.)
+
 As long as \co{z} is zero, and all else being equal, changes in the
 value of \co{y} will not cause a change in the value stored to \co{x}.
 As a result, the semantic dependency from \co{y} to \co{x} exists only
@@ -528,7 +532,7 @@ we will say that an execution is an instance of OOTA if in that execution:
 
 \noindent
 This makes OOTA more complicated than a simple cycle but
-we will continue to refer to it as an OOTA cycle out of habit.
+we will continue to refer to OOTA cycles out of habit.
 Note that this new definition includes and generalizes the earlier
 ``cycle in sdep $\cup$ rfe'' definition.
 
