@@ -3274,6 +3274,14 @@ of the pointed-to object.
 This example could make lines~3 and~27 be \co{memory_order_release} and
 lines~20 and~26 be \co{memory_order_acquire} in order to avoid carrying
 a pointer to \co{r} before the lifetime of \co{r} has started.
+Alternatively, threads could be spawned only after \co{r}'s lifetime
+starts and joined before it ends.
+Placing \co{r} in static global storage would avoid lifetime considerations
+totally.
+And there are of course any number of other synchronization schemes
+that might be used to ensure that pointers are in use only while the
+pointed-to objects are alive.
+
 Note that \co{std::unreachable()} does not suffice because the CPU
 can also reorder relaxed stores.
 Note also that load-store ordering is not sufficient to prevent a
@@ -3487,9 +3495,10 @@ Finally, there might be a desire for hard evidence that coe and fre
 links really can go backwards in time.
 We provide this evidence on x86 to demonstrate that these effects
 are not confined to weakly ordered systems.
-This system is a laptop with Intel(R) Core(TM) i9-10885H CPU @ 2.40GHz,
-having a single socket with 8~cores, each having a pair of hardware
-threads.
+This system is a dual-socket system with
+Intel(R) Xeon(R) Gold 6138 CPU @ 2.00GHz,
+each socket with 20~cores, each having a pair of hardware
+threads, for a grand total of 80 hardware threads.
 The code generating this data may be found in the \path{CodeSamples/cpu}
 directory of the
 perfbook~\cite{McKenney2018ParallelProgramming-2018-12-08a}.\footnote{
@@ -3497,17 +3506,17 @@ perfbook~\cite{McKenney2018ParallelProgramming-2018-12-08a}.\footnote{
 
 \begin{figure}[tb]
 \begin{center}
-\resizebox{3in}{!}{\includegraphics{coe-sh-out}}
-\caption{On x86, coe Links Are Atemporal}
-\label{fig:On x86, coe Links Are Atemporal}
+\resizebox{4in}{!}{\includegraphics{coe-nvals}}
+\caption{On x86, Reasonable CPUs Can Disagree}
+\label{fig:On x86; Reasonable CPUs Can Disagree}
 \end{center}
 \end{figure}
 
-Figure~\ref{fig:On x86, coe Links Are Atemporal}
-shows the results of 15 of the laptop's hardware threads simultaneously
-storing their identifying integer (ranging from 0 to 14) to a shared
+Figure~\ref{fig:On x86; Reasonable CPUs Can Disagree}
+shows the results of 79 of the systems's hardware threads simultaneously
+storing their identifying integer (ranging from 0 to 78) to a shared
 variable, then repeatedly doing timestamped reads from that variable.
-The x-axis displays time in TSC periods, each of which is about 0.417~ns
+The x-axis displays time in TSC periods, each of which is about 0.5~ns
 in duration.
 The y-axis shows the number of distinct opinions that the hardware
 threads have as a function of time, a number that is frequently rather
@@ -3515,6 +3524,22 @@ larger than one.
 The backwards-in-time coe link from Thread~1 to Thread~0 in
 Figure~\ref{fig:IPC Diagram for coe, fre, and rfe}
 is therefore entirely plausible.
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{4in}{!}{\includegraphics{coe-sh-out}}
+\caption{On x86, coe Links Are Atemporal}
+\label{fig:On x86; coe Links Are Atemporal}
+\end{center}
+\end{figure}
+
+Not only is this plausible, but as you can see in
+Figure~\ref{fig:On x86; coe Links Are Atemporal},
+it actually happens, and frequently.
+The store-to-store latency is measured from the end of the ``winning''
+store to the beginning of the non-winning store that started latest.
+As you can see, most of the measurements show that the winning store
+was not the last store, even on x86.
 
 \begin{figure}[tb]
 \begin{center}
@@ -3532,7 +3557,7 @@ is therefore entirely plausible.
 \end{center}
 \end{figure}
 
-However, Figure~\ref{fig:On x86, coe Links Are Partially Ordered}
+@@@ However, Figure~\ref{fig:On x86, coe Links Are Partially Ordered}
 shows that the order of reads of each value at each thread are
 consistent with a number of global orders, as required.
 Figure~\ref{fig:On Power5, coe Links Are Also Partially Ordered}
@@ -3548,11 +3573,12 @@ system~\cite{McKenney2018ParallelProgramming-2018-12-08a}.
 \end{figure}
 
 Figure~\ref{fig:On x86, fre Links Are Atemporal}
-plots a histogram of the elapsed time from the last load to return the
-old value to the store that provided the new value.
-Note well that most of the data falls into negative time, that is to say,
-the last load of the old value executes about 50 timestamp periods (about
-20~nanoseconds) \emph{after} the store that overwrote that same old value.
+plots a histogram of the elapsed time from the beginning of load to
+return the old value to the end of the store that provided the new value.
+Note well that most of the data falls into negative time, that is to
+say, most frequently, the last load of the old value executes about 60
+timestamp periods (about 30~nanoseconds) \emph{after} the store that
+overwrote that same old value.
 That is, fre links can and do go backwards in time.
 This corresponds to the fre link between Thread~3 and Thread~2 depicted in
 Figure~\ref{fig:IPC Diagram for coe, fre, and rfe}.
