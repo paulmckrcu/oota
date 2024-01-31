@@ -3538,8 +3538,10 @@ Figure~\ref{fig:On x86; coe Links Are Atemporal},
 it actually happens, and frequently.
 The store-to-store latency is measured from the end of the ``winning''
 store to the beginning of the non-winning store that started latest.
-As you can see, most of the measurements show that the winning store
-was not the last store, even on x86.
+Every data point on the negative x-axis represents a group of runs
+in which the winning store was not the last store.
+Thus, the winning store not being the last store is quite common, even
+on x86.
 
 \begin{figure}[tb]
 \begin{center}
@@ -3557,9 +3559,11 @@ was not the last store, even on x86.
 \end{center}
 \end{figure}
 
-@@@ However, Figure~\ref{fig:On x86, coe Links Are Partially Ordered}
+However, Figure~\ref{fig:On x86, coe Links Are Partially Ordered}
 shows that the order of reads of each value at each thread are
-consistent with a number of global orders, as required.
+consistent with a number of global orders, as required.\footnote{
+	Taken on a 16-CPU x86 laptop to avoid an unreadable
+	diagram containing 79 bubbles.}
 Figure~\ref{fig:On Power5, coe Links Are Also Partially Ordered}
 shows a rather more elaborate partial order from a Power5
 system~\cite{McKenney2018ParallelProgramming-2018-12-08a}.
@@ -3576,9 +3580,9 @@ Figure~\ref{fig:On x86, fre Links Are Atemporal}
 plots a histogram of the elapsed time from the beginning of load to
 return the old value to the end of the store that provided the new value.
 Note well that most of the data falls into negative time, that is to
-say, most frequently, the last load of the old value executes about 60
-timestamp periods (about 30~nanoseconds) \emph{after} the store that
-overwrote that same old value.
+say, in the most commonly occurring case, the last load of the old value
+executes about 60 timestamp periods (about 30~nanoseconds) \emph{after}
+the store that overwrote that same old value.
 That is, fre links can and do go backwards in time.
 This corresponds to the fre link between Thread~3 and Thread~2 depicted in
 Figure~\ref{fig:IPC Diagram for coe, fre, and rfe}.
