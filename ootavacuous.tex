@@ -399,7 +399,9 @@ any real C++ implementation must consume global time when computing a
 semantic dependency.
 This combination suggests that OOTA cycles cannot occur.
 The idea has been formalized by defining an OOTA cycle as a cycle
-in sdep $\cup$ rf [@@@ Reference needed],
+in sdep $\cup$ rf~\cite{PaulEMcKenney2014OOTA},
+% @@@ This citation credits the formulation to Ali Sezgin, third author
+% @@@ of N4323 ("Out-of-Thin-Air Execution is Vacuous").
 where sdep is the set of semantic dependencies within
 each thread and rf is the set of store-to-load ``reads-from'' links,
 whether intra-thread
