@@ -3317,6 +3317,19 @@ The tool then hands this expression to a SAT solver, and if this solver
 finds a satisfying set of values, the tool uses those values provide
 the execution path to the bug.
 
+\subsection{Complex Semantic Dependencies}
+\label{app:Complex Semantic Dependencies}
+
+Listing~\ref{lst:Example Code for Evaluation of sdep}
+shows a \co{herd7} thread \co{P0()}.
+Is there a semantic dependency between the load from \co{x} on
+line~3 to the store to \co{y} on line~9?
+Answering this question requires solving a mathematical equation,
+not all of which currently have known solutions.
+However, this section will use a relatively simple equation combined
+with restrictions on domain and range that permit \co{cbmc} to do
+the job.
+
 \begin{listing}[tbp]
 \scriptsize
 \begin{verbatim}
@@ -3334,11 +3347,6 @@ the execution path to the bug.
 \caption{Example Code for Evaluation of sdep}
 \label{lst:Example Code for Evaluation of sdep}
 \end{listing}
-
-Listing~\ref{lst:Example Code for Evaluation of sdep}
-shows a \co{herd7} thread \co{P0()}.
-Is there a semantic dependency between the load from \co{x} on
-line~3 to the store to \co{y} on line~9?
 
 \begin{listing}[tbp]
 \scriptsize
@@ -3441,6 +3449,36 @@ There are numerous other tools that can be used, up to and including
 manual inspection, but \co{cbmc} is readily available and easy to
 use.\footnote{
 	On Debian-based distributions, via \co{sudo apt install cbmc}.}
+
+\subsection{C++ Non-Determinism}
+\label{app:C++ Non-Determinism}
+
+The C++ standard allows non-determinism, for example, the order of
+invocation of side-effects in some circumstances.
+Listing~\ref{lst:Code for cbmc-Based Evaluation of Non-Deterministic sdep}
+shows an example leveraging side-effects in the parameter list shown on
+line~37.
+
+\begin{listing}[tbp]
+@@ DisplayLitmus cbmc/sdep-nondet.c @@
+\caption{Code for cbmc-Based Evaluation of Non-Deterministic sdep}
+\label{lst:Code for cbmc-Based Evaluation of Non-Deterministic sdep}
+\end{listing}
+
+Running \co{cbmc} on this as follows:
+
+\begin{quote}
+\scriptsize
+\begin{verbatim}
+cbmc -DCBMC cbmc/sdep-nondet.c
+\end{verbatim}
+\end{quote}
+
+Gives the result \co{VERIFICATION SUCCESSFUL}, showing that \co{cbmc}
+does not model this non-determinism.
+Which is not surprising, given that many of the safety-critical uses
+to which \co{cbmc} is put would prohibit such non-determinism in their
+code bases.
 
 \clearpage
 
@@ -4036,9 +4074,7 @@ not in any way constitute agreement with anything in this paper.
 % Will Deacon: ARM hardware, C++, and OOTA.
 
 % @@@ TODO:
-% Create nice bell graph for coe, or at least try!
 % Construct interleaved OOTA examples (see sheets of paper).
-% Check cmbc on nondeterministic i++.
 % Use LKMM as check for dependencies?
 
 % Objections:
