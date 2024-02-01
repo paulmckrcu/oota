@@ -122,15 +122,12 @@ Listing~\ref{lst:Simple Reordering}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
 Both the C++ compiler and the CPU are within their rights to reorder
 lines~12 and~13, which can result in all of \co{x}, \co{y}, \co{r1},
 and \co{r2} having the value 42 as follows:
-
 \begin{enumerate}
 \item   Line~13 stores 42 to \co{x}.
 \item   Line~6 loads 42 from \co{x} into \co{r1}.
 \item   Line~7 stores \co{r1}, and thus 42, to \co{y}.
 \item   Line~12 loads 42 from \co{y} to \co{r2}.
 \end{enumerate}
-
-\noindent
 Current C++ implementations can and do exhibit this reordering behavior.
 
 \subsubsection{Simple OOTA Cycle}
@@ -155,13 +152,10 @@ support such an outcome:
 Because nothing else in the C++ memory model rules out such OOTA cycles,
 the C++ standard explicitly prohibits them in 33.5.4p8
 (\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
-
 \begin{quote}
 	Implementations should ensure that no “out-of-thin-air” values
 	are computed that circularly depend on their own computation.
 \end{quote}
-
-\noindent
 The standard's prohibition of OOTA is of course important, but those of us
 writing code in the real world must rely on actual C++ implementations.
 And in these implementations, this prohibition is in fact enforced by TSO
@@ -412,7 +406,6 @@ whether intra-thread
 This is a fine definition and is consistent with the words in the C++
 standard, but it has an intra-thread problem exemplified by the following
 code:
-
 \begin{quote}
 \scriptsize
 \begin{verbatim}
@@ -422,8 +415,6 @@ code:
  4   atomic_store_explicit(&z, r3, memory_order_relaxed);
 \end{verbatim}
 \end{quote}
-
-\noindent
 This is an elaboration of \co{thread2()} from
 Listing~\ref{lst:Simple OOTA}
 that adds \co{z} along with lines~3 and~4.
@@ -432,7 +423,6 @@ note that line~3 might well execute immediately after line~2, giving
 other threads no chance to modify \co{y} in between.
 Such an implementation might therefore behave as if the source code
 had instead been as follows:
-
 \begin{quote}
 \scriptsize
 \begin{verbatim}
@@ -442,8 +432,6 @@ had instead been as follows:
  4   atomic_store_explicit(&z, r2, memory_order_relaxed);
 \end{verbatim}
 \end{quote}
-
-\noindent
 Here line~3 has been optimized away in favor of line~4 storing the same value
 in \co{r2} that was stored to \co{y} by line~2.
 And given that the load from \co{y} no longer exists, it cannot possibly
@@ -480,14 +468,11 @@ are strictly functions of the source code.
 Although there are ways of making this work, many instances of
 semantic dependency must be considered functions of particular executions.
 Consider for example:
-
 \begin{quote}
 \begin{verbatim}
 x = y * z;
 \end{verbatim}
 \end{quote}
-
-\noindent
 (Here and below, we have written shared-variable accesses without
 annotations, for brevity.  Please imagine they are all relaxed atomic.)
 
@@ -520,7 +505,6 @@ Since we no longer regard sdep as always relating a single load to a store,
 the notion of a cycle involving sdep appears problematic.
 We are forced to change our definition of an OOTA cycle again;
 we will say that an execution is an instance of OOTA if in that execution:
-
 \begin{quote}
 	There are stores
 	$W_i$~($i = 0$, \ldots,~$m$),
@@ -529,8 +513,6 @@ we will say that an execution is an instance of OOTA if in that execution:
 	such that each $R_{i,j}$ reads from one of the $W_k$
 	stores in a different thread.
 \end{quote}
-
-\noindent
 This makes OOTA more complicated than a simple cycle but
 we will continue to refer to OOTA cycles out of habit.
 Note that this new definition includes and generalizes the earlier
@@ -540,14 +522,11 @@ Note that this new definition includes and generalizes the earlier
 \label{sec:Semantic Dependencies Affected by Cross-Thread Optimizations}
 
 Consider the following:
-
 \begin{quote}
 \begin{verbatim}
 x = y - z;
 \end{verbatim}
 \end{quote}
-
-\noindent
 There appear to be semantic dependencies from \co{y} to \co{x} and from \co{z}
 to \co{x}.
 However, if the compiler somehow knows that \co{y} is
@@ -562,7 +541,6 @@ other threads (a point we will return to).
 \label{sec:Semantic Dependencies Affected by if Statements}
 
 Consider the following \co{if} statement:
-
 \begin{quote}
 \begin{verbatim}
 r1 = x;
@@ -572,8 +550,6 @@ else
     z = r1;
 \end{verbatim}
 \end{quote}
-
-\noindent
 Here there is a semantic dependency from \co{x}, but in some executions
 it extends to \co{y} and in others to \co{z}.
 This is an example of the load affecting not the value of
