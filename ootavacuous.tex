@@ -3193,6 +3193,21 @@ By the same reasoning, Goldblatt's \co{misbehave} example that
 also involves unreachability can also be addressed through insertion
 of the proposed \co{std::observable()}.
 
+\subsection{Atomic Stores From Undefined Behavior}
+\label{sec:Atomic Stores From Undefined Behavior}
+
+Another proposal to the C++ standards
+committee~\cite{HansBoehm2020UBalternatives}
+proposes (among other alternatives) that any atomic store resulting
+from undefined behavior have at least release semantics.
+This would prevent such a store from propagating undefined behavior
+backwards within that store's thread.
+In some cases, this could also prevent this undefined behavior from
+propagating back through other threads.
+
+However, it might well force C++ implementations to promote a surprisingly
+large fraction of a program's relaxed stores to release.
+
 \subsection{Lifetime-Based Undefined Behavior}
 \label{sec:Lifetime-Based Undefined Behavior}
 
