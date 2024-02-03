@@ -2849,6 +2849,47 @@ There are a number of possible reactions to these situations:
 \item	What other interesting situations might come to light?
 \end{enumerate}
 
+There are situations where inventing loads from non-atomic objects
+is customary, for example, when hoisting a load out of a loop.
+In this case, implementations might hoist the load from x out of
+the loop:
+
+\begin{quote}
+\begin{verbatim}
+do_something_with(x);
+for (i = 0; i < limit i++)
+	y[i] += x;
+\end{verbatim}
+\end{quote}
+
+A C++ implementation might act as if the program had instead been this:
+
+\begin{quote}
+\begin{verbatim}
+r1 = x;
+do_something_with(r1);
+for (i = 0; i < limit i++)
+	y[i] += r1;
+\end{verbatim}
+\end{quote}
+
+Note that passing \co{x} to the call to \co{do_something_with()} is important
+because this allows the C++ implementation to assume that accesses to \co{x}
+will not result in a data race.
+Without this assumption, the above transformation might introduce a data
+race when \co{limit} is less than or equal to zero.
+
+But if \co{x} is a non-volatile atomic, then there are no worries about
+data races.
+In theory, the implementation could make the above transformation without
+worry, especially given that the value loaded from \co{x} is discarded in
+the case where \co{limit} is less than or equal to zero.
+Except that the data-race worry is replaced by a cache-miss worry.
+After all, optimizations are supposed to speed things up.
+This means that a C++ implementation might be wise to adhere to the
+same restriction that avoids data races for loads from non-atomic
+variables in order to avoid expensive cache misses.
+
 \subsubsection{Non-Trivial Semantic Dependencies}
 \label{app:Non-Trivial Semantic Dependencies}
 
