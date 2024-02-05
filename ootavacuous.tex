@@ -106,7 +106,7 @@ evaluate litmus tests.
 \label{sec:Brief OOTA Overview}
 
 In broad terms,
-OOTA occurs when a group of threads load from each others' stores
+OOTA occurs theoretically when a group of threads load from each others' stores
 and each thread's store depends on the value returned by that thread's load.
 The collection of loads and stores forms an \emph{OOTA cycle}.
 In the most extreme cases a nonsensical value can pop up ``out of thin air'',
@@ -386,7 +386,7 @@ Appendix~\ref{app:OOTA-Related Litmus Tests}.
 \label{sec:OOTA: rf vs. rfe}
 
 Semantic dependencies are only one type of link in an OOTA cycle.
-The other type extends from a given store to the load that returns the
+The other type extends from a given store to a load that returns the
 value stored.
 It is tempting to make the intuitive argument that the store must precede
 the load in global time, and then to combine this with the notion that
@@ -403,6 +403,7 @@ whether intra-thread
 (rfi) or between threads (rfe).\footnote{
 	See Appendix~\ref{app:Inter-Process Communications} for definitions
 	and properies of rf, rfe, and rfi.}
+
 This is a fine definition and is consistent with the words in the C++
 standard, but it has an intra-thread problem exemplified by the following
 code:
@@ -433,7 +434,7 @@ had instead been as follows:
 \end{verbatim}
 \end{quote}
 Here line~3 has been optimized away in favor of line~4 storing the same value
-in \co{r2} that was stored to \co{y} by line~2.
+to \co{z} that was stored to \co{y} by line~2.
 And given that the load from \co{y} no longer exists, it cannot possibly
 act as a temporal constraint.
 
@@ -501,7 +502,7 @@ they must consider changes to multiple variables.
 See Appendix~\ref{app:Non-Trivial Semantic Dependencies}
 for examples and additional discussion.
 
-Since we no longer regard sdep as always relating a single load to a store,
+Since we can no longer regard sdep as always relating a single load to a store,
 the notion of a cycle involving sdep appears problematic.
 We are forced to change our definition of an OOTA cycle again;
 we will say that an execution is an instance of OOTA if in that execution:
@@ -552,7 +553,7 @@ else
 \end{quote}
 Here there is a semantic dependency from \co{x}, but in some executions
 it extends to \co{y} and in others to \co{z}.
-This is an example of the load affecting not the value of
+This is an example of a load affecting not the value of
 a given store, but rather whether or not that store is executed at all.
 
 We have seen several examples showing that semantic dependencies may vary
@@ -569,7 +570,7 @@ This raises the question: What exactly is an execution?
 
 The C++ standard describes the execution of a program in terms of
 ``a parameterized nondeterministic abstract machine'' in 4.1.2p1
-(\co{intro.abstract}).
+(\co{[intro.abstract]}).
 This description specifies how the abstract machine carries out the
 operations of a source program in great, but not complete, detail:
 \begin{itemize}
@@ -711,7 +712,7 @@ This means:
 \item	The program's output must be the same as that of the abstract
 	execution.
 \item	Volatile accesses ``are evaluated strictly according to the
-	rules of the abstract machine'' [4.1.2p6.1 (\co{intro.abstract})].
+	rules of the abstract machine'' (4.1.2p6.1 \co{[intro.abstract]}).
 \item	(There is a condition on the interleaving of input and output,
 	which does not matter for our purposes.)
 \end{itemize}
