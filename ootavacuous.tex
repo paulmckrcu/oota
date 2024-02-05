@@ -606,28 +606,37 @@ Here \co{y} is semantically dependent on \co{c} in executions
 for which \co{char} is a signed type,
 but not those for which it is unsigned.
 
-The same is theoretically true for the nondeterministic aspects of an
-execution.
+The same is true for the nondeterministic aspects of an execution.
 Consider this example, with \co{i} initially zero:
 \begin{quote}
 \begin{verbatim}
-r1 = ++i / ++i;
+int foo(int a, int b)
+{
+   return a / b;
+}
+
+r1 = foo(++i, ++i);
 x = r1 * z;
 \end{verbatim}
 \end{quote}
-Because the order of evaluation of the division's arguments is undetermined,
+Because early C~implementers could not come to agreement, the standard
+does not specify the order of evaluation of function arguments, so
 the value calculated for \co{r1} might be zero ($1/2$ truncated) or two
 ($2/1$).
 In the former case there is no semantic dependency from \co{z} to \co{x},
 but in the latter case there is.\footnote{
 	Thanks to Peter Sewell for pointing out this possibility.}
+
 (According to the current version of the standard, conflicting side effects
-in unsequenced expressions constitute undefined behavior.
-However there are proposals to make them defined in both
-C++ and C,\footnote{
+in unsequenced subexpressions constitute undefined behavior,
+although there are proposals to make them defined in both C++ and C.\footnote{
 	\url{https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0145r3.pdf}
 	\url{https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3203.htm}}
-which would render this theoretical possibility quite real.)
+Nevertheless, the example above is allowed because the order of evaluation
+of arguments to a function call is ``indeterminately sequenced''
+(7.6.1.3p7 \co{[expr.call]}) rather than unsequenced, a subtle distinction.)
+
+\medskip
 
 The abstract executions we use will be fully specified.
 This means that all the missing information must be supplied:
@@ -635,14 +644,16 @@ the implementation-defined characteristics, the selections for the
 nondeterministic pathways, and most notably, for each load, the store
 from which it reads and the value of the load.
 We ignore issues of signal handlers and I/O;
-in any case our litmus-test programs don't use them.
+in any case our litmus-test programs don't use them
+(but see the discussion of volatile loads in
+section~\ref{sec:Relation Between Abstract and Hardware Executions} below).
 The totality of this information---along with the program's source
 code, of course---determines within each thread a unique, linearly
 ordered series of steps to be carried out by the abstract machine.
-(However, there is no ordering relation between steps carried out
+However, there is no ordering relation between steps carried out
 in different threads.  Even if a load in one thread reads from a
 store in another thread, we don't require the store to come before
-the load.)
+the load.
 
 With the compiler-based implementations we are considering,
 the choices for the nondeterministic pathways are ``frozen'' into the
@@ -695,7 +706,8 @@ program runs its observable behavior must be the same as that of some
 abstract execution of the source code given the same input (in the
 absence of any abstract executions containing undefined behavior).\footnote{
 	This requirement is the standard's ``as-if'' rule.}
-This means:\begin{itemize}
+This means:
+\begin{itemize}
 \item	The program's output must be the same as that of the abstract
 	execution.
 \item	Volatile accesses ``are evaluated strictly according to the
@@ -722,8 +734,26 @@ isn't entirely clear.
 The handling of volatiles, as understood by compiler developers, has
 been described as more folklore or a gentlemen's agreement than
 anything else.
-We will take it to imply that a compiler may not
-invent, omit, or merge volatile accesses, in a sense to be discussed below.
+To help guide C++ users and implementers, the standard adds these
+suggestive comments (9.2.9.2p5 and~6 \co{[dcl.type.cv]}):
+\begin{quote}
+	The semantics of an access through a volatile glvalue are
+	implementation-defined.
+
+	\co{volatile} is a hint to the implementation to avoid aggressive
+	optimization involving the object because the value of the object
+	might be changed by means undetectable by an implementation.
+\end{quote}
+Following the folklore, we interpret these comments to mean that
+volatile accesses should be treated as a form of I/O,
+implying that volatile loads can return unpredictable values.
+They don't necessarily read from stores (in contrast to non-volatile loads,
+which must return the value of the store they read from).
+As a corollary, the rfe relation does not apply to volatile loads
+and hence the accesses in an OOTA cycle must not be volatile.
+We also understand that a compiler may not
+invent, omit, merge, or reorder volatile accesses,
+in a sense to be discussed below.
 
 \subsubsection{Executions Can Be Merged}
 \label{sec:Executions Can Be Merged}
