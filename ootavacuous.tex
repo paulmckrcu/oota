@@ -556,9 +556,74 @@ it extends to \co{y} and in others to \co{z}.
 This is an example of a load affecting not the value of
 a given store, but rather whether or not that store is executed at all.
 
+\subsubsection{Semantic Dependencies Not Affected by \co{if} Statements}
+\label{sec:Semantic Dependencies Not Affected by if Statements}
+
+Compare this example to the previous one:
+\begin{quote}
+\begin{verbatim}
+if (x > 0)
+    y = 42;
+else
+    y = 42;
+\end{verbatim}
+\end{quote}
+Because the stores executed on each arm of the \co{if} statement write
+identical values to identical addresses, one could equally well regard
+the two statements as performing two different stores or as performing
+for all intents and purposes a single store, independent of x.
+Reasonable C++ implementations might disagree on this matter and
+therefore on whether or not the example has a semantic dependency.
+It is the implementations's choice.
+
+\subsubsection{Semantic Dependencies and Matching Up Stores}
+\label{sec:Semantic Dependencies and Matching Up Stores}
+
+Suppose we take the view that the previous example involves only one
+store.
+This opens up the door to greater complexity:
+\begin{quote}
+\begin{verbatim}
+if (x > 0) {
+    L1: y = 42;
+} else {
+    y = 53;
+    y = 42;
+}
+\end{verbatim}
+\end{quote}
+Consider an execution in which \co{x} is greater than zero, so the
+statement labeled \co{L1} runs.
+Is it semantically dependent on \co{x}?
+The answer isn't immediately clear.
+If the other arm of the \co{if} is taken then the same store of 42 to
+\co{y} occurs, but 53 is written before it.
+Which of these two stores should be compared with the store in \co{L1}?
+
+One way to cut the Gordian knot is to match up the stores by the order
+they occur:
+Since \co{L1} is the first store to \co{y} in its arm of the \co{if}
+statement, it should be matched up with the first store to \co{y} in
+the other arm.
+Those two stores write different values so there is a semantic
+dependency.
+
+On the other hand, a compiler may decide to drop the \co{y =
+53} store entirely, leaving it out of the machine code,
+on the grounds that it's always possible for the two adjacent stores
+to \co{y} to execute in such quick succession that no other thread
+manages to read the value 53 before it gets overwritten with 42.
+If the compiler does this then the first store to \co{y} in that
+arm of the \co{if} statement \emph{would} agree with the store in
+\co{L1}, and so there would not be a semantic dependency.
+Once again, the decision is up to the implementation.
+
+\medskip
+
 We have seen several examples showing that semantic dependencies may vary
-according to the execution.
-This raises the question: What exactly is an execution?
+according to the execution and even the implementation.
+This raises some questions, of which the first is:
+What exactly is an execution?
 
 \section{What is an Execution?}
 \label{sec:What is an Execution?}
@@ -600,7 +665,7 @@ abstract execution contains a semantic dependency.
 As an example consider the following, where the type of \co{c} is \co{char}:
 \begin{quote}
 \begin{verbatim}
-y = x * (c >= 0);
+y = (c >= 0);
 \end{verbatim}
 \end{quote}
 Here \co{y} is semantically dependent on \co{c} in executions
