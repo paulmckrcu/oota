@@ -456,6 +456,22 @@ for more a more detailed (albeit quite informal) definition.
 Maybe eventually have an appendix that lists all the definitions
 of both ``OOTA cycle'' and ``semantic dependency''.
 
+The inability of rfi links to act as temporal constraints is not the
+only, or even the main, weakness in the intuitive argument against
+OOTA cycles.
+The primary difficulty lies in the fact that the code transformations
+performed by optimizing compilers can destroy dependencies, including
+semantic ones (depending on one's definition).
+That is, even though the potential for a dependency exists in the
+source code for a thread, there may be no dependency in the machine
+code produced by a compiler.
+There would then be no constraint forcing the implementation to execute
+the thread's store later in global time than the load it supposedly depends on,
+and thus no impediment to the occurrence of an OOTA cycle.
+We will see examples of this destruction in
+Sections~\ref{sec:Global Optimization Can Destroy Dependencies}
+and~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies} below.
+
 \subsection{Properties of Semantic Dependencies}
 \label{sec:Properties of Semantic Dependencies}
 
@@ -530,13 +546,14 @@ x = y - z;
 \end{quote}
 There appear to be semantic dependencies from \co{y} to \co{x} and from \co{z}
 to \co{x}.
-However, if the compiler somehow knows that \co{y} is
+However, if the implementation somehow knows that \co{y} is
 always equal to \co{z} at this point then there is no semantic dependency;
-the compiler can act as if the statement were simply ``\co{x = 0;}''.
-We leave aside the question of how the compiler would know this,
+the implementation can act as if the statement were simply ``\co{x = 0;}''.
+We leave aside the question of how the implementation would know this,
 given that \co{y} and \co{z} cannot be updated simultaneously
 and are subject to change at any time by
-other threads (a point we will return to).
+other threads (a point we will return to in
+section~\ref{sec:Global Optimization Can Destroy Dependencies}).
 
 \subsubsection{Semantic Dependencies Affected by \co{if} Statements}
 \label{sec:Semantic Dependencies Affected by if Statements}
@@ -819,7 +836,213 @@ As a corollary, the rfe relation does not apply to volatile loads
 and hence the accesses in an OOTA cycle must not be volatile.
 We also understand that a compiler may not
 invent, omit, merge, or reorder volatile accesses,
-in a sense to be discussed below.
+in a sense to be discussed in
+section~\ref{sec:Volatile and Partially Volatile Accesses} below.
+
+\section{C++ Compilers}
+\label{sec:C++ Compilers}
+
+A complete C++ implementation consists of much more than just a compiler.
+Among other things, for example, it might have a collection of
+\co{.h} header files, a linker, runtime libraries, and a dynamic loader.
+Nevertheless, for our purposes the compiler is the most important
+component because it is what primarily determines the translation from
+a C++ source program to directly executable machine code.
+We will therefore use the terms ``compiler'' and ``implementation''
+somewhat interchangeably.
+
+@@@ Fill in roadmap when sectioning is finalized.
+
+\subsection{Users Influence the Behavior of Compilers}
+\label{sec:Users Influence the Behavior of Compilers}
+
+The exact definition of a computer language is subject to some debate,
+with standards, implementations, and users all having some degree of
+influence~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2},
+each of which is subject to change over time.
+In areas that are not well settled or where users might reasonably
+want to resist the dictates of the standard,
+compilers often provide switches to override their default behaviors.
+An example is GCC's \co{-funsigned-char} command-line argument,
+which causes it to treat variables of type \co{char} as unsigned.
+More examples of user control over language semantics are given in
+Appendix~\ref{app:User Influence Over Language Semantics}.
+
+We will consider these user-specified compiler switch settings to fall
+within the implementation-defined parameters of the C++ abstract machine.
+They should be provided, implicitly or explicitly, as part of any
+abstract execution.
+
+\subsection{Global Optimization Can Destroy Dependencies}
+\label{sec:Global Optimization Can Destroy Dependencies}
+
+Recall the Simple OOTA example in Listing~\ref{lst:Simple OOTA} on
+page~\pageref{lst:Simple OOTA},
+in which \co{thread1()} loads the value of \co{x} and stores it in
+\co{y} while \co{thread2()} does the reverse.
+A globally optimizing compiler given that program might
+transform it to the following before translating it into machine code,
+if the compiler is sufficiently perverse:
+\begin{quote}
+\begin{verbatim}
+ 1 atomic<int> x(0);
+ 2 atomic<int> y(0);
+ 3
+ 4 void thread1()
+ 5 {
+ 6   int r1 = 42;
+ 7   y.store(r1, memory_order_relaxed);
+ 8 }
+ 9
+10 void thread2()
+11 {
+12   int r2 = 42;
+13   x.store(r2, memory_order_relaxed);
+14 }
+\end{verbatim}
+\end{quote}
+The loads previously on lines~6 and~12 have been replaced by constants.
+Such a transformation complies with the strict C++ standard,
+even though the resulting executable file would produce an unintuitive
+OOTA outcome every time it runs!
+
+The only justification a compiler could have for generating output like
+this is that it knows exactly what accesses will be performed by both
+threads, and therefore it knows that it will not violate the strict C++
+memory model by assuming each thread's load reads from the other's
+store.
+A similar justification can underlie the reasoning in
+section~\ref{sec:Semantic Dependencies Affected by Cross-Thread Optimizations};
+in principle an analysis of the complete program could lead a compiler
+to conclude that \co{y} will always be equal to \co{z} whenever a
+particular \co{y - z} expression is evaluated, allowing the compiler
+to replace the expression with a constant \co{0}.
+
+By contrast, a compiler that analyzes only one thread at a time when
+performing its optimizations and other code transformations will not
+have this kind of global knowledge, and consequently it would not
+perform the OOTA-ful transformation shown here.
+
+Because we seek to find characteristics of compilers that will
+guarantee the absence of OOTA behavior in the machine code they generate,
+we will for now confine our attention to compilers that analyze only
+one thread of source code at a time.
+In more precise terms, we want the compilers under consideration
+always to generate the same machine-code output for threads having
+the same source code, regardless of the rest of the programs
+those threads are contained in.
+Later on we will return to globally optimizing compilers.
+
+\subsection{Inventing Atomic Loads Can Destroy Semantic Dependencies}
+\label{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}
+
+Consider this code, in which the final values of \co{r1} and~\co{r2}
+are observable:
+\begin{quote}
+\begin{verbatim}
+ 1  int r1 = (x != 0);
+ 2  int r2 = (y != 0);
+ 3  z = (r1 == r2);
+\end{verbatim}
+\end{quote}
+It is clear that the store to \co{z} semantically depends on the load
+from \co{y}, because the value of \co{z} will change whenever \co{y}
+changes between zero and nonzero (all else being equal).
+
+However, an especially devious compiler might transform the source into
+the following form before translating it to machine code:
+\begin{quote}
+\begin{verbatim}
+ 1  int r1;
+ 2  int r1a = (x != 0);
+ 3  int r1b = (x != 0);
+ 4  int r2 = (y != 0);
+ 5  if (r1a != r1b) {
+ 6      r1 = r2;
+ 7      z = 1;
+ 8  } else {
+ 9      r1 = r1b;
+10      z = (r1 == r2);
+11  }
+\end{verbatim}
+\end{quote}
+The idea is that \co{r1a}, \co{r1b}, and \co{r2} can each be only zero or one,
+so if \co{r1a} and \co{r1b} differ then one of them must be equal to \co{r2}.
+In executions where this happens---because another thread writes to \co{x}
+between the two loads---the implementation can choose at runtime to use
+for \co{r1} whichever value agrees with \co{r2}, as shown on line~6.
+Then the value stored to \co{z} on line~7 will always be one,
+with no dependence on the value loaded from \co{y}.
+This example is discussed more fully in
+Appendix~\ref{app:Inventing Atomic Loads}.
+
+A noteworthy aspect of this transformation is that it invents an atomic load:
+The original form of the code reads \co{x} only once,
+whereas the transformed code reads it twice.
+Therefore we can rule out transformations like this one by insisting
+the compiler not invent atomic loads.
+In fact, we will require that atomic accesses be treated as
+``partially volatile'', in that the compiler is allowed to omit,
+merge, or reorder them but not invent them.
+
+Just what does this mean?
+
+\subsection{Volatile and ``Partially Volatile'' Accesses}
+\label{sec:Volatile and Partially Volatile Accesses}
+
+Declaring objects to be volatile is a way for the programmer to
+indicate that the hardware should perform all accesses to these
+objects exactly as written in the source code (perhaps because they
+represent memory-mapped device registers or DMA buffers rather than
+normal memory locations).
+In any event, we expect compilers' translations of volatile-object accesses
+into machine code to be as close to verbatim as possible.
+
+To express this idea in more formal terms, we will augment the
+requirements for a hardware execution $H$ to realize an abstract
+execution $A$.
+Each realization must include a map from the set of accesses of
+volatile objects in $A$ to the set of instructions in $H$ that access
+these objects, having the following properties:
+\begin{itemize}
+\item	The map connects accesses of the same type (loads to loads
+	and stores to stores).
+\item	The map connects accesses in a thread of $A$ to accesses in
+	the corresponding thread of $H$.
+\item	The map is value-preserving: The value of an access in $A$ must be
+	the same as the value of the access it maps to in $H$.
+\item	The map is order-preserving: Two accesses in the same thread
+	of $A$ must map to accesses occurring in the same order in $H$.
+	(In other words, the compiler may not reorder accesses
+	to volatile objects.)
+\item	The map is onto: For every access in $H$ to a volatile object
+	there must be an access in $A$ that maps to it.
+	(In other words, the compiler may not invent accesses to
+	volatile objects.)
+\item	The map is one-to-one: Different accesses in $A$ map to
+	different accesses in $H$.
+	(In other words, the compiler may not merge accesses to
+	volatile objects.)
+\item	The map is total: Every access in $A$ to a volatile object
+	maps to some access in $H$.
+	(In other words, the compiler may not omit accesses to
+	volatile objects.)
+\end{itemize}
+Most of these are direct consequences of the fact that volatile
+accesses are considered to be a form of I/O.
+
+For accesses to partially volatile objects, we remove some of the
+requirements and add a new one.
+We leave out the last two items; compilers are allowed to merge or
+omit accesses to partially volatile objects.
+And the requirement for order preservation is weakened; it applies
+only to pairs of accesses to the same object.
+Accesses to different objects may be reordered relative to each other.
+The new requirement is that the map must preserve the rf relation.
+That is, if load $R$ in $A$ reads from store $W$ and $R$ is not
+omitted then the instruction it maps to in $H$ must read from the
+instruction that $W$ maps to,
+and consequently $W$ must not be omitted either.
 
 \subsubsection{Executions Can Be Merged}
 \label{sec:Executions Can Be Merged}
