@@ -4126,9 +4126,14 @@ In the meantime, here is some semi-informed speculation on this topic:
 	for battery-powered systems.
 \item	ECC error correction might still be done in hardware, avoiding
 	the need for precise software-visible exceptions.
-\item	Some systems might prefer to immediately shut down, forbidding
-	software from continuing after an uncorrectable ECC error,
-	perhaps due to safety considerations.
+\item	Some systems might prefer to immediately shut down in response to
+	an uncorrectable ECC error, perhaps due to safety considerations.
+	This would entirely avoid the need for software-visible
+	ECC-related exceptions.\footnote{
+		One motivation for immediate shutdown is that if there
+		are uncorrectable errors, there might soon be errors
+		that translate one valid bit pattern to another valid
+		bit pattern, which could result in a lack of safety.}
 \item	Someone might come up with a clever way of correcting ECC errors
 	in firmware, avoiding the need for precise software-visible
 	exceptions.
