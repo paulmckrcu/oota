@@ -1067,7 +1067,7 @@ A few examples:
 	a status register).
 \item	A conditional branch instruction would have only one input:
 	the flag bits it tests in the status register.
-	A computed branch instruction would as input the register
+	A computed branch instruction would have as input the register
 	containing the address to branch to.
 	For both, the output is the new address to be written to the
 	instruction-pointer register.
@@ -1081,7 +1081,7 @@ Of course, some of an instruction's inputs may be immediate constants
 taken from the instruction itself rather than outputs from some
 earlier instruction.
 Note: Hardware dependency analysis considers only the information
-flowing \emph{within} a CPU, not the information flowing between the
+flowing \emph{within} a CPU, not information flowing between the
 CPU and memory, which is handled separately.
 
 Using this scheme, we say that an instruction $J$ is dependent on
@@ -1089,7 +1089,7 @@ another instruction $I$ when any of $I$'s outputs flow into $J$'s inputs,
 perhaps indirectly via some intermediate instructions.
 Tracing back the flow of information between instructions, you can
 see that any hardware dependency must ultimately emanate from a load
-instruction or a thread's initial state (or possibly some sort of
+instruction or the thread's initial register values (or possibly some sort of
 input instruction, but we will not consider that here).
 These are the only sources of truly new information in a thread.
 
@@ -1101,7 +1101,7 @@ dependencies affect instruction ordering in weakly ordered architectures.
 
 A CPU may start executing an instruction speculatively, but at some
 point it must \emph{commit} to a decision either to definitely execute the
-instruction with some well-defined collection of inputs and outputs
+instruction's action with some collection of well defined inputs and outputs
 or else to abandon it.
 Thanks to the law of cause and~effect, a CPU is not able to commit an
 instruction until all of its inputs' sources have committed.
@@ -1109,18 +1109,19 @@ instruction until all of its inputs' sources have committed.
 instruction.
 For instance, although no existing architectures do this, there is nothing
 in principle to prevent a CPU from committing a \co{multiply}
-instruction as soon as either one of its inputs has committed to the
+instruction as soon as either one of its inputs' sources has committed to the
 value zero.)
 The reason is obvious: An input is subject to change at any time until
-its source commits, the outputs aren't determined until the inputs
-are, and the instruction can't commit until its outputs are fully
+its source commits,
+the action and outputs aren't fully determined until the inputs
+are, and the instruction can't commit until its action and outputs are fully
 determined.
 
 This means that, with a few possible exceptions such as the
 multiply-by-zero example, an instruction can't commit until all the
 instructions it depends on have committed.
 And even taking the exceptions into account, if a change in the
-outputs of instruction $I$ would lead to a change in the inputs to
+outputs of instruction $I$ would lead to a change in the action or outputs of
 instruction $J$ then $I$ must commit before $J$.
 Thus dependencies force instructions to commit in order, even on
 weakly ordered architectures.
@@ -1131,7 +1132,7 @@ The simplest of these is a load reading from a store in another
 thread, i.e., the rfe relation.
 As mentioned in section~\ref{sec:Simple OOTA Cycle} above, a CPU does
 not make the value of a store instruction available for other CPUs to
-load until the store commits or later.
+load until the store commits or some time later.
 And after this happens, it takes some time for the information about
 the store to travel from that CPU to others, owing to the inescapable
 facts that processors have nonzero size and information cannot travel
@@ -1145,7 +1146,7 @@ computed branches.
 An instruction executing after such a branch cannot commit
 until the CPU has committed to whether the branch will be taken and
 if taken, where it will branch to;
-until then the CPU cannot know whether the instruction should
+until then the CPU cannot know whether the later instruction should
 be executed at all.
 Therefore instructions following a conditional or computed branch
 instruction in an execution must commit after anything the branch
@@ -1161,12 +1162,12 @@ store's inputs.
 Until the source for the store's value commits, the value of the load
 isn't fully determined and so the load cannot commit.
 And in general, until the source for store's address commits, it's not
-fully determined whether the store and load are for the same address.
+fully determined whether the store and load will access the same address.
 This argument doesn't hold if the store and load have the \emph{same}
 source for their addresses, but another factor is also at play.
 Until the address is fully determined, there is a possibility that it
 will turn out to be invalid (a NULL pointer, for example), causing the
-store instruction to encounter an addressing exception.
+store instruction to generate an addressing exception.
 If this should happen the load might not execute at all, and therefore
 it can't commit until the address's source has committed.
 
@@ -1186,31 +1187,39 @@ Then for some $i$, load $R_i$ is not omitted and the hardware
 instruction it maps to is ordered before the instruction $W$ maps to.
 \end{quote}
 It's quite straightforward to show that for any implementation in which
-semantic dependencies satisfy the Fundamental Property, no OOTA
-abstract execution can be realized.
+semantic dependencies satisfy the Fundamental Property, no OOTA cycle
+has a nontrivial realization.
 
 Indeed, suppose that abstract execution $A$ is realized by hardware
 execution $H$ and $A$ has an OOTA cycle.
-This means there are stores $W_i$ semantically depending on loads
-$\{R_{i,j}\}$ where each of the loads reads from one of the $W_i$
+This means there are stores $W_i$ in $A$, semantically depending on loads
+$\{R_{i,j}\}$ where each of the loads reads from one of the $W_k$
 stores in a different thread.
 Let $W_i'$ and $R_{i,j}'$ be the hardware instructions these accesses
-map to, if they aren't omitted.
+map to in $H$, if they aren't omitted.
 Assuming that at least one of the stores is not omitted,
-one of the $W_i'$, call it $W_{i_0}'$, must commit first.
-By the Fundamental Property, one of the loads that $W_{i_0}'$ depends on,
-call it $R_{i_0,j_0}'$, is not omitted and is ordered before $W_{i_0}'$.
+one of the $W_i'$ instructions, let's say $W_0'$, must commit first.
+By the Fundamental Property, one of the loads that $W_0$ depends on,
+let's say $R_{0,0}$, is not omitted and $R_{0,0}'$ is ordered before $W_0'$.
 But now we have a contradiction:
 \begin{itemize}
-\item	$W_{i_0}'$ commits after $R_{i_0,j_0}'$;
-\item	$R_{i_0,j_0}'$ commits after the store $W_k'$ it reads from;
-\item	$W_k'$ commits no earlier than $W_{i_0}'$.
+\item	$W_0'$ commits after $R_{0,0}'$;
+\item	$R_{0,0}'$ commits after the store instruction $W_k'$ it reads from;
+\item	$W_k'$ commits no earlier than $W_0'$.
 \end{itemize}
 
 If all the stores in the OOTA cycle are omitted then all the reads
 must be omitted as well.
 This amounts to a situation where the entire cycle has been optimized
-away by the compiler.
+out of existence by the compiler.
+Although we can are unable to prove it, we conjecture that in this
+situation there must be another abstract execution which has the
+same observable effects as $A$ and is also realized by $H$, but in
+which the OOTA cycle does not occur.
+Thus there would be no way to tell, merely by observing the effects of
+$A$, whether there was an OOTA cycle or not.
+For this reason we declare realizations of OOTA cycles in which
+all the accesses are omitted to be trivial.
 
 \subsubsection{Executions Can Be Merged}
 \label{sec:Executions Can Be Merged}
