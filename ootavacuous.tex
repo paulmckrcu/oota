@@ -4505,7 +4505,34 @@ definition of ``semantic dependency''.
 
 \clearpage
 
-\section{Load/Store Ordering: Hardware View for Software Hackers}
+\section{But What About Tooling?}
+\label{sec:But What About Tooling?}
+
+This paper focuses primarily on showing that, under commonly occurring
+constraints, OOTA cycles cannot form in real-world C++ implementations.
+
+But what about tooling?
+
+This appendix expands on
+Section~\ref{sec:Semantic Dependencies and Tooling}
+by looking into the possibility of:
+
+\begin{enumerate}
+\item	Tooling focusing on only part of the language,
+\item	Changing the language to eliminate some aspects that are
+	troublesome for tooling (and potentially accepting performance
+	and energy-efficiency shortfalls), and
+\item	Changing the language to better delineate those portions that
+	tooling can easily accommodate.
+\end{enumerate}
+
+But first, the next section looks at why some weakly ordered
+implementations appear to forbid reordering of prior relaxed loads with
+later relaxed stores,\footnote{
+	Or, in memory-order-speak, forbid all load-buffering litmus tests.}
+despite the architecture permitting such reordering.
+
+\subsection{Load/Store Ordering: Hardware View for Software Hackers}
 \label{sec:Load/Store Ordering: Hardware View for Software Hackers}
 
 % @@@ Get citations
@@ -4612,6 +4639,86 @@ So although it is not unreasonable to continue asking hardware vendors
 to tighten their memory models so as to prohibit reordering of earlier
 loads and later stores, it also would not be too surprising for them to
 continue to refuse.
+
+\subsection{Status Quo and Focused Tooling}
+\label{sec:Status Quo and Focused Tooling}
+
+The theoretical possibility of OOTA cycles causes some tools to have
+difficulty identifying precisely which outcomes are impossible on
+real-world C++ implementations.
+One approach is for tooling to reject programs containing instances
+of \co{memory_order_relaxed} and \co{memory_order_consume}, so that
+developers desiring their code to be analyzed by such tools would
+avoid using these \co{memory_order} values.
+The is strong precedent for this strategy, with the common prohibition
+against side effects in function arguments being but one example.
+
+However, there is a large body of existing code that uses
+\co{memory_order_relaxed}, and it would be unfortunate if such tools
+could not be applied to this code.
+
+Another approach would be to add flags to C++ implementations
+to cause \co{memory_order_relaxed} to be interpreted as either
+\co{memory_order_acquire} (for loads), \co{memory_order_release} (for
+stores), or \co{memory_order_acq_rel} (for read-modify-write operations).
+On TSO systems and on systems featuring exact ECC exceptions, this
+would allow tooling to be brought to bear without performance or
+energy-efficiency consequences beyond forgone optimizations involving
+memory reference reordering.
+
+However, this would mean that programs compiled in this way would not
+be guaranteed to run correctly on weakly ordered systems that lack
+ECC (or that lack precise exceptions).
+In addition, this change is more strict than necessary, forbidding
+optimizations that tooling could in fact analyze.
+Therefore, the next section looks at standardizaing a less severe
+restriction.
+
+\subsection{Change Relaxed to Forbid Load Buffering}
+\label{sec:Change Relaxed to Forbid Load Buffering}
+
+Tooling does not require relaxed accesses become fully acquire and/or
+release, but rather only that implemetnations be forbidden from reordering
+prior relaxed loads with subsequent relaxed stores, as has been suggested
+many times over the
+years~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352}.
+
+This preserves portability while enabling tooling to handle all members
+of the \co{memory_order} enumeration, but inflicts some performance and
+energy-efficiency penalties~\cite{LukeGeeson2023TightenRelaxed} in
+code not requiring these ordering
+restrictions~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
+
+This suggests the addition of a \co{memory_order_load_store} member to
+the \co{memory_order} enumeration, a topic taken up by the next section.
+
+\subsection{Add Load-Store Memory Order that Forbids Load Buffering}
+\label{sec:Add Load-Store Memory Order that Forbids Load Buffering}
+
+The addition of a \co{memory_order_load_store} member to the
+\co{memory_order} enumeration has been suggested starting many years
+ago~\cite{HansBoehm2019OOTArevisitedAgain,DanielLustig2018PlacedBefore}.
+This does not resolve all shortcomings in the C++ memory
+model~\cite{PaulEMcKenney2023P0124R8-LKMM,DanielLustig2018PlacedBefore},
+but it would provide a portable \co{memory_order} that minimally
+restricted compiler and hardware optimizations while still permitting
+full analyzability by current software tools.
+
+This change would also leave \co{memory_order_relaxed} in place,
+allowing minimal-overhead accesses in fastpaths.
+These fastpaths would not be analyzable by generic tools, but could
+be handled by special-case tools that analyze the binaries to verify
+that required orderings are enforced by machine-language properties
+such as dependencies.
+And a tool that checks control dependencies has in fact been
+prototyped~\cite{PaulHeidekrueger2022N4910}.
+
+This suggests a combined strategy of adding \co{memory_order} members
+as needed to extend the reach of general-purpose tooling, while also
+identifying \co{memory_order_relaxed} idioms that are checked at the
+machine level using special-purpose tooling.\footnote{
+	Kudos to Peter Sewell for clearly articulating this possibility
+	as part of an overall strategy.}
 
 \clearpage
 
