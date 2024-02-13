@@ -188,9 +188,10 @@ and this ordering prevents the OOTA result.
 This paper will follow P2055R0~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
 in using the term \emph{full C++} to denote the standard including the
 prohibition above, and the term \emph{strict C++}\footnote{
-	@@@ Future bikeshedding of name.}
+	There is some discomfort with this name, so this footnote
+	is reserved for future bikeshedding.}
 % @@@ Alternatives thus far: OOTA-prone C++, OOTA-enabled C++,
-% @@@ relaxed C++, OOTA C++, OOTA-agnostic C++.
+% @@@ relaxed C++, OOTA C++, OOTA-agnostic C++, loose C++.
 to denote a hypothetical standard that excludes this prohibition, but
 is otherwise identical to full C++.
 Unqualified \emph{C++} means full C++.
@@ -266,11 +267,12 @@ fixed-point computations.
 Some workers recommend avoiding OOTA by ordering prior relaxed
 loads before subsequent relaxed
 stores~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352},
-but this requires real instructions be executed, consuming real
-time and real electrical power to solve a strictly theoretical
-problem.
-This might have been acceptable in the 1960s of my youth, but it is now
-the year 2024.
+but this can require real instructions be
+executed~\cite[Section 7.1]{Maranget2012TutorialARMPower},
+consuming real time and real electrical power to solve a strictly
+theoretical problem.
+This might have been acceptable in the 1960s of some of the authors'
+youths, but it is now the year 2024.
 
 Other workers recommend various procedures to identify and avoid OOTA
 cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA},
@@ -279,10 +281,10 @@ Some of these workers appear to have abandoned this effort, but as of
 early 2024, Mark Batty is persisting with modular relaxed dependencies.
 
 Goldblatt looked at interactions between OOTA cycles and
-undefined behavior (UB)~\cite{DavidGoldblatt2019NoElegantOOTAfix}, and
-Appendix~\ref{app:Aside on Undefined Behavior}
-analyzes his examples and notes ways to separate UB and OOTA-cycle
-concerns.
+undefined behavior (UB)~\cite{DavidGoldblatt2019NoElegantOOTAfix}.
+% Appendix~\ref{app:Aside on Undefined Behavior}
+% analyzes his examples and notes ways to separate UB and OOTA-cycle
+% concerns.
 The remainder of this document will concentrate on examples lacking UB.
 
 All this work focused on either identifying OOTA or seeing how C++
@@ -395,14 +397,14 @@ semantic dependency.
 This combination suggests that OOTA cycles cannot occur.
 The idea has been formalized by defining an OOTA cycle as a cycle
 in sdep $\cup$ rf~\cite{PaulEMcKenney2014OOTA},
-% @@@ This citation credits the formulation to Ali Sezgin, third author
-% @@@ of N4323 ("Out-of-Thin-Air Execution is Vacuous").
+% This citation credits the formulation to Ali Sezgin, third author
+% of N4323 ("Out-of-Thin-Air Execution is Vacuous").
 where sdep is the set of semantic dependencies within
 each thread and rf is the set of store-to-load ``reads-from'' links,
 whether intra-thread
 (rfi) or between threads (rfe).\footnote{
 	See Appendix~\ref{app:Inter-Process Communications} for definitions
-	and properies of rf, rfe, and rfi.}
+	and properties of rf, rfe, and rfi.}
 
 This is a fine definition and is consistent with the words in the C++
 standard, but it has an intra-thread problem exemplified by the following
@@ -450,11 +452,12 @@ the inter-thread and intra-thread portions of any given OOTA cycle.
 %	that we had unwittingly (but productively!) shifted our definition
 %	to sdep $\cup$ rfe.}
 
-@@@ Please see
-Appendix~\ref{app:Informal Definition of Semantic Dependency}
-for more a more detailed (albeit quite informal) definition.
-Maybe eventually have an appendix that lists all the definitions
-of both ``OOTA cycle'' and ``semantic dependency''.
+% We no longer need this.  I will move A.1 to the cbmc appendix.
+% Please see
+% Appendix~\ref{app:Informal Definition of Semantic Dependency}
+% for more a more detailed (albeit quite informal) definition.
+% Maybe eventually have an appendix that lists all the definitions
+% of both ``OOTA cycle'' and ``semantic dependency''.
 
 The inability of rfi links to act as temporal constraints is not the
 only, or even the main, weakness in the intuitive argument against
@@ -554,6 +557,8 @@ given that \co{y} and \co{z} cannot be updated simultaneously
 and are subject to change at any time by
 other threads (a point we will return to in
 section~\ref{sec:Global Optimization Can Destroy Dependencies}).
+% The usual way in the Linux kernel is via a union, but it is probably
+% best to ignore that possibility.
 
 \subsubsection{Semantic Dependencies Affected by \co{if} Statements}
 \label{sec:Semantic Dependencies Affected by if Statements}
@@ -591,7 +596,7 @@ the two statements as performing two different stores or as performing
 for all intents and purposes a single store, independent of x.
 Reasonable C++ implementations might disagree on this matter and
 therefore on whether or not the example has a semantic dependency.
-It is the implementations's choice.
+It is the implementation's choice.
 
 \subsubsection{Semantic Dependencies and Matching Up Stores}
 \label{sec:Semantic Dependencies and Matching Up Stores}
@@ -686,7 +691,8 @@ y = (c >= 0);
 \end{verbatim}
 \end{quote}
 Here \co{y} is semantically dependent on \co{c} in executions
-for which \co{char} is a signed type,
+running on implementations in
+which \co{char} is a signed type,
 but not those for which it is unsigned.
 
 The same is true for the nondeterministic aspects of an execution.
@@ -712,9 +718,9 @@ but in the latter case there is.\footnote{
 
 (According to the current version of the standard, conflicting side effects
 in unsequenced subexpressions constitute undefined behavior,
-although there are proposals to make them defined in both C++ and C.\footnote{
-	\url{https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0145r3.pdf}
-	\url{https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3203.htm}}
+although there are proposals to make them defined in both
+C++~\cite{GabrielDosReis2016P0145r3}
+and C~\cite{AlexCeleste2023N3203}.
 Nevertheless, the example above is allowed because the order of evaluation
 of arguments to a function call is ``indeterminately sequenced''
 (7.6.1.3p7 \co{[expr.call]}) rather than unsequenced, a subtle distinction.)
@@ -1039,10 +1045,14 @@ And the requirement for order preservation is weakened; it applies
 only to pairs of accesses to the same object.
 Accesses to different objects may be reordered relative to each other.
 The new requirement is that the map must preserve the rf relation.
+% Is this rf?  Or specifically rfe?
 That is, if load $R$ in $A$ reads from store $W$ and $R$ is not
 omitted then the instruction it maps to in $H$ must read from the
 instruction that $W$ maps to,
 and consequently $W$ must not be omitted either.
+
+Section~\ref{sec:Constraints of the Standard}
+presents examples illustrating some of these requirements.
 
 \section{Hardware Dependencies, Instruction Ordering, and the
 Fundamental Property}
@@ -1224,7 +1234,9 @@ all the accesses are omitted to be trivial.
 \subsubsection{Executions Can Be Merged}
 \label{sec:Executions Can Be Merged}
 
-Consider this example, which appears to be an \co{if} statement:
+Consider this example, similar to that shown in
+Section~\ref{sec:Semantic Dependencies Not Affected by if Statements},
+which appears to be an \co{if} statement:
 
 \begin{quote}
 \begin{verbatim}
@@ -1274,7 +1286,8 @@ paths through the source code}.% \footnote{
 \subsubsection{Executions Depend on Context}
 \label{sec:Executions Depend on Context}
 
-Consider the following:
+Consider the following example derived from that in
+Section~\ref{sec:Semantic Dependencies and Source Code}:
 
 \begin{quote}
 \begin{verbatim}
@@ -1313,14 +1326,16 @@ a relaxed atomic store.
 But if \co{z} was marked volatile, both stores would need to be executed
 in strict accordance with the rules of the abstract machine.
 
-\emph{Any analysis of a given execution must either be fully informed
-of the enclosing context, or much make conservative assumptions about
+\emph{Any analysis of a given execution either must be fully informed
+of the enclosing context, or must make conservative assumptions about
 that context.}
 
 \subsubsection{Executions Can Be Nondeterministic}
 \label{sec:Executions Can Be Nondeterministic}
 
-Consider this example, with \co{i} initially zero:
+Consider this example, similar to that in
+Section~\ref{sec:Abstract Executions},
+with \co{i} initially zero:
 
 \begin{quote}
 \begin{verbatim}
@@ -1355,15 +1370,15 @@ their goal being to obtain portable code whose behavior does not depend
 on arbitrary choices on the part of the implementation.
 However, the above code nevertheless conforms to the standard.
 Note that side effects in expressions lacking sequence points is
-undefined behavior, however, there are proposals to define it in
-the C++ and C languages, allowing implementations to nevertheless reorder
-evaluation when permitted by the as-if rule.\footnote{
-	\url{https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0145r3.pdf}
-	\url{https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3203.htm}}
+undefined behavior, however, there are proposals to define it in the
+C++~\cite{GabrielDosReis2016P0145r3} and
+C~\cite{AlexCeleste2023N3203}
+languages, allowing implementations to nevertheless reorder
+evaluation when permitted by the as-if rule.
 
-Compiler-based C++ implementions make their non-deterministic choices
-at compile time, so that the object code is deterministic, at least
-on a per-execution basis.
+Even though the standard is non-deterministic, \emph{compiler-based C++
+implementions make their non-deterministic choices at compile time, so
+that the object code is deterministic, at least on a per-execution basis.}
 
 \subsubsection{Executions Can Be Complex}
 \label{sec:Executions Can Be Complex}
@@ -1389,7 +1404,7 @@ x = y & 0x1 ? do_odd(y) : do_even(y);
 \end{verbatim}
 \end{quote}
 
-The key point here is that diferent values might result in almost
+The key point here is that different values might result in almost
 completely disjoint executions.
 
 Fortunately, there are now tools that can help.
@@ -1402,8 +1417,8 @@ reduction, has been used to carry out a similar
 verification~\cite{MichalisKokologiannakis2017NidhuggRCU,SMC-TreeRCU,MichalisKokologiannakis2019RCUstatelessModelCheck}.
 Both tools can easily check whether or not a given dependency is semantic
 for at least some approximate definitions of ``semantic dependency''.
-An example use of \co{cbmc} is illustrated in
-Appendix~\ref{sec:Evaluating sdep Using cbmc}.
+% An example use of \co{cbmc} is illustrated in
+% Appendix~\ref{sec:Evaluating sdep Using cbmc}.
 
 There are also many other tools, but failing that, it is always possible
 to fall back to older software-verification tools such as manual
@@ -1466,7 +1481,8 @@ and each of which is subject to change over time.
 Users  and implementers are of course wise to assume that their opinions
 might be overridden by those of the standard and, for the users,
 especially the implementation.
-However, consider the following code:
+However, consider the following code, similar to that shown in
+Section~\ref{sec:Abstract Executions}:
 
 \begin{quote}
 \begin{verbatim}
@@ -1517,13 +1533,10 @@ atomic operations as volatile can never exhibit OOTA, and the same is true
 for compilers obeying the weaker constraint that atomic accesses may not
 invented, provided the compiler does not perform multi-thread analysis.
 
-@@@ LTO?
+% @@@ LTO?  Does not appear to be relevant given new material.
 
 These restrictions permit us to bring to bear the real-world
 constraints introduced by the next section.
-
-@@@  Need to add material on inventing loads, which is currently
-in an appendix.
 
 \section{Real-World Constraints}
 \label{sec:Real-World Constraints}
@@ -1535,7 +1548,7 @@ abstract machine must be mapped onto real matter and energy.
 This mapping has not been considered by prior work, and brings to
 bear additional constraints from the laws of physics and from hardware
 architecture and design, both of which have been only partially accounted
-for in the standard.
+for in the standard and in prior work.
 One reason for the incomplete accounting for hardware constraints is
 that accurate and executable formal descriptions of hardware memory
 models did not appear until after the standard was released.
@@ -1577,9 +1590,9 @@ Plato's ``Timaeus'' notwithstanding, there has been much recent debate
 as to whether the universe is in fact causal with cause necessarily
 preceding effect.
 However, no one has managed to construct a real time-travel machine
-or any other apparatus that might result in effect preceding cause,
-as discussed at length in Appendix~\ref{sec:Debates on Causality} and 
-the URL that it provides.
+or any other apparatus that might result in effect preceding cause.
+% as discussed at length in Appendix~\ref{sec:Debates on Causality} and 
+% the URL that it provides.
 
 This paper will therefore assume that effect cannot precede cause in
 any real-world computing system.
@@ -1853,6 +1866,7 @@ pair of objects, with the memory-ordering semantics of the first load.
 
 For more discussion of potential optimizations, please see
 Section~\ref{sec:But What About Non-Volatile Atomics?}.
+% @@@ Pull that section in here?  Drop this forward reference?
 
 \subsection{C++ Implementations}
 \label{sec:C++ Implementations}
