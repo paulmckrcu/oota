@@ -3696,482 +3696,6 @@ beasts might be among large-scale C++ programs running in production.
 
 \clearpage
 
-\section{Aside on Undefined Behavior}
-\label{app:Aside on Undefined Behavior}
-
-The combination of OOTA cycles and UB has proven especially
-challenging~\cite{DavidGoldblatt2019NoElegantOOTAfix,HansBoehm2020UBalternatives}.
-
-\subsection{Alignment-Based Undefined Behavior}
-\label{sec:Alignment-Based Undefined Behavior}
-
-The example shown in
-Listing~\ref{lst:Alignment-Based Undefined Behavior (P1916R0)}
-(taken from P1916R0) is especially instructive.
-
-\begin{listing}[tbp]
-\begin{verbatim}
- 1 std::atomic<int> y;
- 2 template <typename T>
- 3 void t1() {
- 4   long long r1 = x.load(std::memory_order_relaxed);
- 5   if (r1 % 4 == 0)
- 6     y.store(1, std::memory_order_relaxed);
- 7   *(T*)r1 = *(T*)r1;
- 8 }
-\end{verbatim}
-\caption{Alignment-Based Undefined Behavior (P1916R0)}
-\label{lst:Alignment-Based Undefined Behavior (P1916R0)}
-\end{listing}
-
-Because the compiler often assumes that UB cannot happen, it might
-look at line~7 and conclude that the value of \co{r1} necessarily
-corresponded to an address aligned per the requirements of type \co{T}.
-If that type's alignment was larger than four bytes, the compiler could
-then replace the condition in line~5 with \co{true}, which would mean
-that there was no semantic dependency from the load of \co{x} to the
-store of \co{y}.
-
-Except that the developer might have knowingly carried out a misaligned
-access, for example, to test an alignment trap handler or because the
-system on which this code was to run was known to gracefully handle
-misaligned accesses.
-
-\begin{listing}[tbp]
-\begin{verbatim}
- 1 std::atomic<int> y;
- 2 template <typename T>
- 3 void t1() {
- 4   long long r1 = x.load(std::memory_order_relaxed);
- 5   if (r1 % 4 == 0)
- 6     y.store(1, std::memory_order_relaxed);
- 7   std::observable();
- 8   *(T*)r1 = *(T*)r1;
- 9 }
-\end{verbatim}
-\caption{Alignment-Based Undefined Behavior Fix}
-\label{lst:Alignment-Based Undefined Behavior Fix}
-\end{listing}
-
-However, in that case, the developer is stepping outside the bounds
-of the standard.
-It would be good to have some way for the developer to get the job
-done without confusing the compiler, thus separating OOTA-cycle and
-UB concerns.
-One approach is to use the \co{std::observable()} function
-that has been proposed to the C++ standards
-committee~\cite{DavisHerring2021P1494R2}.
-This function would blocks backwards-propagating UB.
-Then this example could be rewritten as shown in
-Listing~\ref{lst:Alignment-Based Undefined Behavior Fix},
-with the asm on line~7 preventing the compiler from assuming that line~8
-is guaranteed to be executed, thus preventing the compiler from
-applying any lessons that it might learn from line~8 to line~5.
-
-% Clean up <200b> in vim: ":%s/\%u200b//g"
-
-There are a number of ways to implement \co{std::observable()},
-for example, a new \co{"mightnotreturn"} GCC asm clobber, a call to an empty
-function that is invisible to the compiler, and a GCC goto asm that the
-compiler cannot prove falls through.
-
-\subsection{Unreachability-Based Undefined Behavior}
-\label{sec:Unreachability-Based Undefined Behavior}
-
-This section attempts to apply the lessons
-of Appendix~\ref{sec:Unreachability-Based Undefined Behavior} to
-Goldblatt's unreachability-UB example.
-
-The \co{std::observable()} at line~12 of
-Listing~\ref{lst:Alignment-Based Undefined Behavior Fix}
-avoids confusing the compiler, instead forcing it to assume that the
-value of \co{local} might not be zero.
-
-\begin{listing}[tbp]
-\begin{verbatim}
- 1 // UB if this function is ever called.
- 2 [[noreturn]]
- 3 inline void unreachable() {
- 4   return;
- 5 }
- 6 void t1() {
- 7   r1 = x.load(std::memory_order_relaxed);
- 8   int local = (r1 & 1);
- 9   if (local == 0)
-10     y.store(1, std::memory_order_relaxed);
-11   if (local != 0) {
-12     std::observable();
-13     // If we get here, UB.
-14     unreachable();
-15   }
-16 }
-\end{verbatim}
-\caption{Unreachability-Based Undefined Behavior Fix}
-\label{lst:Unreachability-Based Undefined Behavior Fix}
-\end{listing}
-
-By the same reasoning, Goldblatt's \co{misbehave} example that
-also involves unreachability can also be addressed through insertion
-of the proposed \co{std::observable()}.
-
-\subsection{Atomic Stores From Undefined Behavior}
-\label{sec:Atomic Stores From Undefined Behavior}
-
-Another proposal to the C++ standards
-committee~\cite{HansBoehm2020UBalternatives}
-proposes (among other alternatives) that any atomic store resulting
-from undefined behavior have at least release semantics.
-This would prevent such a store from propagating undefined behavior
-backwards within that store's thread.
-In some cases, this could also prevent this undefined behavior from
-propagating back through other threads.
-
-However, it might well force C++ implementations to promote a surprisingly
-large fraction of a program's relaxed stores to release.
-
-\subsection{Lifetime-Based Undefined Behavior}
-\label{sec:Lifetime-Based Undefined Behavior}
-
-Not all undefined behavior can be backstopped using
-\co{std::unreachable()}.
-
-\begin{listing}[tbp]
-\begin{verbatim}
- 1 int *foo(int *r)
- 2 {
- 3   b.store(r, memory_order_relaxed);
- 4   return &global;
- 5 }
- 6
- 7 int go(int *p)
- 8 {
- 9   int r;
-10   int *q = foo(&r);
-11
-12   r = 2;
-13   *p = 1;
-14   *q = r;
-15   return *q - r;
-16 }
-17
-18 void t1(void)
-19 {
-20   int r1 = go(a.load(memory_order_relaxed));
-21   printf("go() = %d\n", r1);
-22 }
-23
-24 void t2(void)
-25 {
-26   int *r2 = b.load(memory_order_relaxed);
-27   a.store(r2, memory_order_relaxed);
-28 }
-\end{verbatim}
-\caption{Lifetime-Based Undefined Behavior}
-\label{lst:Lifetime-Based Undefined Behavior}
-\end{listing}
-
-Listing~\ref{lst:Lifetime-Based Undefined Behavior}
-shows an example loosely based on one presented by Stephen Dolan\footnote{
-	\url{https://stedolan.net/talks/2024/loadstore}}
-in which function \co{go()} invokes \co{foo()} with a pointer to \co{go()}'s
-local variable \co{r}.
-However, \co{foo()} uses a relaxed store to place this pointer in
-an atomic variable \co{b}.
-Because this store is relaxed, it is not ordered against other code
-in \co{go()} and \co{t1()}, which means that \co{t2()} might well
-read this pointer from \co{b} either before the beginning or after
-the end of \co{r}'s lifetime, neither of which is well-defined.
-
-Of course, any attempt to dereference the pointer read from either
-\co{a} or \co{b} could result in undefined behavior.
-
-The lesson is clear:
-Properly synchronize reads and writes of pointers with the lifetime
-of the pointed-to object.
-
-This example could make lines~3 and~27 be \co{memory_order_release} and
-lines~20 and~26 be \co{memory_order_acquire} in order to avoid carrying
-a pointer to \co{r} before the lifetime of \co{r} has started.
-Alternatively, threads could be spawned only after \co{r}'s lifetime
-starts and joined before it ends.
-Placing \co{r} in static global storage would avoid lifetime considerations
-totally.
-And there are of course any number of other synchronization schemes
-that might be used to ensure that pointers are in use only while the
-pointed-to objects are alive.
-
-Note that \co{std::unreachable()} does not suffice because the CPU
-can also reorder relaxed stores.
-Note also that load-store ordering is not sufficient to prevent a
-pointer to \co{r} from being stored to \co{b} prior to the start of
-\co{r}'s lifetime because there is no atomic load between the start
-of that lifetime and the relaxed store to \co{b}.
-
-There are a number of ways to prevent carrying a pointer to \co{r} after
-the lifetime of \co{r} has ended, and these are left as an exercise for
-the reader.
-
-\clearpage
-
-\section{Evaluating sdep Using \co{cbmc}}
-\label{sec:Evaluating sdep Using cbmc}
-
-This section demonstrates the evaluation of sdep using
-the C Bounded Model Checker
-(\co{cbmc})~\cite{EdmundClarke2004CBMC}.
-This tool takes a smallish C program as input and constructs a logic
-expression representing that program.
-The logic expression's variables represent bits in the program's inputs
-and state, and the result of that logic expression is \co{true} if that
-program has a bug, for example, if it is possible for that C program to
-trigger an assertion or execute an out-of-bounds array reference.
-The tool then hands this expression to a SAT solver, and if this solver
-finds a satisfying set of values, the tool uses those values provide
-the execution path to the bug.
-
-But first, Appendix~\ref{app:Informal Definition of Semantic Dependency}
-outlines an informal informal definition of ``semantic dependency''
-that can be used in \co{cbmc} test cases.
-
-\subsection{Informal Definition of Semantic Dependency}
-\label{app:Informal Definition of Semantic Dependency}
-
-The manual analysis uses the informal rule that a semantic dependency
-exists between a set of relaxed atomic loads\footnote{
-	Please see
-	Appendix~\ref{app:Non-Trivial Semantic Dependencies}
-	for examples showing why this is a set of loads rather than a
-	single load.}
-and a store on any execution where different values loaded would change
-the address stored to, the value stored, or the number of times that
-store would be executed, with the proviso that stores of the same value
-to the same address having the same ordering properties are fungible.
-
-Producing a precise formal statement of this rule turns out to be quite
-challenging, but as noted earlier, there is considerable work along
-various
-lines~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA}.
-For examples of the challenges, please see
-Section~\ref{sec:On OOTA Definitions}.
-Our informal definition meets these challenges as follows:
-
-\begin{enumerate}
-\item	Section~\ref{sec:Semantic Dependencies and Source Code}
-	is responsible for the phrase ``on any execution'' as well
-	as the proviso regarding fungible loads.
-\item	Section~\ref{sec:Semantic Dependencies Depend on Context}'s
-	challenges are met by looking at the full context within
-	a given thread.
-\item	Section~\ref{sec:Semantic Dependencies Can Be Nondeterministic}'s
-	non-determinism challenges are avoided by avoiding litmus tests
-	exhibiting non-deterministic behavior.
-	Again, note that most production C++ code uses compiler-based C++
-	implementations, which freeze their non-deterministic choices
-	into the binary at compile time.
-\item	Section~\ref{sec:Semantic Dependencies And Optimization}'s
-	optimization-choice challenges are met by using the C++
-	implementation's choice of semantic dependency based on the
-	optimizations that the implementation actually applied.
-\item	Section~\ref{sec:Semantic Dependencies and I/O}'s
-	I/O challenges are met by again noting that I/O is observed
-	behavior.
-	And by avoiding litmus tests involving I/O, given that relatively
-	few of the available tools handle I/O.
-\item	Section~\ref{sec:Semantic Dependencies Can Be Complex}'s
-	complexity challenges are met by looking at what the code
-	actually does.
-	For example, if an as-yet unproven mathematical conjecture
-	holds, the code will act consistently with that conjecture,
-	and vice versa.
-\item	Section~\ref{sec:Implementers and Users Influence Semantic-Dependencies Definition}'s
-	implementer-/user-choice challenges are met by accounting for
-	those choices.
-	For example, if a user has specified \co{-funsigned-char},
-	then the actual executions will be consistent with that choice.
-	For more examples, please see
-	Appendix~\ref{app:User Influence Over Language Semantics}.
-\end{enumerate}
-
-In short, we are treating ``semantic dependency'' in a manner similar
-to our treatment of the laws of physics.
-We let the actual executions provide an empirical basis for the analysis.
-
-We do not expect this approach to please everyone.
-However, those who are displeased might do well to reflect on the fact
-that the C++ standard is not mathematical in nature, which implies that
-any mathematical model of C++ is inherently an approximation.
-We look forward to the day when the standard gains more mathematical
-rigor, and perhaps the C++ memory model is a first step in that
-direction.\footnote{
-	But if so, the OOTA situation should be a caution!}
-Nevertheless, until that day, we must live with the standard in its
-current decidedly non-mathematical form.
-
-\subsection{Complex Semantic Dependencies}
-\label{app:Complex Semantic Dependencies}
-
-Listing~\ref{lst:Example Code for Evaluation of sdep}
-shows a \co{herd7} thread \co{P0()}.
-Is there a semantic dependency between the load from \co{x} on
-line~3 to the store to \co{y} on line~9?
-Answering this question requires solving a mathematical equation,
-not all of which currently have known solutions.
-However, this section will use a relatively simple equation combined
-with restrictions on domain and range that permit \co{cbmc} to do
-the job.
-
-\begin{listing}[tbp]
-\scriptsize
-\begin{verbatim}
- 1 P0(atomic_int *x, atomic_int *y, atomic_int *limit)
- 2 {
- 3   r1 = atomic_load_explicit(x, memory_order_relaxed);
- 4   r2 = atomic_load_explicit(limit, memory_order_relaxed);
- 5   r3 = r1 * r1 + 2 * r1 + 2;
- 6   r4 = r2;
- 7   if (r2 >= r3)
- 8     r4 = r3;
- 9   atomic_store_explicit(y, r4, memory_order_relaxed);
-10 }
-\end{verbatim}
-\caption{Example Code for Evaluation of sdep}
-\label{lst:Example Code for Evaluation of sdep}
-\end{listing}
-
-\begin{listing}[tbp]
-\scriptsize
-\begin{verbatim}
- 1 int main(int argc, char *argv[])
- 2 {
- 3   int i;
- 4   int y[2] = { 0, 0 };
- 5
- 6   for (i = 0; i < 2; i++) {
- 7     int r1;
- 8     int r2;
- 9     int r3;
-10     int *yp = &y[i];
-11
-12     r1 = limited_arg(argv[2 * i + 1]);
-13     r2 = const_arg(limited_arg(argv[2 * i + 2]));
-14     r3 = r1 * r1 + 2 * r1 + 2;
-15     *yp = r2 <= r3 ? r2 : r3;
-16     printf("i = %d, r1 = %d, r2 = %d, r3 = %d\n", i, r1, r2, r3);
-17   }
-18   assert(y[0] == y[1]);
-19 }
-\end{verbatim}
-\caption{Code for cbmc-Based Evaluation of sdep}
-\label{lst:Code for cbmc-Based Evaluation of sdep}
-\end{listing}
-
-One way to answer this question is to create a C program
-(see Listing~\ref{lst:Code for cbmc-Based Evaluation of sdep})
-that runs the \co{P0()} thread's code twice with arbitrary inputs
-(the loop spanning lines~6-17) and asserts that the results of
-each iteration be equal (line~18).
-
-Running this with:
-
-\begin{quote}
-\scriptsize
-\begin{verbatim}
-cbmc -DCBMC cbmc/sdep-quadratic.c
-\end{verbatim}
-\end{quote}
-
-gives the result \co{VERIFICATION FAILED}.
-This indicates that there are different values of \co{x} and \co{limit}
-that yield different values of \co{y}, that is, that there can be
-a semantic dependency.
-
-\begin{listing}[tbp]
-@@ DisplayLitmus cbmc/sdep-quadratic.c @@
-\caption{Full Code for cbmc-Based Evaluation of sdep}
-\label{lst:Full Code for cbmc-Based Evaluation of sdep}
-\end{listing}
-
-However, $x^2 + 2x + 2$ has a minimum value of 1 at $x=-1$, so
-forcing \co{limit} to (say) zero should eliminate this static
-dependency:\footnote{
-	See Listing~\ref{lst:Full Code for cbmc-Based Evaluation of sdep}
-	for the full \path{cbmc/sdep-quadratic.c} program.}
-
-\begin{quote}
-\scriptsize
-\begin{verbatim}
-cbmc -DCBMC -DLOAD_CONSTANT=0 cbmc/sdep-quadratic.c
-\end{verbatim}
-\end{quote}
-
-But this also gives the result \co{VERIFICATION FAILED}.
-One reason for this is that this program does 32-bit computer arithmetic,
-and is thus subject to wraparound.
-Limiting the value of \co{x} to 46,339 prevents wraparound:
-
-\begin{quote}
-\scriptsize
-\begin{verbatim}
-cbmc -DCBMC -DLOAD_CONSTANT=0 -DLOAD_LIMITS=46339 cbmc/sdep-quadratic.c
-\end{verbatim}
-\end{quote}
-
-And this yields \co{VERIFICATION SUCCESSFUL}, indicating that there
-is no semantic dependency in this case.
-This is to be expected because the specified value of zero for \co{limit}
-is smaller than the minimum of the quadratic expression, so that the
-value stored to \co{y} is always zero.
-Specifying \co{-DLOAD_CONSTANT=1} also yields \co{VERIFICATION SUCCESSFUL}
-because this value is equal to that minimum, so that the value stored to
-\co{y} is always 1.
-However, specifying any larger value (for example, \co{-DLOAD_CONSTANT=2})
-yields \co{VERIFICATION FAILED} because the value assigned to \co{y}
-might be either 1 or 2, indicating that a semantic dependency exists.
-
-This situation underscores the point that the existance of a semantic
-dependency can be a property of a particular execution rather than a
-universal property of the code itself.
-The interested reader is encouraged to create more complex examples,
-for example, demonstrating semantic dependencies from multiple loads or
-exploring indeterminacy.
-
-There are numerous other tools that can be used, up to and including
-manual inspection, but \co{cbmc} is readily available and easy to
-use.\footnote{
-	On Debian-based distributions, via \co{sudo apt install cbmc}.}
-
-\subsection{C++ Non-Determinism}
-\label{app:C++ Non-Determinism}
-
-The C++ standard allows non-determinism, for example, the order of
-invocation of side-effects in some circumstances.
-Listing~\ref{lst:Code for cbmc-Based Evaluation of Non-Deterministic sdep}
-shows an example leveraging side-effects in the parameter list shown on
-line~37.
-
-\begin{listing}[tbp]
-@@ DisplayLitmus cbmc/sdep-nondet.c @@
-\caption{Code for cbmc-Based Evaluation of Non-Deterministic sdep}
-\label{lst:Code for cbmc-Based Evaluation of Non-Deterministic sdep}
-\end{listing}
-
-Running \co{cbmc} on this as follows:
-
-\begin{quote}
-\scriptsize
-\begin{verbatim}
-cbmc -DCBMC cbmc/sdep-nondet.c
-\end{verbatim}
-\end{quote}
-
-Gives the result \co{VERIFICATION SUCCESSFUL}, showing that \co{cbmc}
-does not model this non-determinism.
-Which is not surprising, given that many of the safety-critical uses
-to which \co{cbmc} is put would prohibit such non-determinism in their
-code bases.
-
-\clearpage
-
 \section{Inter-Process Communications}
 \label{app:Inter-Process Communications}
 
@@ -4720,6 +4244,482 @@ identifying \co{memory_order_relaxed} idioms that are checked at the
 machine level using special-purpose tooling.\footnote{
 	Kudos to Peter Sewell for clearly articulating this possibility
 	as part of an overall strategy.}
+
+\clearpage
+
+\section{Aside on Undefined Behavior}
+\label{app:Aside on Undefined Behavior}
+
+The combination of OOTA cycles and UB has proven especially
+challenging~\cite{DavidGoldblatt2019NoElegantOOTAfix,HansBoehm2020UBalternatives}.
+
+\subsection{Alignment-Based Undefined Behavior}
+\label{sec:Alignment-Based Undefined Behavior}
+
+The example shown in
+Listing~\ref{lst:Alignment-Based Undefined Behavior (P1916R0)}
+(taken from P1916R0) is especially instructive.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 std::atomic<int> y;
+ 2 template <typename T>
+ 3 void t1() {
+ 4   long long r1 = x.load(std::memory_order_relaxed);
+ 5   if (r1 % 4 == 0)
+ 6     y.store(1, std::memory_order_relaxed);
+ 7   *(T*)r1 = *(T*)r1;
+ 8 }
+\end{verbatim}
+\caption{Alignment-Based Undefined Behavior (P1916R0)}
+\label{lst:Alignment-Based Undefined Behavior (P1916R0)}
+\end{listing}
+
+Because the compiler often assumes that UB cannot happen, it might
+look at line~7 and conclude that the value of \co{r1} necessarily
+corresponded to an address aligned per the requirements of type \co{T}.
+If that type's alignment was larger than four bytes, the compiler could
+then replace the condition in line~5 with \co{true}, which would mean
+that there was no semantic dependency from the load of \co{x} to the
+store of \co{y}.
+
+Except that the developer might have knowingly carried out a misaligned
+access, for example, to test an alignment trap handler or because the
+system on which this code was to run was known to gracefully handle
+misaligned accesses.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 std::atomic<int> y;
+ 2 template <typename T>
+ 3 void t1() {
+ 4   long long r1 = x.load(std::memory_order_relaxed);
+ 5   if (r1 % 4 == 0)
+ 6     y.store(1, std::memory_order_relaxed);
+ 7   std::observable();
+ 8   *(T*)r1 = *(T*)r1;
+ 9 }
+\end{verbatim}
+\caption{Alignment-Based Undefined Behavior Fix}
+\label{lst:Alignment-Based Undefined Behavior Fix}
+\end{listing}
+
+However, in that case, the developer is stepping outside the bounds
+of the standard.
+It would be good to have some way for the developer to get the job
+done without confusing the compiler, thus separating OOTA-cycle and
+UB concerns.
+One approach is to use the \co{std::observable()} function
+that has been proposed to the C++ standards
+committee~\cite{DavisHerring2021P1494R2}.
+This function would blocks backwards-propagating UB.
+Then this example could be rewritten as shown in
+Listing~\ref{lst:Alignment-Based Undefined Behavior Fix},
+with the asm on line~7 preventing the compiler from assuming that line~8
+is guaranteed to be executed, thus preventing the compiler from
+applying any lessons that it might learn from line~8 to line~5.
+
+% Clean up <200b> in vim: ":%s/\%u200b//g"
+
+There are a number of ways to implement \co{std::observable()},
+for example, a new \co{"mightnotreturn"} GCC asm clobber, a call to an empty
+function that is invisible to the compiler, and a GCC goto asm that the
+compiler cannot prove falls through.
+
+\subsection{Unreachability-Based Undefined Behavior}
+\label{sec:Unreachability-Based Undefined Behavior}
+
+This section attempts to apply the lessons
+of Appendix~\ref{sec:Unreachability-Based Undefined Behavior} to
+Goldblatt's unreachability-UB example.
+
+The \co{std::observable()} at line~12 of
+Listing~\ref{lst:Alignment-Based Undefined Behavior Fix}
+avoids confusing the compiler, instead forcing it to assume that the
+value of \co{local} might not be zero.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 // UB if this function is ever called.
+ 2 [[noreturn]]
+ 3 inline void unreachable() {
+ 4   return;
+ 5 }
+ 6 void t1() {
+ 7   r1 = x.load(std::memory_order_relaxed);
+ 8   int local = (r1 & 1);
+ 9   if (local == 0)
+10     y.store(1, std::memory_order_relaxed);
+11   if (local != 0) {
+12     std::observable();
+13     // If we get here, UB.
+14     unreachable();
+15   }
+16 }
+\end{verbatim}
+\caption{Unreachability-Based Undefined Behavior Fix}
+\label{lst:Unreachability-Based Undefined Behavior Fix}
+\end{listing}
+
+By the same reasoning, Goldblatt's \co{misbehave} example that
+also involves unreachability can also be addressed through insertion
+of the proposed \co{std::observable()}.
+
+\subsection{Atomic Stores From Undefined Behavior}
+\label{sec:Atomic Stores From Undefined Behavior}
+
+Another proposal to the C++ standards
+committee~\cite{HansBoehm2020UBalternatives}
+proposes (among other alternatives) that any atomic store resulting
+from undefined behavior have at least release semantics.
+This would prevent such a store from propagating undefined behavior
+backwards within that store's thread.
+In some cases, this could also prevent this undefined behavior from
+propagating back through other threads.
+
+However, it might well force C++ implementations to promote a surprisingly
+large fraction of a program's relaxed stores to release.
+
+\subsection{Lifetime-Based Undefined Behavior}
+\label{sec:Lifetime-Based Undefined Behavior}
+
+Not all undefined behavior can be backstopped using
+\co{std::unreachable()}.
+
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 int *foo(int *r)
+ 2 {
+ 3   b.store(r, memory_order_relaxed);
+ 4   return &global;
+ 5 }
+ 6
+ 7 int go(int *p)
+ 8 {
+ 9   int r;
+10   int *q = foo(&r);
+11
+12   r = 2;
+13   *p = 1;
+14   *q = r;
+15   return *q - r;
+16 }
+17
+18 void t1(void)
+19 {
+20   int r1 = go(a.load(memory_order_relaxed));
+21   printf("go() = %d\n", r1);
+22 }
+23
+24 void t2(void)
+25 {
+26   int *r2 = b.load(memory_order_relaxed);
+27   a.store(r2, memory_order_relaxed);
+28 }
+\end{verbatim}
+\caption{Lifetime-Based Undefined Behavior}
+\label{lst:Lifetime-Based Undefined Behavior}
+\end{listing}
+
+Listing~\ref{lst:Lifetime-Based Undefined Behavior}
+shows an example loosely based on one presented by Stephen Dolan\footnote{
+	\url{https://stedolan.net/talks/2024/loadstore}}
+in which function \co{go()} invokes \co{foo()} with a pointer to \co{go()}'s
+local variable \co{r}.
+However, \co{foo()} uses a relaxed store to place this pointer in
+an atomic variable \co{b}.
+Because this store is relaxed, it is not ordered against other code
+in \co{go()} and \co{t1()}, which means that \co{t2()} might well
+read this pointer from \co{b} either before the beginning or after
+the end of \co{r}'s lifetime, neither of which is well-defined.
+
+Of course, any attempt to dereference the pointer read from either
+\co{a} or \co{b} could result in undefined behavior.
+
+The lesson is clear:
+Properly synchronize reads and writes of pointers with the lifetime
+of the pointed-to object.
+
+This example could make lines~3 and~27 be \co{memory_order_release} and
+lines~20 and~26 be \co{memory_order_acquire} in order to avoid carrying
+a pointer to \co{r} before the lifetime of \co{r} has started.
+Alternatively, threads could be spawned only after \co{r}'s lifetime
+starts and joined before it ends.
+Placing \co{r} in static global storage would avoid lifetime considerations
+totally.
+And there are of course any number of other synchronization schemes
+that might be used to ensure that pointers are in use only while the
+pointed-to objects are alive.
+
+Note that \co{std::unreachable()} does not suffice because the CPU
+can also reorder relaxed stores.
+Note also that load-store ordering is not sufficient to prevent a
+pointer to \co{r} from being stored to \co{b} prior to the start of
+\co{r}'s lifetime because there is no atomic load between the start
+of that lifetime and the relaxed store to \co{b}.
+
+There are a number of ways to prevent carrying a pointer to \co{r} after
+the lifetime of \co{r} has ended, and these are left as an exercise for
+the reader.
+
+\clearpage
+
+\section{Evaluating sdep Using \co{cbmc}}
+\label{sec:Evaluating sdep Using cbmc}
+
+This section demonstrates the evaluation of sdep using
+the C Bounded Model Checker
+(\co{cbmc})~\cite{EdmundClarke2004CBMC}.
+This tool takes a smallish C program as input and constructs a logic
+expression representing that program.
+The logic expression's variables represent bits in the program's inputs
+and state, and the result of that logic expression is \co{true} if that
+program has a bug, for example, if it is possible for that C program to
+trigger an assertion or execute an out-of-bounds array reference.
+The tool then hands this expression to a SAT solver, and if this solver
+finds a satisfying set of values, the tool uses those values provide
+the execution path to the bug.
+
+But first, Appendix~\ref{app:Informal Definition of Semantic Dependency}
+outlines an informal informal definition of ``semantic dependency''
+that can be used in \co{cbmc} test cases.
+
+\subsection{Informal Definition of Semantic Dependency}
+\label{app:Informal Definition of Semantic Dependency}
+
+The manual analysis uses the informal rule that a semantic dependency
+exists between a set of relaxed atomic loads\footnote{
+	Please see
+	Appendix~\ref{app:Non-Trivial Semantic Dependencies}
+	for examples showing why this is a set of loads rather than a
+	single load.}
+and a store on any execution where different values loaded would change
+the address stored to, the value stored, or the number of times that
+store would be executed, with the proviso that stores of the same value
+to the same address having the same ordering properties are fungible.
+
+Producing a precise formal statement of this rule turns out to be quite
+challenging, but as noted earlier, there is considerable work along
+various
+lines~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA}.
+For examples of the challenges, please see
+Section~\ref{sec:On OOTA Definitions}.
+Our informal definition meets these challenges as follows:
+
+\begin{enumerate}
+\item	Section~\ref{sec:Semantic Dependencies and Source Code}
+	is responsible for the phrase ``on any execution'' as well
+	as the proviso regarding fungible loads.
+\item	Section~\ref{sec:Semantic Dependencies Depend on Context}'s
+	challenges are met by looking at the full context within
+	a given thread.
+\item	Section~\ref{sec:Semantic Dependencies Can Be Nondeterministic}'s
+	non-determinism challenges are avoided by avoiding litmus tests
+	exhibiting non-deterministic behavior.
+	Again, note that most production C++ code uses compiler-based C++
+	implementations, which freeze their non-deterministic choices
+	into the binary at compile time.
+\item	Section~\ref{sec:Semantic Dependencies And Optimization}'s
+	optimization-choice challenges are met by using the C++
+	implementation's choice of semantic dependency based on the
+	optimizations that the implementation actually applied.
+\item	Section~\ref{sec:Semantic Dependencies and I/O}'s
+	I/O challenges are met by again noting that I/O is observed
+	behavior.
+	And by avoiding litmus tests involving I/O, given that relatively
+	few of the available tools handle I/O.
+\item	Section~\ref{sec:Semantic Dependencies Can Be Complex}'s
+	complexity challenges are met by looking at what the code
+	actually does.
+	For example, if an as-yet unproven mathematical conjecture
+	holds, the code will act consistently with that conjecture,
+	and vice versa.
+\item	Section~\ref{sec:Implementers and Users Influence Semantic-Dependencies Definition}'s
+	implementer-/user-choice challenges are met by accounting for
+	those choices.
+	For example, if a user has specified \co{-funsigned-char},
+	then the actual executions will be consistent with that choice.
+	For more examples, please see
+	Appendix~\ref{app:User Influence Over Language Semantics}.
+\end{enumerate}
+
+In short, we are treating ``semantic dependency'' in a manner similar
+to our treatment of the laws of physics.
+We let the actual executions provide an empirical basis for the analysis.
+
+We do not expect this approach to please everyone.
+However, those who are displeased might do well to reflect on the fact
+that the C++ standard is not mathematical in nature, which implies that
+any mathematical model of C++ is inherently an approximation.
+We look forward to the day when the standard gains more mathematical
+rigor, and perhaps the C++ memory model is a first step in that
+direction.\footnote{
+	But if so, the OOTA situation should be a caution!}
+Nevertheless, until that day, we must live with the standard in its
+current decidedly non-mathematical form.
+
+\subsection{Complex Semantic Dependencies}
+\label{app:Complex Semantic Dependencies}
+
+Listing~\ref{lst:Example Code for Evaluation of sdep}
+shows a \co{herd7} thread \co{P0()}.
+Is there a semantic dependency between the load from \co{x} on
+line~3 to the store to \co{y} on line~9?
+Answering this question requires solving a mathematical equation,
+not all of which currently have known solutions.
+However, this section will use a relatively simple equation combined
+with restrictions on domain and range that permit \co{cbmc} to do
+the job.
+
+\begin{listing}[tbp]
+\scriptsize
+\begin{verbatim}
+ 1 P0(atomic_int *x, atomic_int *y, atomic_int *limit)
+ 2 {
+ 3   r1 = atomic_load_explicit(x, memory_order_relaxed);
+ 4   r2 = atomic_load_explicit(limit, memory_order_relaxed);
+ 5   r3 = r1 * r1 + 2 * r1 + 2;
+ 6   r4 = r2;
+ 7   if (r2 >= r3)
+ 8     r4 = r3;
+ 9   atomic_store_explicit(y, r4, memory_order_relaxed);
+10 }
+\end{verbatim}
+\caption{Example Code for Evaluation of sdep}
+\label{lst:Example Code for Evaluation of sdep}
+\end{listing}
+
+\begin{listing}[tbp]
+\scriptsize
+\begin{verbatim}
+ 1 int main(int argc, char *argv[])
+ 2 {
+ 3   int i;
+ 4   int y[2] = { 0, 0 };
+ 5
+ 6   for (i = 0; i < 2; i++) {
+ 7     int r1;
+ 8     int r2;
+ 9     int r3;
+10     int *yp = &y[i];
+11
+12     r1 = limited_arg(argv[2 * i + 1]);
+13     r2 = const_arg(limited_arg(argv[2 * i + 2]));
+14     r3 = r1 * r1 + 2 * r1 + 2;
+15     *yp = r2 <= r3 ? r2 : r3;
+16     printf("i = %d, r1 = %d, r2 = %d, r3 = %d\n", i, r1, r2, r3);
+17   }
+18   assert(y[0] == y[1]);
+19 }
+\end{verbatim}
+\caption{Code for cbmc-Based Evaluation of sdep}
+\label{lst:Code for cbmc-Based Evaluation of sdep}
+\end{listing}
+
+One way to answer this question is to create a C program
+(see Listing~\ref{lst:Code for cbmc-Based Evaluation of sdep})
+that runs the \co{P0()} thread's code twice with arbitrary inputs
+(the loop spanning lines~6-17) and asserts that the results of
+each iteration be equal (line~18).
+
+Running this with:
+
+\begin{quote}
+\scriptsize
+\begin{verbatim}
+cbmc -DCBMC cbmc/sdep-quadratic.c
+\end{verbatim}
+\end{quote}
+
+gives the result \co{VERIFICATION FAILED}.
+This indicates that there are different values of \co{x} and \co{limit}
+that yield different values of \co{y}, that is, that there can be
+a semantic dependency.
+
+\begin{listing}[tbp]
+@@ DisplayLitmus cbmc/sdep-quadratic.c @@
+\caption{Full Code for cbmc-Based Evaluation of sdep}
+\label{lst:Full Code for cbmc-Based Evaluation of sdep}
+\end{listing}
+
+However, $x^2 + 2x + 2$ has a minimum value of 1 at $x=-1$, so
+forcing \co{limit} to (say) zero should eliminate this static
+dependency:\footnote{
+	See Listing~\ref{lst:Full Code for cbmc-Based Evaluation of sdep}
+	for the full \path{cbmc/sdep-quadratic.c} program.}
+
+\begin{quote}
+\scriptsize
+\begin{verbatim}
+cbmc -DCBMC -DLOAD_CONSTANT=0 cbmc/sdep-quadratic.c
+\end{verbatim}
+\end{quote}
+
+But this also gives the result \co{VERIFICATION FAILED}.
+One reason for this is that this program does 32-bit computer arithmetic,
+and is thus subject to wraparound.
+Limiting the value of \co{x} to 46,339 prevents wraparound:
+
+\begin{quote}
+\scriptsize
+\begin{verbatim}
+cbmc -DCBMC -DLOAD_CONSTANT=0 -DLOAD_LIMITS=46339 cbmc/sdep-quadratic.c
+\end{verbatim}
+\end{quote}
+
+And this yields \co{VERIFICATION SUCCESSFUL}, indicating that there
+is no semantic dependency in this case.
+This is to be expected because the specified value of zero for \co{limit}
+is smaller than the minimum of the quadratic expression, so that the
+value stored to \co{y} is always zero.
+Specifying \co{-DLOAD_CONSTANT=1} also yields \co{VERIFICATION SUCCESSFUL}
+because this value is equal to that minimum, so that the value stored to
+\co{y} is always 1.
+However, specifying any larger value (for example, \co{-DLOAD_CONSTANT=2})
+yields \co{VERIFICATION FAILED} because the value assigned to \co{y}
+might be either 1 or 2, indicating that a semantic dependency exists.
+
+This situation underscores the point that the existance of a semantic
+dependency can be a property of a particular execution rather than a
+universal property of the code itself.
+The interested reader is encouraged to create more complex examples,
+for example, demonstrating semantic dependencies from multiple loads or
+exploring indeterminacy.
+
+There are numerous other tools that can be used, up to and including
+manual inspection, but \co{cbmc} is readily available and easy to
+use.\footnote{
+	On Debian-based distributions, via \co{sudo apt install cbmc}.}
+
+\subsection{C++ Non-Determinism}
+\label{app:C++ Non-Determinism}
+
+The C++ standard allows non-determinism, for example, the order of
+invocation of side-effects in some circumstances.
+Listing~\ref{lst:Code for cbmc-Based Evaluation of Non-Deterministic sdep}
+shows an example leveraging side-effects in the parameter list shown on
+line~37.
+
+\begin{listing}[tbp]
+@@ DisplayLitmus cbmc/sdep-nondet.c @@
+\caption{Code for cbmc-Based Evaluation of Non-Deterministic sdep}
+\label{lst:Code for cbmc-Based Evaluation of Non-Deterministic sdep}
+\end{listing}
+
+Running \co{cbmc} on this as follows:
+
+\begin{quote}
+\scriptsize
+\begin{verbatim}
+cbmc -DCBMC cbmc/sdep-nondet.c
+\end{verbatim}
+\end{quote}
+
+Gives the result \co{VERIFICATION SUCCESSFUL}, showing that \co{cbmc}
+does not model this non-determinism.
+Which is not surprising, given that many of the safety-critical uses
+to which \co{cbmc} is put would prohibit such non-determinism in their
+code bases.
 
 \clearpage
 
