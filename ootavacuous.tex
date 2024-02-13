@@ -3691,8 +3691,8 @@ At which point, the order of execution could be as follows:
 Please note that the OOTA-like cycle called out in the \co{exists}
 clause can happen even though the program never actually executes any
 code that would have resulted in division-by-zero UB.
-It is tempting to consider using the techniques described in
-Appendix~\ref{app:Aside on Undefined Behavior}
+It is tempting to consider using techniques
+% Appendix~\ref{app:Aside on Undefined Behavior}
 that prevent back-propagation of UB, but these are ineffective in this
 case because the C++ implementation can detect and exploit UB when
 considering line~14 in isolation.
