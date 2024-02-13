@@ -2,7 +2,7 @@ C oota-3-2-proc-opt
 (*
  * Result: Never
  *
- * Three-process expansion of JMM Causality Test Case 4, but
+ * Three-process expansion of JMM Causality Test Case 3, but
  * collapsed back into two threads, then with store-load to
  * store optimization.
  *)

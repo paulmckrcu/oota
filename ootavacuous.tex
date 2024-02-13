@@ -3694,6 +3694,93 @@ were converted to be volatile.
 Therefore, this paper focuses on UB-free programs, rare though these
 beasts might be among large-scale C++ programs running in production.
 
+\subsubsection{Semantic Dependencies and \co{volatile}}
+\label{app:Semantic Dependencies and volatile}
+
+The Linux kernel uses volatile accesses to constrain the compiler,
+and it is worth looking at the example shown in
+Listing~\ref{lst:Non-Volatile Accesses and Dependencies}
+to see how this works.
+
+\begin{listing}
+\begin{verbatim}
+ 1 atomic<int> x, y;
+ 2
+ 3 void thread1() {
+ 4   int r1 = x.load(memory_order::relaxed);
+ 5   y.store(r1, memory_order::relaxed);
+ 6 }
+\end{verbatim}
+\caption{Non-Volatile Accesses and Dependencies}
+\label{lst:Non-Volatile Accesses and Dependencies}
+\end{listing}
+
+Because both \co{x} and \co{y} are non-volatile, the compiler is
+free to assume that the value loaded by line~4 will be some value
+stored to \co{x} or its initial value.
+Because there are no stores to \co{x}, the only remaining possibility
+is the default-initialized value of zero.
+Therefore, the C++ implementation is within its rights to substitute
+the constant zero for \co{r1} on line~5, eliminating the semantic
+dependency that would otherwise extend from line~4 to line~5.
+This in turn enables the implementation to reorder line~5 to
+precede line~4.
+
+\begin{listing}
+\begin{verbatim}
+ 1 atomic<volatile int> x, y;
+ 2
+ 3 void thread1() {
+ 4   int r1 = x.load(memory_order::relaxed);
+ 5   y.store(r1, memory_order::relaxed);
+ 6 }
+\end{verbatim}
+\caption{Volatile Accesses and Dependencies}
+\label{lst:Volatile Accesses and Dependencies}
+\end{listing}
+
+One way to preserve this dependency is use of \co{volatile}, as shown in
+Listing~\ref{lst:Volatile Accesses and Dependencies}.
+Now the implementation is forbidden from assuming that the value loaded
+by line~4 has any relation to any stores to or initialization of \co{x},
+even if \co{x} is placed in normal memory.
+
+In this case, the \co{volatile} keyword alerts the implementation to
+the possibility of interfering accesses to \co{x} from outside the
+program, for example, due to \co{x} being:
+
+\begin{itemize}
+\item	Allocated in an MMIO region of the address space.
+\item	Modified by an unknown-to-the-implementation thread
+	or signal handler.
+\item	Subject to I/O-device DMA operations.
+\item	Modified by debugger commands.
+\item	Modified by accesses to facilities such as \path{/dev/mem}.
+\item	Modified by as-yet-unwritten dynamically linked libraries.
+\item	Modified by some other mechanism of the reader's choosing.
+\end{itemize}
+
+These possibilities force the implementation to preserve the semantic
+dependency from line~4 to line~5.
+They can also prevent the formation of OOTA cycles local to the
+implementation because such inteference means that the volatile loads
+might be reading from something that the implementation knows nothing
+about.
+
+The developer is free to arrange for \co{x} to be free of any
+interference, thus obtaining predictable behavior along with the
+preserved semantic dependency.
+However, this example invalidates the rough definition of semantic
+dependency from
+Section~\ref{sec:Simple OOTA Cycle}
+because the value loaded from \co{x} will always be the initial value
+of zero, so that it is at best dubious to talk about any changes in
+the value loaded.
+
+One way forward is to assume that interference could happen when
+determining which dependencies are semantic, and then do further analysis
+using that determination.
+
 \clearpage
 
 \section{Inter-Process Communications}
