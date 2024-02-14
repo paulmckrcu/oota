@@ -187,11 +187,14 @@ and this ordering prevents the OOTA result.
 
 This paper will follow P2055R0~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
 in using the term \emph{full C++} to denote the standard including the
-prohibition above, and the term \emph{strict C++}\footnote{
+prohibition above.
+{\it Contra\/} that article, we will use the term \emph{loose C++}\footnote{
 	There is some discomfort with this name, so this footnote
 	is reserved for future bikeshedding.}
 % @@@ Alternatives thus far: OOTA-prone C++, OOTA-enabled C++,
-% @@@ relaxed C++, OOTA C++, OOTA-agnostic C++, loose C++.
+% @@@ relaxed C++, OOTA C++, OOTA-agnostic C++.
+(rather than \emph{strict C++}, which seems too similar to
+\emph{full C++} for comfort)
 to denote a hypothetical standard that excludes this prohibition, but
 is otherwise identical to full C++.
 Unqualified \emph{C++} means full C++.
@@ -317,7 +320,7 @@ the cycle.\footnote{
 \end{listing}
 
 Listing~\ref{lst:OOTA Cycle}
-shows a code fragment that under strict C++ has an OOTA cycle (although
+shows a code fragment that under loose C++ has an OOTA cycle (although
 the cycle is of course prohibited in full C++).
 This section describes the fragment, thereby giving an overview of
 the \co{herd7} tool.
@@ -815,7 +818,7 @@ It's worth noting, however, that not all the possible abstract executions
 of a program need be realizable by the machine-code executable file
 produced by that implementation.
 In fact, we will see that \emph{none} of the possible OOTA executions
-allowed by the strict C++ abstract machine will ever be realized
+allowed by the loose C++ abstract machine will ever be realized
 by the executables produced by many compilers,
 
 Exactly what the standard's restriction on volatile accesses means
@@ -908,13 +911,13 @@ if the compiler is sufficiently perverse:
 \end{verbatim}
 \end{quote}
 The loads previously on lines~6 and~12 have been replaced by constants.
-Such a transformation complies with the strict C++ standard,
+Such a transformation complies with the loose C++ standard,
 even though the resulting executable file would produce an unintuitive
 OOTA outcome every time it runs!
 
 The only justification a compiler could have for generating output like
 this is that it knows exactly what accesses will be performed by both
-threads, and therefore it knows that it will not violate the strict C++
+threads, and therefore it knows that it will not violate the loose C++
 memory model by assuming each thread's load reads from the other's
 store.
 A similar justification can underlie the reasoning in
@@ -1527,7 +1530,7 @@ traditional compilers.
 It will then turn out to be necessary to take the notion of semantic
 dependence, and thus OOTA, to be compiler-relative rather than absolute.
 
-We will show that programs built using strict C++ compilers that treat all
+We will show that programs built using loose C++ compilers that treat all
 atomic operations as volatile can never exhibit OOTA, and the same is true
 for compilers obeying the weaker constraint that atomic accesses may not
 invented, provided the compiler does not perform multi-thread analysis.
