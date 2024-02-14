@@ -144,7 +144,9 @@ OOTA occurs theoretically when a group of threads load from each others' stores
 and each thread's store depends on the value returned by that thread's load.
 The collection of loads and stores forms an \emph{OOTA cycle}.
 In the most extreme cases a nonsensical value can pop up ``out of thin air'',
-but this is not necessary.
+however, as shown by
+Listing~\ref{lst:OOTA Cycle},
+OOTA cycles need not involve nonsensical values.
 
 \subsubsection{Simple Reordering}
 \label{sec:Simple Reordering}
