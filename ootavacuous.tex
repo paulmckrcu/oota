@@ -91,8 +91,42 @@ Audience: SG1
 \section{Introduction}
 \label{sec:Introduction}
 
-@@@ Add brief description and roadmap of paper, including the simplifications
-and restrictions.
+This paper shows that C++ implementations subject to reasonable
+real-world constraints cannot exhibit OOTA cycles.
+Section~\ref{sec:Background}
+provides background on the problem of OOTA cycles, including a
+brief summary of prior work.
+Section~\ref{sec:OOTA and Semantic Dependencies}
+motivates a shift in definition of OOTA cycle and reviews properties of
+semantic dependencies, showing that these properties are a function of
+executions rather than simply of the source code.
+This leads into
+Section~\ref{sec:What is an Execution?},
+which describes properties of abstract and hardware executions, along
+with the relationship between the two.
+
+This in turn leads to
+Section~\ref{sec:C++ Compilers}, which describes properties of the tool
+commonly used to create hardware executions with the proper relationship
+to a given set of abstract executions, namely  the compiler.
+Section~\ref{sec:Hardware Dependencies, Instruction Ordering, and the
+Fundamental Property}
+then combines hardware dependencies and instruction ordering to arrive
+at the fundamental property of semantic dependencies.
+
+This sets the stage for
+Section~\ref{sec:Real-World Constraints}
+to bring real-world constraints to bear, starting with the laws of
+physics, informally demonstrating that these constraints prevent
+OOTA cycles containing only volatile and quasi-volatile atomics from
+occurring in undefined-behavior-free C++ programs running on correctly
+constructed C++ compiler-based implemen- tations that are restricted to
+single-threaded analysis in our current universe.
+
+Finally,
+Section~\ref{sec:Conclusion}
+presents concluding remarks.
+% @@@ Future directions at some point.
 
 \section{Background}
 \label{sec:Background}
