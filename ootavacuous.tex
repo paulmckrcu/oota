@@ -915,10 +915,12 @@ In particular, when running in a non-benign environment a program's
 volatile loads can return unpredictable values.
 They don't necessarily read from stores (in contrast to non-volatile loads,
 which always must return the value of the store they read from).
-This implies that volatile load-acquire's do not synchronize with
-volatile store-releases in the sense of the C++ memory model,
+This implies that volatile load-acquire's do not necessarily synchronize with
+volatile store-releases in the sense of the C++ memory model,\footnote{
+	For example, roughly speaking, they might instead synchronize
+	with load-acquires and store-releases in device firmware.}
 so they do not contribute in the same way to the happens-before relation.
-Also, in these environments the rfe relation does not apply
+Also, in these environments the rfe relation does not necessarily apply
 to volatile loads and hence the accesses in an OOTA cycle must be
 non-volatile.
 
