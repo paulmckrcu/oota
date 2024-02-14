@@ -89,8 +89,8 @@ do
 	fi
 done
 
-pdflatex ootavacuous-flat.tex
-bibtex ootavacuous-flat.aux
-pdflatex ootavacuous-flat.tex
-pdflatex ootavacuous-flat.tex
+pdflatex ootavacuous-flat.tex || exit
+bibtex ootavacuous-flat.aux || exit
+pdflatex ootavacuous-flat.tex || exit
+pdflatex ootavacuous-flat.tex || exit
 cp ootavacuous-flat.pdf ootavacuous.pdf
