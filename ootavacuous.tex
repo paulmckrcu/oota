@@ -843,7 +843,7 @@ and hence the accesses in an OOTA cycle must not be volatile.
 We also understand that a compiler may not
 invent, omit, merge, or reorder volatile accesses,
 in a sense to be discussed in
-section~\ref{sec:Volatile and Partially Volatile Accesses} below.
+section~\ref{sec:Volatile and Quasi Volatile Accesses} below.
 
 \section{C++ Compilers}
 \label{sec:C++ Compilers}
@@ -988,13 +988,13 @@ whereas the transformed code reads it twice.
 Therefore we can rule out transformations like this one by insisting
 the compiler not invent atomic loads.
 In fact, we will require that atomic accesses be treated as
-``partially volatile'', in that the compiler is allowed to omit,
+``quasi volatile'', in that the compiler is allowed to omit,
 merge, or reorder them but not invent them.
 
 Just what does this mean?
 
-\subsection{Volatile and ``Partially Volatile'' Accesses}
-\label{sec:Volatile and Partially Volatile Accesses}
+\subsection{Volatile and ``Quasi Volatile'' Accesses}
+\label{sec:Volatile and Quasi Volatile Accesses}
 
 Declaring objects to be volatile is a way for the programmer to
 indicate that the hardware should perform all accesses to these
@@ -1037,10 +1037,10 @@ these objects, having the following properties:
 Most of these are direct consequences of the fact that volatile
 accesses are considered to be a form of I/O.
 
-For accesses to partially volatile objects, we remove some of the
+For accesses to quasi volatile objects, we remove some of the
 requirements and add a new one.
 We leave out the last two items; compilers are allowed to merge or
-omit accesses to partially volatile objects.
+omit accesses to quasi volatile objects.
 And the requirement for order preservation is weakened; it applies
 only to pairs of accesses to the same object.
 Accesses to different objects may be reordered relative to each other.
@@ -1187,7 +1187,7 @@ With the contents of the last few sections under our belts, we can
 formulate the Fundamental Property that we would like all semantic
 dependencies to satisfy.
 Note that this formulation makes sense only for implementations in
-which all atomic objects are treated as partially volatile.
+which all atomic objects are treated as quasi volatile.
 \begin{quote}
 Let $W$ be a store which, in some abstract execution $A$, semantically
 depends on loads $\{R_0$, \ldots,~$R_n\}$, and suppose that $W$ is not
