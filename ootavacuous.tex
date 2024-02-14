@@ -3028,7 +3028,7 @@ the loop:
 \begin{verbatim}
 do_something_with(x);
 for (i = 0; i < limit i++)
-	y[i] += x;
+    y[i] += x;
 \end{verbatim}
 \end{quote}
 
@@ -3039,7 +3039,7 @@ A C++ implementation might act as if the program had instead been this:
 r1 = x;
 do_something_with(r1);
 for (i = 0; i < limit i++)
-	y[i] += r1;
+    y[i] += r1;
 \end{verbatim}
 \end{quote}
 
@@ -3715,7 +3715,11 @@ constraints, OOTA cycles cannot form in real-world C++ implementations.
 
 But what about tooling?
 
-This appendix expands on
+One entirely reasonable reaction is that, given the issues raised in
+Sections~\ref{sec:Properties of Semantic Dependencies}
+and~\ref{sec:The Fundamental Property of Semantic Dependencies},
+load/store reordering is the least of the problems faced by tooling.
+Nevertheless, this appendix expands on
 Section~\ref{sec:Semantic Dependencies and Tooling}
 by looking into the possibility of:
 
