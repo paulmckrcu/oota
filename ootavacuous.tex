@@ -836,16 +836,29 @@ suggestive comments (9.2.9.2p5 and~6 \co{[dcl.type.cv]}):
 	optimization involving the object because the value of the object
 	might be changed by means undetectable by an implementation.
 \end{quote}
-Following the folklore, we interpret these comments to mean that
-volatile accesses should be treated as a form of I/O,
-implying that volatile loads can return unpredictable values.
+
+Taking our cue from the folklore, we propose to recognize formally
+that programs with volatile objects can execute in two different kinds
+of environment: a benign one in which accesses to these objects work
+the same as non-volatile memory accesses, and a non-benign one in which
+accesses to volatile objects are subject to outside interference and
+act more like I/O.
+In particular, when running in a non-benign environment a program's
+volatile loads can return unpredictable values.
 They don't necessarily read from stores (in contrast to non-volatile loads,
-which must return the value of the store they read from).
-As a corollary, the rfe relation does not apply to volatile loads
-and hence the accesses in an OOTA cycle must not be volatile.
-We also understand that a compiler may not
-invent, omit, merge, or reorder volatile accesses,
-in a sense to be discussed in
+which always must return the value of the store they read from).
+This implies that volatile load-acquire's do not synchronize with
+volatile store-releases in the sense of the C++ memory model,
+so they do not contribute in the same way to the happens-before relation.
+Also, in these environments the rfe relation does not apply
+to volatile loads and hence the accesses in an OOTA cycle must be
+non-volatile.
+
+Of course, the machine-code file produced by a compiler must work
+properly in either kind of environment.
+Therefore the compiler must generally treat accesses to volatile objects
+as a form of I/O, and it may not
+invent, omit, merge, or reorder these accesses, as we will discuss in
 section~\ref{sec:Volatile and Quasi Volatile Accesses} below.
 
 \section{C++ Compilers}
@@ -1007,7 +1020,9 @@ normal memory locations).
 In any event, we expect compilers' translations of volatile-object accesses
 into machine code to be as close to verbatim as possible.
 
-To express this idea in more formal terms, we will augment the
+To express this idea in more formal terms,
+and to explain what we mean by ``quasi-volatile'' object accesses,
+we augment the
 requirements for a hardware execution $H$ to realize an abstract
 execution $A$.
 Each realization must include a map from the set of accesses of
@@ -1015,11 +1030,15 @@ volatile objects in $A$ to the set of instructions in $H$ that access
 these objects, having the following properties:
 \begin{itemize}
 \item	The map connects accesses of the same type (loads to loads
-	and stores to stores).
+	and stores to stores) and to the same object.
 \item	The map connects accesses in a thread of $A$ to accesses in
 	the corresponding thread of $H$.
 \item	The map is value-preserving: The value of an access in $A$ must be
 	the same as the value of the access it maps to in $H$.
+\item	In benign environments the map must preserve the rf relation.
+	That is, if volatile load $R$ in $A$ reads from store $W$ then
+	then the instruction it maps to in $H$ must read from the
+	instruction that $W$ maps to.
 \item	The map is order-preserving: Two accesses in the same thread
 	of $A$ must map to accesses occurring in the same order in $H$.
 	(In other words, the compiler may not reorder accesses
@@ -1037,21 +1056,24 @@ these objects, having the following properties:
 	(In other words, the compiler may not omit accesses to
 	volatile objects.)
 \end{itemize}
-Most of these are direct consequences of the fact that volatile
-accesses are considered to be a form of I/O.
+Most of these are direct consequences of the fact that volatile-object
+accesses are considered to be a form of I/O when the program runs
+in a non-benign environment.
+But to be clear, these requirements apply to all environments.
 
-For accesses to quasi volatile objects, we remove some of the
-requirements and add a new one.
-We leave out the last two items; compilers are allowed to merge or
-omit accesses to quasi volatile objects.
-And the requirement for order preservation is weakened; it applies
-only to pairs of accesses to the same object.
+By contrast, accesses to quasi-volatile objects are normal memory
+accesses, not subject to unpredictable interference in non-benign
+environments (otherwise the program's behavior would be undefined).
+However, we do impose most of the requirements above on quasi-volatile
+object accesses.
+The last two items are left out: Compilers are allowed to merge or
+omit accesses to these objects.
+Because of this, the item about preserving the rf relation
+applies only when $R$ is not omitted, in which case $W$ must not
+be omitted either, but now it applies in all environments.
+Lastly, the requirement for order preservation is weakened; it applies
+only to pairs of accesses to the same quasi-volatile object.
 Accesses to different objects may be reordered relative to each other.
-The new requirement is that the map must preserve the rf relation.
-That is, if load $R$ in $A$ reads from store $W$ and $R$ is not
-omitted then the instruction it maps to in $H$ must read from the
-instruction that $W$ maps to,
-and consequently $W$ must not be omitted either.
 
 Section~\ref{sec:Constraints of the Standard}
 presents examples illustrating some of these requirements.
