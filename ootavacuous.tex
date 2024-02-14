@@ -939,7 +939,18 @@ a C++ source program to directly executable machine code.
 We will therefore use the terms ``compiler'' and ``implementation''
 somewhat interchangeably.
 
-@@@ Fill in roadmap when sectioning is finalized.
+Section~\ref{sec:Users Influence the Behavior of Compilers}
+shows that C++ compilers can be influenced by their users as well
+as by the standard.
+Section~\ref{sec:Global Optimization Can Destroy Dependencies}
+presents an example showing that global optimizations can destroy
+semantic dependencies, and then
+Section~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}
+analyzes examples showing that inventing atomic loads can destroy
+semantic dependencies.
+Section~\ref{sec:Volatile and Quasi Volatile Accesses}
+then presents required properties of volatile atomic operations, and
+also defines quasi-volatile properties for non-volatile atomic operations.
 
 \subsection{Users Influence the Behavior of Compilers}
 \label{sec:Users Influence the Behavior of Compilers}
