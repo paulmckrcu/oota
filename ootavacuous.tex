@@ -2219,6 +2219,27 @@ While taking this approach sacrifices significant generality, it has the
 significant benefit of greatly reducing the cost of dependency analysis,
 potentially all the way down to zero.
 
+\section{Future Directions}
+\label{sec:Future Directions}
+
+This paper focuses solely on compilers, but it should be possible to
+extend these results to some classes of interpreters and JITs on the
+one hand and to link-time optimizations (LTO) on the other.
+
+This paper focuses further on compilers that do only local per-thread
+analysis.
+Further explorations could consider some classes of global analysis,
+for example, analyses that demonstrate that a given expression
+will always evaluate to a particular constant.
+JMM Causality Test Case 1 discussed in
+Appendix~\ref{app:Causality Test Case 1}
+provides an example of such a global analysis.
+
+This paper assumes that the user defines threads, and that the
+C++ implementation executes those threads unchanged.
+Future analyses might examine the possibility of ``flattening''
+optimizations that combine multiple threads into one.
+
 \section{Conclusion}
 \label{sec:Conclusion}
 
