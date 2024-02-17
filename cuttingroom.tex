@@ -732,7 +732,9 @@ applying any lessons that it might learn from line~8 to line~5.
 There are a number of ways to implement \co{std::observable()},
 for example, a new \co{"mightnotreturn"} GCC asm clobber, a call to an empty
 function that is invisible to the compiler, and a GCC goto asm that the
-compiler cannot prove falls through.
+compiler cannot prove falls through.\footnote{
+	Rust defines non-pure asms as potentially looping forever.
+	\url{https://github.com/rust-lang/reference/pull/1442}}
 
 \subsection{Unreachability-Based Undefined Behavior}
 \label{sec:Unreachability-Based Undefined Behavior}
