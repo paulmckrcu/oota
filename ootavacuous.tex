@@ -41,7 +41,7 @@
 \floatname{listing}{Listing}
 
 \begin{document}
-\title{D3064R0: Bringing the Laws of Physics, Computer-System Constraints, and Compilers to Bear on the OOTA Problem}
+\title{D3064R0: How to Avoid OOTA Without Really Trying}
 
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
@@ -1559,8 +1559,8 @@ semantic dependency.
 
 A drawback of the definition is that it is only relative to a specific
 compiler or implementation.
-This may strike some people as too restrictive, in that a given piece
-of code should either contain or not contain a semantic dependency
+This may strike some people as avoiding the real problem, in that a given
+piece of code should either contain or not contain a semantic dependency
 independent of the implementation used to run it.
 
 We can address this drawback by defining an \emph{absolute semantic
@@ -1612,7 +1612,7 @@ quasi-volatile objects could omit the two loads, replacing them in the
 machine code with simple assignments ``\co{r1 = 42}'' and
 ``\co{r2 = 42}''.
 This would be a valid transformation, and the resulting behavior would
-not count as OOTA because according to our definition, the
+not count as OOTA according to our definition because the
 dependencies in \co{thread1} and \co{thread2} would not be semantic.
 
 To see why, recall that a semantic dependency must have a witness,
