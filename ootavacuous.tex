@@ -306,8 +306,8 @@ misordering on the one hand or disallowed OOTA on the other, using
 a perturbation method based on the insight that all OOTA behaviors are
 fixed-point computations.
 
-Some workers recommend avoiding OOTA by ordering prior relaxed
-loads before subsequent relaxed
+Some workers recommend avoiding OOTA by forcing prior relaxed
+loads to be ordered before subsequent relaxed
 stores~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352},
 but this can require real instructions be
 executed~\cite[Section 7.1]{Maranget2012TutorialARMPower},
@@ -561,7 +561,7 @@ x = y * z;
 (Here and below, we have written shared-variable accesses without
 annotations, for brevity.  Please imagine they are all relaxed atomic.)
 
-As long as \co{z} is zero, and all else being equal, changes in the
+As long as \co{z} is zero, changes in the
 value of \co{y} will not cause a change in the value stored to \co{x}.
 As a result, the semantic dependency from \co{y} to \co{x} exists only
 in executions where \co{z} is nonzero,
@@ -572,8 +572,8 @@ which shows it is a property of the execution, not just of the source code.
 
 Suppose that in some execution of the previous example,
 both \co{y} and \co{z} are zero.
-Then changes to either \co{y} or \co{z} (again, all
-else being equal) will not cause a change in the value stored to \co{x}.
+Then changes to either \co{y} or \co{z}
+will not cause a change in the value stored to \co{x}.
 In other words, in this execution there is no semantic dependency
 from either \co{y} or \co{z} to \co{x}.
 But there \emph{is} a semantic dependency from the \emph{pair}
@@ -591,10 +591,9 @@ the notion of a cycle involving sdep appears problematic.
 We are forced to change our definition of an OOTA cycle again;
 we will say that an execution is an instance of OOTA if in that execution:
 \begin{quote}
-	There are stores
-	$W_i$~($i = 0$, \ldots,~$m$),
-	where $W_i$ semantically depends on loads
-	$\{R_{i,j}\}$~($j = 0$, \ldots,~$n_i$),
+	There are stores $W_0,$ \ldots,~$W_m$,
+	where each $W_i$ semantically depends on a set of loads
+	$\{R_{i,0},$ \ldots,~$R_{i,n_i}\}$,
 	such that each $R_{i,j}$ reads from one of the $W_k$
 	stores in a different thread.
 \end{quote}
@@ -616,7 +615,7 @@ There appear to be semantic dependencies from \co{y} to \co{x} and from \co{z}
 to \co{x}.
 However, if the implementation somehow knows that \co{y} is
 always equal to \co{z} at this point then there is no semantic dependency;
-the implementation can act as if the statement were simply ``\co{x = 0;}''.
+the implementation can act as if the statement were simply ``\co{x = 0}''.
 We leave aside the question of how the implementation would know this,
 given that \co{y} and \co{z} cannot be updated simultaneously
 and are subject to change at any time by
@@ -683,7 +682,7 @@ Consider an execution in which \co{x} is greater than zero, so the
 statement labeled \co{L1} runs.
 Is it semantically dependent on \co{x}?
 The answer isn't immediately clear.
-If the other arm of the \co{if} is taken then the same store of 42 to
+If the other arm of the \co{if} is taken then a store of the same value 42 to
 \co{y} occurs, but 53 is written before it.
 Which of these two stores should be compared with the store in \co{L1}?
 
@@ -709,7 +708,7 @@ Once again, the decision is up to the implementation.
 
 We have seen several examples showing that semantic dependencies may vary
 according to the execution and even the implementation.
-This raises some questions, of which the first is:
+This raises several questions, of which the first is:
 What exactly is an execution?
 
 \section{What is an Execution?}
@@ -830,7 +829,7 @@ in every respect during those steps, although they may diverge later.
 \subsection{Hardware Executions}
 \label{sec:Hardware Executions}
 
-When a given computer executes the machine code in a file, the outcome
+The outcome when a given computer executes the machine code in a file
 has historically been much better defined than the executions of the
 C++ abstract machine.
 The hardware's behavior is typically specified with great precision by
@@ -839,7 +838,9 @@ describing exactly what patterns of loads and stores can occur.
 Thus, leaving aside questions of asynchronous interrupts and system
 calls, the behavior of a CPU executing a particular thread within a
 program is entirely determined by the values obtained by the various
-load-from-memory instructions.
+memory-load instructions.
+(We count read-modify-write instructions as both memory loads and
+memory stores.)
 
 For this reason, the hardware executions we use will comprise (along
 with machine code being run) the computer architecture and for each
@@ -1049,9 +1050,9 @@ Consider this code, in which the final values of \co{r1} and~\co{r2}
 are observable:
 \begin{quote}
 \begin{verbatim}
- 1  int r1 = (x != 0);
- 2  int r2 = (y != 0);
- 3  z = (r1 == r2);
+   int r1 = (x != 0);
+   int r2 = (y != 0);
+   z = (r1 == r2);
 \end{verbatim}
 \end{quote}
 It is clear that the store to \co{z} semantically depends on the load
@@ -1146,7 +1147,7 @@ these objects, having the following properties:
 Most of these are direct consequences of the fact that volatile-object
 accesses are considered to be a form of I/O when the program runs
 in a nonbenign environment.
-But to be clear, these requirements apply to all environments.
+But to be clear, these requirements apply in all environments.
 
 By contrast, accesses to quasi-volatile objects are normal memory
 accesses, not subject to unpredictable interference in nonbenign
@@ -1195,11 +1196,11 @@ A few examples:
 	(the sum to be stored in a general-purpose register and some
 	condition-code bits---e.g., Zero, Carry, and Overflow---to be
 	stored in a status register).
-\item	A conditional move instruction would have as inputs the
+\item	A conditional-move instruction would have as inputs the
 	condition-code bits to test, the source register value, and the
 	target register value; the output would be the value to be stored
 	in the target register.
-\item	A conditional or computed branch instruction would have as inputs
+\item	A conditional- or computed-branch instruction would have as inputs
 	the condition-code bits to test, the address of the following
 	instruction (to be used if the condition is false) and the
 	destination address (to be used if the condition is true).
@@ -1243,7 +1244,7 @@ and the instruction and its outputs can't commit until the CPU has fully
 determined what it will do and what they will be.
 (On the other hand, the CPU need not wait for inputs that won't affect
 the instruction's results.
-For instance, a conditional move instruction wouldn't need to wait for
+For instance, a conditional-move instruction wouldn't need to wait for
 the source register input to be determined once it knew that the
 condition was definitely false.
 And, although no existing architectures do this, there is nothing
@@ -1287,7 +1288,7 @@ if taken, where it will branch to (that is, the output value it will
 send to the instruction-pointer register);
 until then the CPU cannot know whether the later instruction should
 be executed at all.
-Therefore instructions following a conditional or computed branch
+Therefore instructions following a conditional- or computed-branch
 instruction in an execution must commit after the branch, and hence
 after the source for the branch's condition or destination input.
 (There could theoretically be an exception for a branch that
@@ -1301,10 +1302,11 @@ With the contents of the last few sections under our belts, we can
 formulate the Fundamental Property that we would like all semantic
 dependencies to satisfy.
 Note that this formulation makes sense only for implementations in
-which all atomic objects are treated as quasi volatile.
+which all atomic objects are treated as volatile or quasi volatile.
 \begin{quote}
-Let $W$ be a store which, in some abstract execution $A$, semantically
-depends on loads $\{R_0$, \ldots,~$R_n\}$, and suppose that $W$ is not
+Let $W$ be a store which semantically depends on loads
+$\{R_0$, \ldots,~$R_n\}$ in some abstract execution $A$,
+and suppose that $W$ is not
 omitted in some hardware execution $H$ realizing $A$.
 Then for some $i$, load $R_i$ is not omitted and the hardware
 instruction it maps to is ordered before the instruction $W$ maps to.
@@ -1406,8 +1408,8 @@ pointless activity.)
 
 Let $A$ be an abstract execution of some program $P$ containing a
 thread $T$, and let $H$ be a hardware execution realizing $A$.
-Let $W$ be an store in $T$ to an atomic object and let $\{R_i \mid i =
-0, \ldots, n\}$ be a set of loads in $T$ from atomic objects on which
+Let $W$ in $T$ be a store to an atomic object, and let $\{R_0,$
+\ldots,~$R_n\}$ in $T$ be a set of loads from atomic objects on which
 $W$ might or might not depend.
 We can dispose of one case immediately: If $W$ is omitted in $H$ then
 the issue of semantic dependency is moot.
@@ -1426,7 +1428,7 @@ not necessarily the same as $P$ but which contains the same thread $T$.
 The thread should start out with the same initial state in $A$ and
 $B$, and all loads in $A$ coming before any of the $R_i$ should obtain
 the same value as they do in $B$ (this is part of our interpretation
-of ``all other things being equal'').
+of ``all else being equal'').
 It follows that the two abstract executions of $T$ will be identical
 up to the first of the $R_i$ loads.
 
@@ -1447,7 +1449,7 @@ Our third requirement for being a witness is that each load in the
 common portion either must obtain the same value in $H$ and $G$, or
 must itself be one of the $R'_i$ loads, or must be ordered in $H$
 after one of the $R'_i$ loads (this is the remaining part of our
-interpretation of ``all other things being equal''.)
+interpretation of ``all else being equal''.)
 
 Finally, we need to determine an instruction $X'$ in $G$ that
 corresponds to $W'$.
@@ -1457,13 +1459,13 @@ But if $W'$ is in the divergent portion of $H$ then things aren't so
 simple.
 The choice is somewhat arbitrary, and so we will fall back on the
 earlier proposal of matching up stores by the order they occur.
-Let \co{y} be the atomic object that $W'$ stores to, and suppose $W'$
-is the $N$th store to \co{y} within the divergent portion of $H$.
-Then $X'$ will be the $N$th store to \co{y} in the divergent portion
+Let $y$ be the atomic object that $W'$ stores to, and suppose $W'$
+is the $N$th store to $y$ within the divergent portion of $H$.
+Then $X'$ will be the $N$th store to $y$ in the divergent portion
 of $G$, if such a store exists.
 Our last requirement for being a witness to a semantic dependency
 is that $X'$ act differently from $W'$: it doesn't exist, it stores
-a different value, or it stores to an object other than \co{y}.
+a different value, or it stores to an object other than $y$.
 
 \subsection{For Compilers Using Global Analysis}
 \label{sec:For Compilers Using Global Analysis}
@@ -1474,13 +1476,13 @@ In order to obtain the desired results we have to require that these
 compilers treat all atomic objects as volatile.
 Equivalently, the machine code generated by such a compiler must be
 the same for a given program as for a ``volatilized'' form of the
-program in which all atomic objects are defined to be volatile.
+program in which all the atomic objects are defined to be volatile.
 
 In this context our definition of semantic dependency is essentially
 the same as before.
 Since we can no longer expect the machine code for a thread to be the
 same regardless of the program it belongs to, the program $Q$ in the
-earlier definition (of which $B$ and $G$ are executions) must now be
+earlier definition (of which $B$ and $G$ are executions) must be
 $P$ or its volatilized form.
 However, we do now allow the possibility that the executions $B$ and
 $G$ take place in a nonbenign environment.
@@ -1531,8 +1533,8 @@ which marks the end of the common period by going different ways in
 $H$ and $G$.
 Just as in the previous case, since the branch behaves differently in
 the two executions it must be ordered after one of the $R'_i$ loads.
-And then so must $W'$, because any instruction following a conditional
-or computed branch instruction is ordered after the branch.
+And then so must $W'$, because any instruction following a conditional-
+or computed-branch instruction is ordered after that branch.
 QED.
 
 \medskip
@@ -1561,12 +1563,12 @@ A drawback of the definition is that it is only relative to a specific
 compiler or implementation.
 This may strike some people as wishy-washy and as avoiding the real
 problem, in that a given piece of code should either contain or not
-contain a semantic dependency independent of the implementation used to
+contain a semantic dependency, independent of the implementation used to
 run it.
 
 We can address this drawback by defining an \emph{absolute semantic
-dependency} as one that is present relative to any valid C++
-implementation, past, present, or future.
+dependency} as one that is present relative to any valid loose C++
+implementation, past, present, or future, real or imagined.
 Of course this notion has its own problems, including that it is
 extremely nonconstructive and impossible to apply in practice.
 However it may be the best we can do with our current understanding
@@ -1576,7 +1578,7 @@ There is one thing we can definitely state:
 Programs produced by an implementation of the right sort will never
 exhibit absolute OOTA (that is, an OOTA cycle in which all the
 semantic dependencies are absolute).
-This is simply because a semantic dependency that is absolute is {\it
+This is simply because an absolute semantic dependency is {\it
 a fortiori\/} a semantic dependency relative to the compiler in use.
 
 But in fact we have shown more than this:
@@ -1619,7 +1621,7 @@ dependencies in \co{thread1} and \co{thread2} would not be semantic.
 To see why, recall that a semantic dependency must have a witness,
 another execution in which the store acts differently.
 But this transformed program has no other executions; every time it
-runs it will write 42 to both \co{x} and \co{y}.
+runs it will store 42 to both \co{x} and \co{y}.
 (Keep in mind also that since the atomic objects are not treated as
 volatile, they are not subject to unspecified interference when the
 program runs in a nonbenign environment.)
@@ -1652,7 +1654,7 @@ x = (int) &x;
 \end{quote}
 Even though the example contains no loads at all, it may store
 different values when running in different programs because the
-variable \co{x} may be allocated at differing addresses in those
+object \co{x} may be allocated at differing addresses in those
 programs.
 According to our definition, this could count as a degenerate OOTA
 cycle of length one, in which the store is semantically dependent on
@@ -1692,7 +1694,7 @@ We would expect that the store to \co{z} would be semantically
 dependent on the load of \co{y} in this execution.
 
 However, a single-thread analysis compiler can translate this into the
-machine code equivalent of:
+machine-code equivalent of:
 \begin{quote}
 \begin{verbatim}
 int r1 = (x != 0);
@@ -3494,8 +3496,8 @@ to see how this works.
  1 atomic<int> x, y;
  2
  3 void thread1() {
- 4   int r1 = x.load(memory_order::relaxed);
- 5   y.store(r1, memory_order::relaxed);
+ 4   int r1 = x.load(memory_order_relaxed);
+ 5   y.store(r1, memory_order_relaxed);
  6 }
 \end{verbatim}
 \caption{Non-Volatile Accesses and Dependencies}
@@ -3518,8 +3520,8 @@ precede line~4.
  1 atomic<volatile int> x, y;
  2
  3 void thread1() {
- 4   int r1 = x.load(memory_order::relaxed);
- 5   y.store(r1, memory_order::relaxed);
+ 4   int r1 = x.load(memory_order_relaxed);
+ 5   y.store(r1, memory_order_relaxed);
  6 }
 \end{verbatim}
 \caption{Volatile Accesses and Dependencies}
