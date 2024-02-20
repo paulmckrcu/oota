@@ -1305,3 +1305,12 @@ However, these situations do not involve OOTA cycles, but rather user
 errors and other issues that can lead to unfriendly optimizations that
 in turn result in unpredictable output.
 This paper focuses instead on OOTA cycles.
+
+In happy contrast to the situation at the start of the C++11 memory-model
+effort, heavily used CPU families now have accurate and executable formal
+memory models, all of which prohibit the causal cycles required to form
+OOTA cycles.
+Even more important, there is clarity on exactly what hardware can and
+can not do in the course of speculative execution.
+Finally, computation is based on instructions, and instructions require
+finite time to execute, even when executed speculatively.
