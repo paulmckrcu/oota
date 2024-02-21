@@ -1844,9 +1844,9 @@ Because volatile atomics constitute observable
 behavior~\cite[\co{intro.abstract}]{ThomasKoeppe2023N4950},
 they must be executed in strict accordance with the rules of the abstract
 machine.
-This means that any volatile atomic operation involving a store
-must execute as if all loads whose return values are used to compute
-that store's address or value have already returned.
+This means that any volatile atomic operation involving a store may
+execute only after the committing of all loads whose return values are
+used to compute that store's address or value.
 OOTA afficienados will recognize this as a special case of ordering
 relaxed loads before relaxed stores, albeit one not requiring
 expensive memory-fence instructions on weakly ordered architectures.
@@ -1869,7 +1869,7 @@ prohibits reordering only of quasi volatile accesses to the same object,
 but such reordering is in any case directly forbidden by the standard.
 Referring also to the ``onto'' bullet from
 Section~\ref{sec:Volatile and Quasi Volatile Accesses},
-implementations must not behave as if the source code has
+implementations should not behave as if the source code has
 additional:
 
 \begin{enumerate}
@@ -1948,7 +1948,7 @@ excessive cache-miss overheads.
  2   int a;
  3   int b;
  4 };
- 5 struct foo *globalfoop;
+ 5 _Atomic struct foo *globalfoop;
  6
  7 void bar()
  8 {
@@ -1970,7 +1970,7 @@ excessive cache-miss overheads.
 However, even duplicating an existing atomic load can lead to incorrect
 results.
 To see this, please refer to
-Listing{lst:Do Not Duplicate Atomic Loads}.
+Listing~\ref{lst:Do Not Duplicate Atomic Loads}.
 Suppose that the load on line~13 were duplicated, for example, by
 uncommenting line~15.
 Then the values of \co{a} and \co{b} passed to line~17's call to
@@ -1978,8 +1978,8 @@ Then the values of \co{a} and \co{b} passed to line~17's call to
 \co{foo} structure, something that \co{do_something_with()} might
 not be prepared to deal with.
 
-Therefore, C++ implementations should not invent loads, and should
-not even duplicate them.
+Therefore, C++ implementations should avoid inventing atomic loads,
+and in fact should avoid even duplicating them.
 
 \paragraph{Omitted Redundant Atomic Stores}
 In contrast, a pair of back-to-back nonvolatile atomic stores to \co{x}
@@ -2012,6 +2012,9 @@ being a relaxed load.
 Then the C++ implementation could choose to act as if the source code
 had instead contained a single atomic load from the combined
 pair of objects, with the memory-ordering semantics of the first load.
+
+This provides an example of the ``one-to-one'' bullet of
+Section~\ref{sec:Volatile and Quasi Volatile Accesses}.
 
 \subsection{Semantic Dependencies and Tooling}
 \label{sec:Semantic Dependencies and Tooling}
