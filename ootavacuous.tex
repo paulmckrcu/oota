@@ -1757,8 +1757,8 @@ the standard.\footnote{
 	On the other hand, implementer freedom does have significant
 	value.}
 
-The following sections discuss these constraints, starting with the
-laws of physics, continuing with hardware constraints, continuing
+The following sections discuss these constraints, starting with
+with hardware constraints, continuing
 further with constraints imposed by the standard, and culminating
 with constraints imposed by the C++ implementations themselves.
 An additional section discusses the OOTA-cycle implications for
@@ -1868,17 +1868,26 @@ stores.
 
 For example, nonvolatile relaxed atomic accesses are subject to the
 memory model.
-In particular, implementations must not behave as if the source code has
+The ``order-preserving'' bullet from
+Section~\ref{sec:Volatile and Quasi Volatile Accesses}
+prohibits reordering only of quasi volatile accesses to the same object,
+but such reordering is in any case directly forbidden by the standard.
+Referring also to the ``onto'' bullet from
+Section~\ref{sec:Volatile and Quasi Volatile Accesses},
+implementations must not behave as if the source code has
 additional:
 
 \begin{enumerate}
 \item	Invented atomic stores.
 \item	Duplicated atomic stores.
+\item	Invented atomic loads.
 \end{enumerate}
 
 The discussion of these two constraints is followed by a discussion of
 when redundant atomic stores may safely be omitted and on fusing of
 nonvolatile atomic loads from adjacent objects.
+These topics correspond to the ``one-to-one'' and ``total'' bullets of
+Section~\ref{sec:Volatile and Quasi Volatile Accesses}.
 
 It is also important to note that implementations and users have a
 surprising degree of influence over language
@@ -1917,8 +1926,9 @@ are no other accesses to \co{x} at the time of the invented store.
 \label{lst:Example Duplicated Store}
 \end{listing}
 
-Duplicating atomic stores can also introduce new and undesirable
-behaviors.
+Duplicating atomic stores is a special case of inventing them, but it is
+worth illustrating the fact that duplicating stores can also introduce
+new and undesirable behaviors.
 To see this, consider Listing~\ref{lst:Example Duplicated Store}, a
 litmus test that demonstrates such a behavior.
 Without line~9, if the value loaded into \co{r1} is 1, then the final value
@@ -1930,6 +1940,51 @@ unless it can prove that doing so does not negatively affect the
 program's observable behaviors, independently of OOTA cycles.
 Again, the implementation might be able to prove that there
 are no other accesses to \co{x} at the time of the invented store.
+
+\paragraph{Invented Atomic Loads}
+Although one can argue that it is functionally correct to invent atomic
+loads as long as the loaded value is not used, doing so can result in
+excessive cache-miss overheads.
+
+\begin{listing}[tbp]
+\scriptsize
+\begin{verbatim}
+ 1 struct foo {
+ 2   int a;
+ 3   int b;
+ 4 };
+ 5 struct foo *globalfoop;
+ 6
+ 7 void bar()
+ 8 {
+ 9   int a;
+10   int b;
+11   struct foo *fp;
+12
+13   fp = atomic_load_explicit(&globalfoop, memory_order_acquire);
+14   a = fp->a;
+15   // fp = atomic_load_explicit(&globalfoop, memory_order_acquire);
+16   b = fp->b;
+17   do_something_with(a, b);
+18 }
+\end{verbatim}
+\caption{Do Not Duplicate Atomic Loads}
+\label{lst:Do Not Duplicate Atomic Loads}
+\end{listing}
+
+However, even duplicating an existing atomic load can lead to incorrect
+results.
+To see this, please refer to
+Listing{lst:Do Not Duplicate Atomic Loads}.
+Suppose that the load on line~13 were duplicated, for example, by
+uncommenting line~15.
+Then the values of \co{a} and \co{b} passed to line~17's call to
+\co{do_something_with()} might be from different instances of the
+\co{foo} structure, something that \co{do_something_with()} might
+not be prepared to deal with.
+
+Therefore, C++ implementations should not invent loads, and should
+not even duplicate them.
 
 \paragraph{Omitted Redundant Atomic Stores}
 In contrast, a pair of back-to-back nonvolatile atomic stores to \co{x}
