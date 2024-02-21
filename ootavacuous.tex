@@ -1737,32 +1737,25 @@ next section.
 \section{Real-World Constraints}
 \label{sec:Real-World Constraints}
 
-Real-world constraints are imposed by the standard, which have been
-considered in prior work.
+The C++ standard imposes many constraints, and these have been considered
+in prior work.
 However, in correct real-world C++ implementations, the standard's
 abstract machine must be mapped onto real matter and energy.
 This mapping has not been considered by prior work, and brings to
-bear additional constraints from the laws of physics and from hardware
-architecture and design, both of which have been only partially accounted
-for in the standard and in prior work.
+bear additional constraints from from hardware architecture and
+design,\footnote{
+	Which is in turn constrained by the laws of physics.}
+which has been only partially accounted for in the standard and in
+prior work.
 One reason for the incomplete accounting for hardware constraints is
 that accurate and executable formal descriptions of hardware memory
 models did not appear until after the standard was released.
-A final set of constraints is imposed by the C++ implementations
-themselves, some of which have resulted in nondeterminisms within
-the standard.\footnote{
-	For example, when pre-existing implementations could not agree
-	on any specific deterministic handling of side-effects within
-	expressions.
-	On the other hand, implementer freedom does have significant
-	value.}
 
-The following sections discuss these constraints, starting with
-with hardware constraints, continuing
-further with constraints imposed by the standard, and culminating
-with constraints imposed by the C++ implementations themselves.
-An additional section discusses the OOTA-cycle implications for
-any tooling that exists separately for these C++ implementations.
+The following sections discuss these constraints, starting with with
+hardware constraints and continuing with additional constraints imposed
+by the standard.
+An additional section discusses the OOTA-cycle implications for C++
+tooling.
 
 \subsection{Hardware Architecture and Design}
 \label{sec:Hardware Architecture and Design}
