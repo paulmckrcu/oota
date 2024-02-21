@@ -1410,3 +1410,176 @@ to be OOTA cycles.
 Current programming-language abstract machines do not capture these
 temporal constraints, which makes it more difficult for them to
 efficiently rule out OOTA behavior.
+
+\subsection{C++ Implementations}
+\label{sec:C++ Implementations}
+
+As noted earlier, this initial work focuses on C++ implementations based
+on compilers and computing hardware (including CPUs and GPGPUs).
+
+C++ implementations execute C++ programs, and use a range of techniques.
+For example, many implementations take steps to optimize the code to
+be executed.
+This optimization presents a trade-off between the time spent optimizing
+the code and the time spent actually executing it.
+One type of optimization is the identification of nonsemantic dependencies
+and the replacement of them with simpler computations, up to and including
+replacement of arbitrarily complex passages of code with constants.\footnote{
+	There are a great many other optimizations, but this paper
+	necessarily focuses on semantic dependencies.}
+
+This optimization thread may, roughly speaking, be divided into two
+activities, analysis of the code and classification of dependencies.
+Two sections on these topics are followed by sections on optimizations
+and on consequences.
+
+\subsubsection{Code Analysis}
+\label{sec:Code Analysis}
+
+As would be expected given the various optimization/execution tradeoffs,
+different C++ implementations carry out different degrees of analysis.
+
+First, at one extreme, ``simple implementations'' do absolutely no
+analysis beyond that absolutely required to correctly execute the program.
+
+Second, other implementations do local analysis.
+This analysis might be on a per-code-path basis, within a single function,
+within a single function after inlining, and so forth.
+
+Third, one could imagine implementations whose analysis is restricted to
+a thread.
+In this case, the analysis stops at loads to objects that were last
+stored to by other threads (``rfe''), stores to objects where the next
+and/or previous stores in that object's modification order were executed
+by other threads (``coe''), and loads from objects for which the value
+returned by a given load was overwritten by some other thread
+(``fre'').\footnote{
+	See Appendix~\ref{app:Inter-Process Communications} for more
+	information on these memory-reference inter-process communications
+	links.}
+
+Fourth, one could also imagine implementations whose analysis is
+completely unrestricted, up to and including the limiting case where
+execution is oracular in nature.
+Of course, if we are going to imagine omniscient analysis and oracles,
+we can also rely on them to locate any OOTA cycles that might appear
+in environments not constrained by the laws of physics, hardware
+limitations, and C++ implementation concerns.
+
+However, for more realistic implementations in the third category,
+analysis relevant to OOTA cycles begins with loads from objects that were
+last stored to by some other thread and ends with stores to objects that
+might be loaded by other threads.
+
+If additional inter-thread information is available, the corresponding
+constraints may be applied.
+For example, if an implementation proves that the values of a pair of
+objects are always equal at any time that a given thread might access
+them, that implementation could behave as if the that thread's code had
+substituted a load from one for a load from the other.
+
+Note that if all of the inter-thread relaxed accesses are volatile,
+as they are in the C language, then all of the inter-thread traffic is
+observed behavior.
+In this case, even omniscient oracular implementations are required
+to confine their analyses to within a single thread.
+
+The next section focuses on the key analysis step for OOTA cycles,
+namely dependency classification.
+
+\subsubsection{Dependency Classification}
+\label{sec:Dependency Classification}
+
+Carrying out this type of optimization requires that the implementation
+classify dependencies as maybe semantic or definitely not.
+Given the limited resources available, almost all implementations will
+choose to approximate sdep, which entails some misclassifications, with
+the consequences summarized in
+Table~\ref{tab:Semantic-Dependency Classification}.
+The first row of the table depicts the case where the implementation
+correctly identifies a semantic dependency, and thus exhibits temporal
+behavior for the execution at hand of the corresponding code.
+The second row depicts the case where the implementation misclassifies
+the dependency as nonsemantic, which will result in an incorrect
+execution.
+In this case, the proper course of action is to fix that bug, which is
+most likely a bug even in the absence of OOTA cycles.
+The third row depicts the case where the implementation misclassifies
+the dependency as semantic, thus missing a chance to optimize.
+The resulting execution is nevertheless correct, and is also temporal.
+The fourth and final row depicts the case where the implementation
+correctly classifies the dependency as nonsemantic, in which case
+the execution is both correct and atemporal.
+
+\begin{table}
+\centering
+\begin{tabular}{c|c|l}
+Actual Execution	& Implementation	& Result \\
+\hline
+sdep			& sdep			& Temporal \\
+\cline{2-3}
+			& $\neg$sdep		& Fix C++ bug! \\
+\hline
+$\neg$sde		& sdep			& Temporal \\
+\cline{2-3}
+			& $\neg$sdep		& Atemporal \\
+\end{tabular}
+\caption{Semantic-Dependency Classification}
+\label{tab:Semantic-Dependency Classification}
+\end{table}
+
+Note well that in the absence of bugs in the implementation (which
+again should be fixed), it is the implementation's classification of
+the dependency that dictates whether or not the corresponding execution
+is temporal.
+
+\subsubsection{C++ Implementations: Optimization}
+\label{sec:C++ Implementations: Optimization}
+
+C++ implementations undertake a wide variety of optimizations, in
+some cases taking advantage of nondeterminism and in others applying
+the results of code analysis to produce faster code.
+The changes can be profound, for example, with large computations being
+replaced by simple constants.
+Either way, the implementation is behaving as if the original program
+had been written more optimally.
+
+In such cases, one option is to carry out analysis of semantic dependencies
+on the optimized code.
+The seL4 project took this approach to the extreme of analyzing
+the binary output~\cite{ThomasSewell2013L4binaryVerification}.
+
+In C++ implementations using compilers, nondeterminism of a given
+(post-optimization) code path is ``frozen'' into the resulting binary,
+which greatly simplifies analysis of semantic dependencies.
+Other C++ implementations (for example, those using interpreters or JITs)
+might need to directly model any nondeterminism.
+This latter situation might motivate additional C++ projects to ban
+nondeterminism in favor of portable code.
+
+Another question is how to prove that a given optimization is valid.
+This has been a hard question in the past, and is likely to remain so
+both for sequential and concurrent programs.
+The consequences of using an invalid optimization can be quite severe,
+and the evidence thus far indicates that OOTA cycles are not a bit issue.
+Nevertheless, a proof that the same value is always stored implies a
+proof that there is no semantic dependency to that relaxed atomic store,
+and thus no chance of that store participating in an OOTA cycle.
+
+\subsubsection{C++ Implementations: Consequences}
+\label{sec:C++ Implementations: Consequences}
+
+Given a correct C++ implementation, a given store will either be
+executed as if is was semantically dependent on a given prior load or
+not.
+In the former case on a real-world implementation, a nonnegative interval
+of time will elapse between the load and the store, and in the latter
+case, that load-store pair cannot possibly be a member of an OOTA cycle.
+
+Of course, dependencies can be separately analyzed, and such analysis
+might show that one of the dependencies that the implementation treated
+as a semantic dependency was in fact nonsemantic.
+And this is a belt-and-suspenders situation:
+The corresponding load-store pair cannot be a member of an OOTA cycle,
+and a nonnegative interval of time will elapse between the load and
+the store.
