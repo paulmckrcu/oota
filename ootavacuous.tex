@@ -2024,8 +2024,8 @@ pair of objects, with the memory-ordering semantics of the first load.
 Where a C++ implementation's primary function is to correctly execute
 a C++ program, the function of tooling is often to evaluate properties
 of possible executions of that same program.
-This difference in function results in different sensitivities to
-sdep misclassifications, as shown in
+While implementations are never supposed to break a semantic dependency,
+tools are in some cases permitted to misclassify them, as shown in
 Table~\ref{tab:Semantic-Dependency Classification For Tools}.
 
 \begin{table}
@@ -2067,9 +2067,12 @@ other, whether by working with that implementation's intermediate
 representations, binaries produced by that implementation, by tracing
 the program's execution, or, in the case of dynamic tools, by actually
 executing the program.
-While taking this approach sacrifices significant generality, it has the
-significant benefit of greatly reducing the cost of dependency analysis,
-potentially all the way down to zero.
+Either way, this approach reduces the problem of analysis from the
+level of the C++ abstract machine to a much simpler lower level of
+abstraction.
+While taking this approach sacrifices significant generality, it also
+has the significant benefit of greatly reducing the cost of dependency
+analysis, potentially all the way down to zero.
 
 \section{Future Directions}
 \label{sec:Future Directions}
