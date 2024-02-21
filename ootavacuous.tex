@@ -1760,8 +1760,15 @@ tooling.
 \subsection{Hardware Architecture and Design}
 \label{sec:Hardware Architecture and Design}
 
-On real systems, instructions require time to execute, even
-when executed speculatively.
+Computer systems are expected to continue increasing their use of
+speculative execution.
+Nevertheless, the main points of this paper will remain unaffected.
+To see this, keep in mind that on real systems, observable effects
+must eventually be committed, but that nothing can be committed
+until all of the computations that determine those effects remain
+speculative.
+Furthermore, instructions take time to execute, even when executed
+speculatively.
 For example, in Listing~\ref{lst:Speculated Store and Non-Speculated Load},
 suppose that the storage for \co{x} is located immediately before that
 for \co{y[]}.
@@ -1797,12 +1804,7 @@ that were involved.
 Applying this to Listing~\ref{lst:OOTA Cycle}, because values from
 speculative stores cannot be visible to nonspeculative loads, lines~10
 and~12 cannot be committed until after the load in line~8 completes
-and the conditional on line~9 is evaluated nonspeculatively.\footnote{
-	Alternatively, and as noted earlier, one could imagine that both
-	the speculation and the squashing of failed speculation might
-	span multiple threads.
-	This might make sense for multiple hardware threads sharing
-	a core.}
+and the conditional on line~9 is evaluated nonspeculatively.
 Similarly, lines~18 and~20 cannot be committed until after lines~16
 and~17 complete nonspeculatively.
 
