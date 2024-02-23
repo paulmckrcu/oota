@@ -1,4 +1,4 @@
-C oota-causality-11
+C oota-causality-12
 (*
  * Result: Never
  *
@@ -19,8 +19,8 @@ C oota-causality-11
  *  test 4.
  *)
 {
+	[x] = 0;
 	[y] = 0;
-	[z] = 0;
 	[a[0]] = 1;
 	[a[1]] = 2;
 }
