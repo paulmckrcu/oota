@@ -4,18 +4,18 @@ C speculative-store
  *)
 {
 	[x] = 0;
-	[y] = 0;
+	[y] = { 0 };
 	[z] = 0;
 }
 
-P0(atomic_int *x, atomic_int *y[], atomic_int *z) {
+P0(atomic_int *x, atomic_int **y, atomic_int *z) {
 	int r1 = atomic_load_explicit(z, memory_order_relaxed);
 	// Speculatively executed store
 	atomic_store_explicit(&y[r1], 42, memory_order_relaxed);
 	atomic_store_explicit(x, 1, memory_order_relaxed);
 }
 
-P1(atomic_int *x, atomic_int *y[]), atomic_int *z {
+P1(atomic_int *x, atomic_int **y, atomic_int *z) {
 	// Non-speculatively executed load
 	int r2 = atomic_load_explicit(x, memory_order_relaxed);
 }
