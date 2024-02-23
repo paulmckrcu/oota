@@ -1765,8 +1765,8 @@ speculative execution.
 Nevertheless, the main points of this paper will remain unaffected.
 To see this, keep in mind that on real systems, observable effects
 must eventually be committed, but that nothing can be committed
-until all of the computations that determine those effects remain
-speculative.
+until all of the computations that determine those effects have
+committed.
 Furthermore, instructions take time to execute, even when executed
 speculatively.
 For example, in Listing~\ref{lst:Speculated Store and Non-Speculated Load},
@@ -1787,26 +1787,21 @@ either zero or one.
 \label{lst:Speculated Store and Non-Speculated Load}
 \end{listing}
 
-Therefore, nonspeculative loads are prohibited from loading values from
-speculative stores.
+Therefore, a given load is prohibited from committing until after the
+store that it reads from has committed.
 And yes, this does mean that hardware can produce OOTA cycles during
 speculative execution, but the hardware is required to prevent all such
 speculative OOTA cycles from ever committing.
+As a special case of this prohibition, if a speculated load obtains
+a value from a store that has not yet committed, then if that store
+is squashed, the load must also be squashed, even if that load and
+that store are executed by different CPUs.
 
-As a special case of this prohibition, a value stored speculatively must
-not be exposed to nonspeculative loads from other threads.
-In the further special case of multiple hardware threads sharing a core,
-one might imagine speculation involving multiple threads.
-However, in this case, any squashing of speculation must squash the
-full extent of that speculation, across all of the hardware threads
-that were involved.
-
-Applying this to Listing~\ref{lst:OOTA Cycle}, because values from
-speculative stores cannot be visible to nonspeculative loads, lines~10
-and~12 cannot be committed until after the load in line~8 completes
-and the conditional on line~9 is evaluated nonspeculatively.
+Applying this to Listing~\ref{lst:OOTA Cycle}, lines~10 and~12 cannot be
+committed until after the load in line~8 and the conditional on line~9
+have both committed.
 Similarly, lines~18 and~20 cannot be committed until after lines~16
-and~17 complete nonspeculatively.
+and~17 have committed.
 
 One could imagine a conditional-store instruction, similar to existing
 conditional-move instructions, but with condition controlling a store
@@ -1824,14 +1819,14 @@ This means that the control dependency would extend from the loads on
 lines~8 and~9 to the store on line~11 and nowhere else, potentially
 enabling more hardware optimizations than would be permitted for code
 relying on conditional branches.
-Nevertheless, the conditional store could not be committed while any
-the instructions it depends on were still being speculatively executed.
+Nevertheless, the conditional store could not be committed until all of
+the instructions it depends on have committed.
 
 Finally, the prohibition of hardware OOTA applies within a single
 multi-threaded core as well as between cores.
 This means that for any set of speculative accesses to be committed,
-all loads in that set must have been confirmed by corresponding
-nonspeculative stores.
+all loads in that set must have committed, which in turn requires that
+all store providing the loads' values must also have committed.
 
 The key point is that a store having a semantic dependency on a given
 set of loads must execute after the completion of at least some of those
