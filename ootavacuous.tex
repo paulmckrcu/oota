@@ -2566,11 +2566,18 @@ The \co{herd7} tool does not report this result.
 \end{listing}
 
 This is the same as causality test case~17, even to the alternate OOTA
-cycle reported by the \co{herd7} tool, except that line~9 tests
+cycle reported by \co{herd7}, except that line~9 tests
 \co{r3} for equality to zero rather than non-equality to 42.
-
 Perhaps surprisingly, this makes a difference.
 
+A compiler that treats atomic objects as volatile or uses
+single-thread analysis cannot assume that \co{x} will necessarily be
+equal to 42 following lines~9 and~10; it might have some other value
+such as 1.
+Therefore the compiler cannot conclude that \co{r1} will always be 42
+and must leave the semantic dependency between lines~11 and~12 intact.
+Of course, the resulting OOTA cycle will not be realized, because of
+hardware dependency ordering.
 
 \subsubsection{Causality Test Case 19}
 \label{app:Causality Test Case 19}
@@ -2608,7 +2615,7 @@ The \co{herd7} tool does not report this result.
 \end{listing}
 
 This is the same as causality test case~19, even to the OOTA cycle
-reported by the \co{herd7} tool, except that line~19 tests
+reported by \co{herd7}, except that line~19 tests
 \co{r3} for equality to zero rather than non-equality to 42.
 The same analysis applies.
 
