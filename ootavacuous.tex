@@ -419,7 +419,9 @@ on page~\pageref{lst:Simple Reordering as Litmus Test}
 and Listing~\ref{lst:Causality Test Case 4}
 on page~\pageref{lst:Causality Test Case 4}, respectively.
 Other OOTA-related litmus tests may be found in
-Appendix~\ref{app:OOTA-Related Litmus Tests}.
+Appendix~\ref{app:Litmus Tests from “Causality Test Cases"}
+and
+Appendix~\ref{app:Additional Litmus Tests}.
 
 \section{OOTA and Semantic Dependencies}
 \label{sec:OOTA and Semantic Dependencies}
@@ -2114,28 +2116,16 @@ extended accordingly.
 \clearpage
 \appendix
 
-\section{OOTA-Related Litmus Tests}
-\label{app:OOTA-Related Litmus Tests}
-
-This appendix evaluates a number of OOTA-related litmus tests.
-The evaluations are carried out using the \co{herd7} tool and also
-using manual analysis.
-
-Appendix~\ref{app:Litmus Tests from “Causality Test Cases"}
-evaluates the obligatory litmus tests from the JMM Causality Test
-Cases, and
-Appendix~\ref{app:Additional Litmus Tests}
-evaluates some additional litmus tests that affected our thinking or
-otherwise gave us pause.
-
-\subsection{Litmus Tests from “Causality Test Cases"}
+\section{Litmus Tests from “Causality Test Cases"}
 \label{app:Litmus Tests from “Causality Test Cases"}
 
 These tests might be two decades old, but they are still quite
 relevant.\footnote{
 	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
+This appendix evaluates them using the \co{herd7} tool and also using
+manual analysis.
 
-\subsubsection{Causality Test Case 1}
+\subsection{Causality Test Case 1}
 \label{app:Causality Test Case 1}
 
 Listing~\ref{lst:Causality Test Case 1}
@@ -2166,7 +2156,7 @@ having no cycle at all because of the lack of an sdep link in \co{P0()},
 and other implementations prevented by hardware
 dependency ordering from realizing the cycle.
 
-\subsubsection{Causality Test Case 2}
+\subsection{Causality Test Case 2}
 \label{app:Causality Test Case 2}
 
 Listing~\ref{lst:Causality Test Case 2}
@@ -2197,7 +2187,7 @@ For compilers that do not merge the two loads, the hardware
 dependency ordering arising from the conditional test on line~10
 will prevent the realization of an OOTA cycle.
 
-\subsubsection{Causality Test Case 3}
+\subsection{Causality Test Case 3}
 \label{app:Causality Test Case 3}
 
 Listing~\ref{lst:Causality Test Case 3}
@@ -2216,7 +2206,7 @@ it does not change the fact that those two loads can be merged.
 \label{lst:Causality Test Case 3}
 \end{listing}
 
-\subsubsection{Causality Test Case 4}
+\subsection{Causality Test Case 4}
 \label{app:Causality Test Case 4}
 
 Listing~\ref{lst:Causality Test Case 4}
@@ -2238,7 +2228,7 @@ This test case is virtually the same as the Simple OOTA cycle
 discussed in section~\ref{sec:Simple OOTA Cycle}, the only difference
 being the final values of the variables.
 
-\subsubsection{Causality Test Case 5}
+\subsection{Causality Test Case 5}
 \label{app:Causality Test Case 5}
 
 Listing~\ref{lst:Causality Test Case 5}
@@ -2257,7 +2247,7 @@ added, but those routines play no role in the OOTA cycle.
 \co{P2()} has no loads and so cannot participate in an OOTA cycle in
 any case.
 
-\subsubsection{Causality Test Case 6}
+\subsection{Causality Test Case 6}
 \label{app:Causality Test Case 6}
 
 Listing~\ref{lst:Causality Test Case 6}
@@ -2282,7 +2272,7 @@ Less-omniscient compilers will preserve the dependency, and then
 hardware dependency ordering will prevent the OOTA cycle from
 being realized.
 
-\subsubsection{Causality Test Case 7}
+\subsection{Causality Test Case 7}
 \label{app:Causality Test Case 7}
 
 Listing~\ref{lst:Causality Test Case 7}
@@ -2306,7 +2296,7 @@ dependency ordering.
 It could have been ruled out if some of the accesses were acquire or
 release, but here they are all relaxed.
 
-\subsubsection{Causality Test Case 8}
+\subsection{Causality Test Case 8}
 \label{app:Causality Test Case 8}
 
 Listing~\ref{lst:Causality Test Case 8}
@@ -2334,7 +2324,7 @@ A less-capable compiler would leave the dependency in place,
 and the resulting hardware dependency ordering would prevent
 the OOTA cycle from being realized.
 
-\subsubsection{Causality Test Case 9}
+\subsection{Causality Test Case 9}
 \label{app:Causality Test Case 9}
 
 Listing~\ref{lst:Causality Test Case 9}
@@ -2358,7 +2348,7 @@ Consequently \co{P0} and~\co{P1} both have semantic dependencies,
 and hardware dependency ordering will prevent the OOTA cycle from
 being realized.
 
-\subsubsection{Causality Test Case 9a}
+\subsection{Causality Test Case 9a}
 \label{app:Causality Test Case 9a}
 
 Listing~\ref{lst:Causality Test Case 9a}
@@ -2378,7 +2368,7 @@ As as result the computation on line~9 is once again independent of
 the value loaded on line~8, which makes the analysis nearly the same
 as that of causality test case~8.
 
-\subsubsection{Causality Test Case 10}
+\subsection{Causality Test Case 10}
 \label{app:Causality Test Case 10}
 
 Listing~\ref{lst:Causality Test Case 10}
@@ -2400,7 +2390,7 @@ realized.
 occur in this execution because \co{r3} is zero.
 Thus neither of them contributes to an OOTA cycle.
 
-\subsubsection{Causality Test Case 11}
+\subsection{Causality Test Case 11}
 \label{app:Causality Test Case 11}
 
 Listing~\ref{lst:Causality Test Case 11}
@@ -2418,7 +2408,7 @@ Like causality test case~7, this test case has nothing to do with OOTA cycles.
 The result may be obtained by executing lines~20, 12, 13, 18, 19, 10, 11,
 and~17 in that order.
 
-\subsubsection{Causality Test Case 12}
+\subsection{Causality Test Case 12}
 \label{app:Causality Test Case 12}
 
 Causality Test Case 12 in
@@ -2438,7 +2428,7 @@ relaxed atomic loads and stores involving \co{x} and \co{y}.
 The resulting hardware dependency ordering will prevent an OOTA cycle
 from being realized, whether the compiler is omniscient or not.
 
-\subsubsection{Causality Test Case 13}
+\subsection{Causality Test Case 13}
 \label{app:Causality Test Case 13}
 
 Listing~\ref{lst:Causality Test Case 13}
@@ -2455,7 +2445,7 @@ The \co{herd7} tool reports this result.
 This is the same as causality test case~10 without the confounding
 influence of \co{P2()} and~\co{P3()}.
 
-\subsubsection{Causality Test Case 14}
+\subsection{Causality Test Case 14}
 \label{app:Causality Test Case 14}
 
 Listing~\ref{lst:Causality Test Case 14}
@@ -2477,7 +2467,7 @@ doesn't enter into this OOTA cycle, which involves only \co{x} and~\co{y}.)
 The \co{memory_order_seq_cst} specification on line~17 has no important effect;
 hardware dependency ordering will prevent the cycle from being realized.
 
-\subsubsection{Causality Test Case 15}
+\subsection{Causality Test Case 15}
 \label{app:Causality Test Case 15}
 
 Listing~\ref{lst:Causality Test Case 15}
@@ -2500,7 +2490,7 @@ being realized.
 
 Having no load, \co{P2()} cannot participate in an OOTA cycle.
 
-\subsubsection{Causality Test Case 16}
+\subsection{Causality Test Case 16}
 \label{app:Causality Test Case 16}
 
 Listing~\ref{lst:Causality Test Case 16}
@@ -2519,7 +2509,7 @@ valid realization will either.
 \label{lst:Causality Test Case 16}
 \end{listing}
 
-\subsubsection{Causality Test Case 17}
+\subsection{Causality Test Case 17}
 \label{app:Causality Test Case 17}
 
 Listing~\ref{lst:Causality Test Case 17}
@@ -2550,7 +2540,7 @@ This allows the cycle to be realized,
 but because the dependency in \co{P0()} is not semantic,
 the cycle is not OOTA.
 
-\subsubsection{Causality Test Case 18}
+\subsection{Causality Test Case 18}
 \label{app:Causality Test Case 18}
 
 Listing~\ref{lst:Causality Test Case 18}
@@ -2578,7 +2568,7 @@ and must leave the semantic dependency between lines~11 and~12 intact.
 Of course, the resulting OOTA cycle will not be realized, because of
 hardware dependency ordering.
 
-\subsubsection{Causality Test Case 19}
+\subsection{Causality Test Case 19}
 \label{app:Causality Test Case 19}
 
 Listing~\ref{lst:Causality Test Case 19}
@@ -2599,7 +2589,7 @@ Just as in those examples, the OOTA cycle cannot be realized by
 compilers that treat atomic objects as volatile or that do
 single-thread analysis and treat atomic objects as quasi volatile.
 
-\subsubsection{Causality Test Case 20}
+\subsection{Causality Test Case 20}
 \label{app:Causality Test Case 20}
 
 Listing~\ref{lst:Causality Test Case 20}
@@ -2618,13 +2608,15 @@ reported by \co{herd7}, except that line~19 tests
 \co{r3} for equality to zero rather than non-equality to 42.
 The same analysis applies.
 
-\subsection{Additional Litmus Tests}
+\section{Additional Litmus Tests}
 \label{app:Additional Litmus Tests}
 
 These litmus tests helped illuminate important aspects of the problem
 of defining sdep and identifying OOTA cycles.
+This appendix evaluates them using the \co{herd7} tool and also using
+manual analysis.
 
-\subsubsection{Simple Reordering as Litmus Test}
+\subsection{Simple Reordering as Litmus Test}
 \label{app:Simple Reordering as Litmus Test}
 
 Listing~\ref{lst:Simple Reordering as Litmus Test}
@@ -2638,7 +2630,7 @@ can be recast into a \co{herd7} litmus test.
 \label{lst:Simple Reordering as Litmus Test}
 \end{listing}
 
-\subsubsection{Non-LB Litmus Tests}
+\subsection{Non-LB Litmus Tests}
 \label{app:Non-LB Litmus Tests}
 
 Listing~\ref{lst:Non-LB Litmus Test}
@@ -2666,7 +2658,7 @@ cycle to form, that cycle would involve both \co{r0} and \co{r1}.
 However, we conjecture that tools designed to find OOTA cycles could
 satisfy themselves with having found either of the two resulting cycles.
 
-\subsubsection{Multi-Cycle Litmus Tests}
+\subsection{Multi-Cycle Litmus Tests}
 \label{app:Multi-Cycle Litmus Tests}
 
 Listing~\ref{lst:Multi-Cycle Litmus Test}
@@ -2687,7 +2679,7 @@ C++ implementation.
 \label{lst:Multi-Cycle Litmus Test}
 \end{listing}
 
-\subsubsection{Three-Process Version of JMM Causality Test Case 4}
+\subsection{Three-Process Version of JMM Causality Test Case 4}
 \label{app:Three-Process Version of JMM Causality Test Case 4}
 
 Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4}
@@ -2708,7 +2700,7 @@ All threads have straightforward semantic dependencies from their
 relaxed atomic loads to their relaxed atomic stores, which prevents this
 OOTA cycle on correct real-world C++ implementations.
 
-\subsubsection{Why rfe Instead of Tried-And-True rf?}
+\subsection{Why rfe Instead of Tried-And-True rf?}
 \label{app:Why rfe Instead of Tried-And-True rf?}
 
 Although the examples presented in
@@ -2823,7 +2815,7 @@ This example demonstrates why OOTA cycles must be defined in terms
 of (sdep $\cup$ rfe), or in \co{herd7} nomenclature,
 \co{acyclic(sdep; rfe)}.
 
-\subsubsection{Inventing Atomic Loads}
+\subsection{Inventing Atomic Loads}
 \label{app:Inventing Atomic Loads}
 
 This section contains several example litmus tests from the active
@@ -3008,7 +3000,7 @@ This means that a C++ implementation might be wise to adhere to the
 same restriction that avoids data races for loads from non-atomic
 variables in order to avoid expensive cache misses.
 
-\subsubsection{Non-Trivial Semantic Dependencies}
+\subsection{Non-Trivial Semantic Dependencies}
 \label{app:Non-Trivial Semantic Dependencies}
 
 Most of the examples in this paper involve simple semantic dependencies
@@ -3178,7 +3170,7 @@ dependency''.
 We propose expanding the traditional definition to include dependencies
 extending from groups of loads to a single store.
 
-\subsubsection{OOTA From Undefined-Behavior Optimizations}
+\subsection{OOTA From Undefined-Behavior Optimizations}
 \label{app:OOTA From Undefined-Behavior Optimizations}
 
 Many C++ implementations carry out optimizations based on the assumption
@@ -3232,7 +3224,7 @@ were converted to be volatile.
 Therefore, this paper focuses on UB-free programs, rare though these
 beasts might be among large-scale C++ programs running in production.
 
-\subsubsection{Semantic Dependencies and \co{volatile}}
+\subsection{Semantic Dependencies and \co{volatile}}
 \label{app:Semantic Dependencies and volatile}
 
 The Linux kernel uses volatile accesses to constrain the compiler,
