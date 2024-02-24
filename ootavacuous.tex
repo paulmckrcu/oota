@@ -3473,18 +3473,27 @@ computer hardware and the laws of physics would expect.
 \end{figure}
 
 Figure~\ref{fig:Propagation Delay and Temporal Properties of coe, fre, and rfe}
-shows how the temporal properties of coe, fre, and rfe are explained
-by propagation delay.
+shows how propagation delay explains the temporal properties of coe,
+fre, and rfe.
 The upper portion of the figure shows an atemporal coe, in which
 CPU~0 stores 1 to \co{x} after CPU~3 stores 2 to \co{x}, but
 the ordering of the stores is decided after the fact.
 In this case, the value of 2 from CPU~3's store overwrites the value
 of 1 from CPU~0's store, despite the fact that CPU~0's store
 happened later in time.
+One way that this could happen is that the cache line containing
+\co{x} happened to arrive at CPU~3 before arriving at CPU~0.
+A more fanciful explanation is that both values arrived at the
+interconnect at the saem time, and the interconnect made an
+arbitrary choice between the two.
+Either way, the end result is that an earlier store can overwrite
+a later store.
+
 The middle portion of the figure shows an atemporal fre, in which
 CPU~3's load obtains the old value of zero from \co{x} despite
 having executed long after CPU~0's store, courtesy of the fact
 that the new value of \co{x} had not yet propagated to CPU~3.
+
 The lower portion of the figure shows a temporal rfe.
 Because CPU~3's load cannot obtain the value stored by CPU~0 until
 after that value has propagated to CPU~3, the fact that CPU~3 obtains
