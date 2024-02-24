@@ -1742,7 +1742,7 @@ in prior work.
 However, in correct real-world C++ implementations, the standard's
 abstract machine must be mapped onto real matter and energy.
 This mapping has not been considered by prior work, and brings to
-bear additional constraints from from hardware architecture and
+bear additional constraints from hardware architecture and
 design,\footnote{
 	Which is in turn constrained by the laws of physics.}
 which has been only partially accounted for in the standard and in
@@ -1764,9 +1764,9 @@ Computer systems are expected to continue increasing their use of
 speculative execution.
 Nevertheless, the main points of this paper will remain unaffected.
 To see this, keep in mind that on real systems, observable effects
-must eventually be committed, but that nothing can be committed
-until all of the computations that determine those effects have
-committed.
+must eventually be committed, but that no effect can be committed
+while any of the computations that determine the effect remain
+speculative.
 Furthermore, instructions take time to execute, even when executed
 speculatively.
 For example, in Listing~\ref{lst:Speculated Store and Non-Speculated Load},
@@ -1840,8 +1840,8 @@ behavior~\cite[\co{intro.abstract}]{ThomasKoeppe2023N4950},
 they must be executed in strict accordance with the rules of the abstract
 machine.
 This means that any volatile atomic operation involving a store may
-execute only after the committing of all loads whose return values are
-used to compute that store's address or value.
+execute only after after all loads whose values are used to compute the
+store's address or value have committed.
 OOTA afficienados will recognize this as a special case of ordering
 relaxed loads before relaxed stores, albeit one not requiring
 expensive memory-fence instructions on weakly ordered architectures.
@@ -1935,6 +1935,16 @@ are no other accesses to \co{x} at the time of the invented store.
 Although one can argue that it is functionally correct to invent atomic
 loads as long as the loaded value is not used, doing so can result in
 excessive cache-miss overheads.
+Even duplicating an atomic load can lead to incorrect results if done
+carelessly.
+To see this, please refer to
+Listing~\ref{lst:Do Not Duplicate Atomic Loads}.
+Suppose that the load on line~13 were duplicated, for example, by
+uncommenting line~15.
+Then the values of \co{a} and \co{b} passed to line~17's call to
+\co{do_something_with()} might be from different instances of the
+\co{foo} structure, something that \co{do_something_with()} might
+not be prepared to deal with.
 
 \begin{listing}[tbp]
 \scriptsize
@@ -1962,19 +1972,8 @@ excessive cache-miss overheads.
 \label{lst:Do Not Duplicate Atomic Loads}
 \end{listing}
 
-However, even duplicating an existing atomic load can lead to incorrect
-results.
-To see this, please refer to
-Listing~\ref{lst:Do Not Duplicate Atomic Loads}.
-Suppose that the load on line~13 were duplicated, for example, by
-uncommenting line~15.
-Then the values of \co{a} and \co{b} passed to line~17's call to
-\co{do_something_with()} might be from different instances of the
-\co{foo} structure, something that \co{do_something_with()} might
-not be prepared to deal with.
-
-Therefore, C++ implementations should avoid inventing atomic loads,
-and in fact should avoid even duplicating them.
+For these reasons, C++ implementations should avoid inventing atomic
+loads, and in fact should avoid even duplicating them.
 
 \paragraph{Omitted Redundant Atomic Stores}
 In contrast, a pair of back-to-back nonvolatile atomic stores to \co{x}
