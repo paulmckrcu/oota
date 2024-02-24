@@ -8,10 +8,12 @@ C oota-causality-15
  *	and the program is correctly synchronized. Since the program is
  *	correctly synchronized in all SC executions, no non-sc behaviors
  *	are allowed.
+ * For uniformity, this litmus test uses x, y, u, and v.  The mapping from
+ * testcases.html is a->u and b->v.
  *)
 {
-	[u] = 0; (* a *)
-	[v] = 0; (* b *)
+	[u] = 0;
+	[v] = 0;
 	[x] = 0;
 	[y] = 0;
 }

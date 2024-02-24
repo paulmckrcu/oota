@@ -6,10 +6,13 @@ C oota-causality-6
  *
  * Decision: Allowed. Intrathread analysis could determine that thread 2
  *	always writes 1 to x and hoist the write to the beginning of thread 2.
+ *
+ * For uniformity, this litmus test uses x and y.  The mapping from
+ * testcases.html is A->x and B->y.
  *)
 {
-	[x] = 0; (* A *)
-	[y] = 0; (* B *)
+	[x] = 0;
+	[y] = 0;
 }
 
 P0(atomic_int *x, atomic_int *y) {
