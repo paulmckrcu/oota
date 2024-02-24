@@ -89,7 +89,7 @@
        id="tspan3903"
        x="111.02266"
        y="21.545057"
-       style="font-size:9.62954px;line-height:1.25;font-family:sans-serif">WRITE_ONCE(x, 1);</tspan></text>
+       style="font-size:9.62954px;line-height:1.25;font-family:sans-serif">x.store(1);</tspan></text>
   <path
      style="fill:none;stroke:#000000;stroke-width:0.802462px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
      d="M 39.230014,5.0887309 H 428.48424"
@@ -175,7 +175,7 @@
        id="tspan3903-0"
        x="318.11984"
        y="94.602623"
-       style="font-size:9.62954px;line-height:1.25;font-family:sans-serif">r1 = READ_ONCE(x);</tspan></text>
+       style="font-size:9.62954px;line-height:1.25;font-family:sans-serif">r1 = x.load();</tspan></text>
   <text
      xml:space="preserve"
      style="font-style:normal;font-weight:normal;line-height:0%;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none"

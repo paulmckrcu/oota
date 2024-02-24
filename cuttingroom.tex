@@ -1583,3 +1583,34 @@ And this is a belt-and-suspenders situation:
 The corresponding load-store pair cannot be a member of an OOTA cycle,
 and a nonnegative interval of time will elapse between the load and
 the store.
+
+@@@  disagreements.
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{4in}{!}{\includegraphics{coe-nvals}}
+\caption{On x86, Reasonable CPUs Can Disagree}
+\label{fig:On x86; Reasonable CPUs Can Disagree}
+\end{center}
+\end{figure}
+
+Figure~\ref{fig:On x86; Reasonable CPUs Can Disagree}
+shows the results of 79 of the systems's hardware threads simultaneously
+storing their identifying integer (ranging from 0 to 78) to a shared
+variable, then repeatedly doing timestamped reads from that variable.
+The x-axis displays time in TSC periods, each of which is about 0.5~ns
+in duration.
+The y-axis shows the number of distinct opinions that the hardware
+threads have as a function of time, a number that is frequently rather
+larger than one.
+The backwards-in-time coe link from Thread~1 to Thread~0 in
+Figure~\ref{fig:IPC Diagram for coe, fre, and rfe}
+is therefore entirely plausible.
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{3in}{!}{\rotatebox{90}{\includegraphics{store15tred}}}
+\caption{On Power5, coe Links Are Also Partially Ordered}
+\label{fig:On Power5, coe Links Are Also Partially Ordered}
+\end{center}
+\end{figure}
