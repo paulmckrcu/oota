@@ -2123,8 +2123,10 @@ extended accordingly.
 These tests might be two decades old, but they are still quite
 relevant.\footnote{
 	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
-This appendix evaluates them using the \co{herd7} tool and also using
-manual analysis.
+We have translated them from Java to C++, and we evaluate them using
+the \co{herd7} tool and also using manual analysis.
+Please note that differences in the semantics of these two languages
+result in changes in verdict for some litmus tests.
 
 \subsection{Causality Test Case 1}
 \label{app:Causality Test Case 1}
