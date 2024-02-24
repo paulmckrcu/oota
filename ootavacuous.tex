@@ -1779,7 +1779,8 @@ of \co{i} to be -1, so that the speculated store of 42 on line~9 uses
 the address of \co{x}.\footnote{
 	Yes, \co{y[-1]} is UB, but the CPU neither knows
 	nor cares, nor should it.}
-Then line~11 can cause the value 42 to be loaded into \co{r1}, when
+Then line~11 can cause the value 42 to be loaded into \co{r2},
+thus satisfying the \co{exists} clause on line~20, when
 by the rules of the C++ abstract machine the value must instead be
 either zero or one.
 
