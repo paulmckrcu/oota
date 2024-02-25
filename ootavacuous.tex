@@ -2620,6 +2620,554 @@ The same analysis applies.
 
 \clearpage
 
+\section{Inter-Process Communications}
+\label{app:Inter-Process Communications}
+
+This section more clearly defines the ``coe'', ``fre'', and ``rfe''
+types of interprocess communication (also collectively called ``links'')
+and gives evidence on the temporal qualities of these different types.
+
+First, context.
+The final ``e'' in all three acronyms stands for ``external'' as opposed
+to within-thread communication (``coi'', ``fri'', and ``rfi'') and as
+also opposed to all communication, whether inter-thread or intra-thread
+(``co'', ``fr'', and ``rf'').
+
+Next, definitions:
+
+\begin{description}
+\item[coe]
+	Coherency (external), which connects a store to any other store
+	to that same object that overwrites either the first store's
+	value or that overwrites some later value.
+\item[fre]
+	From-read (external), which connects a load to any other store
+	object that overwrites either the value that the load returned
+	or that overwrites some later value.
+\item[rfe]
+	Reads-from (external), which connects a store to any load from
+	that same object that returns the value stored.
+\end{description}
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{4in}{!}{\includegraphics{ipc}}
+\caption{IPC Diagram for coe, fre, and rfe}
+\label{fig:IPC Diagram for coe, fre, and rfe}
+\end{center}
+\end{figure}
+
+Thirdly, Figure~\ref{fig:IPC Diagram for coe, fre, and rfe} illustrates
+the coe, fre, fri, and rfe links for four threads with time advancing
+from the top to the bottom of the figure.  Starting with coe, even though
+Thread~1's store was later in global time than that of Thread~0, that of
+Thread~1 came first in coe order, followed by those of Threads~2 and ~3.
+There is thus a coe link from Thread~1's store to every other store,
+from Thread~0's store to those of Threads~2 and~3, and from Thread~2's
+store to that of Thread~3.
+This situation can occur due to the initial placement and subsequent
+movement of cache lines.
+
+Thread~3's load reads the value stored by Thread~0's store, so there is
+an rfe link from that store to that load.  There is also an fre link from
+that load to Thread~2's store and an fri link to Thread~3's later store.
+Note that this fre link goes backwards in time.
+
+Finally, there might be a desire for hard evidence that coe and fre
+links really can go backwards in time.
+We provide this evidence on x86 to demonstrate that these effects
+are not confined to weakly ordered systems.
+This system is a dual-socket system with
+Intel(R) Xeon(R) Gold 6138 CPU @ 2.00GHz,
+each socket with 20~cores, each having a pair of hardware
+threads, for a grand total of 80 hardware threads.
+The code generating this data may be found in the \path{CodeSamples/cpu}
+directory of the git archive of the book
+``Is Parallel Programming Hard, And, If So, What Can You Do About
+It?''~\cite{McKenney2018ParallelProgramming-2018-12-08a}.\footnote{
+	\co{git://git.kernel.org/pub/scm/linux/kernel/git/paulmck/perfbook.git}}
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{4in}{!}{\includegraphics{coe-sh-out}}
+\caption{On x86, coe Links Are Atemporal}
+\label{fig:On x86; coe Links Are Atemporal}
+\end{center}
+\end{figure}
+
+Figure~\ref{fig:On x86; coe Links Are Atemporal}
+shows that coe links really are atemporal, that is, they can go backwards
+in time, and quite frequently at that, even on x86.
+The store-to-store latency is measured from the end of the ``winning''
+store to the beginning of the nonwinning store that started latest.
+Every data point on the negative x-axis represents a group of runs
+in which the winning store was not the last store.
+Thus, the winning store not being the last store is quite common, even
+on x86.
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{5in}{!}{\includegraphics{coe-out-1}}
+\caption{On x86, coe Links Form a Coherent Partial Order}
+\label{fig:On x86, coe Links Form a Coherent Partial Order}
+\end{center}
+\end{figure}
+
+However, Figure~\ref{fig:On x86, coe Links Form a Coherent Partial Order}
+shows that the order of reads of each value at each thread are
+consistent with a number of global orders, as required.\footnote{
+	Note that this data was not measured on the 80-CPU system, but
+	rather on a 16-CPU x86 laptop to avoid an unreadable diagram
+	containing 79 bubbles.}
+Working from the far left, one CPU saw the values 0, 11, and 9,
+a second CPU saw 3, 11, and 9, and so on.
+Although different CPUs saw different sequences of values, there is no
+disagreement on the order of the values that they could see.
+For example, all CPUs agree that the value 9 came last.
+This is an example of single-variable sequential consistency, and
+meets the coherence requirements of the C++ standard.
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{3in}{!}{\includegraphics{fre-sh-out}}
+\caption{On x86, fre Links Are Atemporal}
+\label{fig:On x86, fre Links Are Atemporal}
+\end{center}
+\end{figure}
+
+Figure~\ref{fig:On x86, fre Links Are Atemporal}
+plots a histogram of the elapsed time from the beginning of load to
+return the old value to the end of the store that provided the new value.
+Note well that most of the data falls into negative time, that is to
+say, in the most commonly occurring case, the last load of the old value
+executes about 60 timestamp periods (about 30~nanoseconds) \emph{after}
+the store that overwrote that same old value.
+That is, fre links can and do go backwards in time.
+This corresponds to the fre link between Thread~3 and Thread~2 depicted in
+Figure~\ref{fig:IPC Diagram for coe, fre, and rfe}.
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{3in}{!}{\includegraphics{rfe-sh-out}}
+\caption{On x86, rfe Links Are Temporal}
+\label{fig:On x86, rfe Links Are Temporal}
+\end{center}
+\end{figure}
+
+Figure~\ref{fig:On x86, rfe Links Are Temporal}
+plots a histogram of the elapsed time from a store of a new value
+to the first load of that new value.
+Note well that all of the data falls into positive time, indicating
+that rfe links always go forward in time, as those familiar with
+computer hardware and the laws of physics would expect.
+
+\begin{figure}[tb]
+\begin{center}
+\resizebox{4in}{!}{\includegraphics{coe}}
+\resizebox{4in}{!}{\includegraphics{fre}}
+\resizebox{4in}{!}{\includegraphics{rfe}}
+\caption{Propagation Delay and Temporal Properties of coe, fre, and rfe}
+\label{fig:Propagation Delay and Temporal Properties of coe, fre, and rfe}
+\end{center}
+\end{figure}
+
+Figure~\ref{fig:Propagation Delay and Temporal Properties of coe, fre, and rfe}
+shows how propagation delay explains the temporal properties of coe,
+fre, and rfe.
+The upper portion of the figure shows an atemporal coe, in which
+CPU~0 stores 1 to \co{x} after CPU~3 stores 2 to \co{x}, but
+the ordering of the stores is decided after the fact.
+In this case, the value of 2 from CPU~3's store overwrites the value
+of 1 from CPU~0's store, despite the fact that CPU~0's store
+happened later in time.
+One way that this could happen is that the cache line containing
+\co{x} happened to arrive at CPU~3 before arriving at CPU~0.
+A more fanciful explanation is that both values arrived at the
+interconnect at the saem time, and the interconnect made an
+arbitrary choice between the two.
+Either way, the end result is that an earlier store can overwrite
+a later store.
+
+The middle portion of the figure shows an atemporal fre, in which
+CPU~3's load obtains the old value of zero from \co{x} despite
+having executed long after CPU~0's store, courtesy of the fact
+that the new value of \co{x} had not yet propagated to CPU~3.
+
+The lower portion of the figure shows a temporal rfe.
+Because CPU~3's load cannot obtain the value stored by CPU~0 until
+after that value has propagated to CPU~3, the fact that CPU~3 obtains
+the new value implies that the load was executed after the store.
+
+And this is exactly why the C++ memory model guarantees ordering from
+rfe links but not the coe and fre links for relaxed accesses in the
+absence of other ordering from stronger atomic memory accesses or
+\co{atomic_thread_fence(memory_order_seq_cst}.
+
+\clearpage
+
+\section{User Influence Over Language Semantics}
+\label{app:User Influence Over Language Semantics}
+
+As noted earlier, the exact definition of a computer language is subject
+to some debate, with standards, implementations, and users all having
+some degree of
+influence~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2},
+and each of which is subject to change over time.
+It is natural to dismiss user influence when compared to the text of
+standards or the code in implementations, but both are subject to
+change and do change over time.
+The implementation is especially subject to change, for example,
+consider the following command line used to build the Linux kernel's
+\co{kernel/rcu/tree.c} C-language source file:
+
+~\\
+{
+	\scriptsize
+	\texttt{
+	gcc -Wp,-MMD,kernel/rcu/.tree.o.d -nostdinc
+	-I./arch/x86/include \\
+	-I./arch/x86/include/generated  -I./include
+	-I./arch/x86/include/uapi \\
+	-I./arch/x86/include/generated/uapi
+	-I./include/uapi -I./include/generated/uapi \\
+	-include ./include/linux/compiler-version.h
+	-include ./include/linux/kconfig.h \\
+	-include ./include/linux/compiler\_types.h -D\_\_KERNEL\_\_
+	-fmacro-prefix-map=./= \\
+	-Werror -std=gnu11 -fshort-wchar
+	-funsigned-char -fno-common -fno-PIE \\
+	-fno-strict-aliasing -mno-sse
+	-mno-mmx -mno-sse2 -mno-3dnow -mno-avx \\
+	-fcf-protection=branch
+	-fno-jump-tables -m64 -falign-jumps=1 -falign-loops=1 \\
+	-mno-80387 -mno-fp-ret-in-387 -mpreferred-stack-boundary=3
+	-mskip-rax-setup \\
+	-mtune=generic -mno-red-zone -mcmodel=kernel
+	-Wno-sign-compare \\
+	-fno-asynchronous-unwind-tables
+	-mindirect-branch=thunk-extern \\
+	-mindirect-branch-register
+	-mindirect-branch-cs-prefix -mfunction-return=thunk-extern
+	-fno-jump-tables -fpatchable-function-entry=16,16
+	-fno-delete-null-pointer-checks -O2 \\
+	-fno-allow-store-data-races
+	-fstack-protector-strong -fomit-frame-pointer \\
+	-fno-stack-clash-protection -falign-functions=16
+	-fno-strict-overflow -fno-stack-check \\
+	-fconserve-stack
+	-Wall -Wundef -Werror=implicit-function-declaration \\
+	-Werror=implicit-int -Werror=return-type -Werror=strict-prototypes \\
+	-Wno-format-security -Wno-trigraphs -Wno-frame-address
+	-Wno-address-of-packed-member \\
+	-Wframe-larger-than=2048 -Wno-main
+	-Wno-unused-but-set-variable \\
+	-Wno-unused-const-variable -Wvla
+	-Wno-pointer-sign -Wcast-function-type \\
+	-Wno-array-bounds
+	-Wno-alloc-size-larger-than -Wimplicit-fallthrough=5 \\
+	-Werror=date-time -Werror=incompatible-pointer-types
+	-Werror=designated-init \\
+	-Wenum-conversion
+	-Wno-unused-but-set-variable -Wno-unused-const-variable \\
+	-Wno-restrict -Wno-packed-not-aligned -Wno-format-overflow
+	-Wno-format-truncation \\
+	-Wno-stringop-overflow
+	-Wno-stringop-truncation -Wno-missing-field-initializers \\
+	-Wno-type-limits -Wno-shift-negative-value
+	-Wno-maybe-uninitialized \\
+	-Wno-sign-compare
+	-DKBUILD\_MODFILE='"kernel/rcu/tree"'
+	-DKBUILD\_BASENAME='"tree"' \\
+	-DKBUILD\_MODNAME='"tree"' -D\_\_KBUILD\_MODNAME=kmod\_tree \\
+	-c -o kernel/rcu/tree.o kernel/rcu/tree.c
+	}
+}
+
+We do not propose to explain all of these, and sufficiently motivated
+readers can avail themselves of the GCC documentation.
+We instead look at representative members of several categories.
+
+The \co{-funsigned-char} causes type \co{char} to be unsigned, which
+overrides per-architecture defaults, some of which treat \co{char}
+as signed and others as \co{unsigned}.
+This choice prevents a class of bugs, and also allows the kernel to make
+reliable use of the uppermost bit of variables of type \co{char}.
+It also affects the definition of ``semantic dependency'' by changing
+the arithmetic proporties of this type.
+In theory, the standard could specify the signedness of \co{char}, but the
+variety of existing practice in the 1980s prevented this.
+Plus machine instructions were much more expensive back then, so the
+signedness of \co{char} was much more of a performance concern than
+it is toda than
+it is todayy.
+
+The \co{-mno-sse} prevents GCC from making use of the SSE hardware.
+This is done for performance reasons, as it avoids the overhead of
+saving and restoring the state of this hardware when switching between
+user and kernel contexts.
+Similarly, the \co{-mcmodel=kernel} causes the kernel binary to be
+placed in the uppermost 2GB of the address space, again reducing
+the overhead of switching between user and kernel contexts.
+These are cases where the standard does not specify anything, nor
+should it.
+
+The \co{-fpatchable-function-entry=16,16} causes GCC to emit 16
+\co{nop} instructions at the beginning of each function, with
+the function's entry point being just after this string of \co{nop}
+instructions.
+The resulting buffers are used by the Linux-kernel tracing infrastructure
+which is in turn used for debugging, performance measurement, and
+monitoring.
+This is again clearly outside of the scope of the standard.
+
+The \co{-fstack-protector-strong} causes GCC to emit code that provides
+some protection against some clases of attacks based on buffer overflows.
+One could rightly argue code should simply avoid ever overflowing buffers,
+but things like memory allocators and userspace memory accesses must
+use code that can be difficult to distinguish from buffer overflows.
+It is not clear that the ever-increasing variety of attacks should
+affect the standard.
+
+The \co{-fno-strict-overflow} causes GCC to act as if signed integer
+overflow is defined behavior.
+Note well that this command-line option also affects the definition of
+``semantic dependency''.
+This might be a controversial choice, and another option would be to add
+a new set of signed integer types to the standard for which overflow is
+defined as wrapping, similar to the situation with unsigned integers.
+
+The \co{-Werror=strict-prototypes} causes GCC to warn if old-style
+non-ANSI function prototypes are used.
+This helps avoid certain classes of bugs.
+Warnings are by design outside of the scope of the standard.
+
+In other words, user preference can exert a nontrivial influence over
+language semantics, and in particular can affect some aspects of the
+definition of ``semantic dependency''.
+
+\clearpage
+
+\section{But What About Tooling?}
+\label{sec:But What About Tooling?}
+
+This paper focuses primarily on showing that, under commonly occurring
+constraints, OOTA cycles cannot form in real-world C++ implementations.
+
+But what about tooling?
+
+One entirely reasonable reaction is that, given the issues raised in
+Sections~\ref{sec:Properties of Semantic Dependencies}
+and~\ref{sec:The Fundamental Property of Semantic Dependencies},
+load/store reordering is the least of the problems faced by tooling.
+Nevertheless, this appendix expands on
+Section~\ref{sec:Semantic Dependencies and Tooling}
+by looking into the possibility of:
+
+\begin{enumerate}
+\item	Tooling focusing on only part of the language,
+\item	Changing the language to eliminate some aspects that are
+	troublesome for tooling (and potentially accepting performance
+	and energy-efficiency shortfalls), and
+\item	Changing the language to better delineate those portions that
+	tooling can easily accommodate.
+\end{enumerate}
+
+But first, the next section looks at why some weakly ordered
+implementations appear to forbid reordering of prior relaxed loads with
+later relaxed stores,\footnote{
+	Or, in memory-order-speak, forbid all load-buffering litmus tests.}
+despite the architecture permitting such reordering.
+
+\subsection{Load/Store Ordering: Hardware View for Software Hackers}
+\label{sec:Load/Store Ordering: Hardware View for Software Hackers}
+
+% @@@ Get citations
+
+Both the ARM and PowerPC memory models permit reordering prior loads
+against subsequent stores, but actual tests on recent hardware fail to
+produce any evidence of any such reordering.
+Nevertheless, thus far neither ARM nor PowerPC hardware architects
+have been willing to strengthen their memory models so as to forbid
+such reordering.
+% @@@ Cite Grisenthwaite
+
+This appendix offers some possible reasons for this odd juxtaposition
+of negative test results and flat refusal.
+
+One key point is that some hardware (including ARM and PowerPC) provides
+precise exceptions.
+For example, if a given load results in a segmentation violation
+exception, that exception will occur before any instructions following
+that load have committed.
+This means that a given load instruction's execution must have proceeded
+beyond the point where an exception might occur before any subsequent
+store can be permitted to commit, even if that store is completely
+unrelated to that load.
+For example, the later store cannot commit until all prior loads' address
+translations have completed successfully.
+
+However, if that load suffers a cache miss, address translation will have
+completed long before the load returns its value, meaning that a later
+store might well commit before the load completes.
+In fact, that later store might commit before the store that supplies the
+value returned by that load!
+Which explains why some hardware systems really do reorder prior loads
+and later stores.
+
+The question then becomes ``Why would weakly ordered systems fail to
+reorder prior loads with later stores?''
+
+One explanation is ECC errors.
+
+If correctable ECC errors were fixed up in hardware, then only uncorrectable
+ECC errors would be directly visible to software.
+If the only possible reaction to an uncorrectable ECC error was to
+terminate the program suffering that ECC error, it would be safe to
+allow subsequent stores to commit as soon as all prior loads' address
+translations had completed successfully.
+
+However, some kernels and applications have ways of handling even
+uncorrectable errors.
+Operating-system kernels encountering an ECC error might note that the
+affected data was being used by only one user process, and might react by
+killing that user process, taking care to account for memory shared with
+other processes.
+Some user applications might be note that the affected data affected only
+a particular computation, and might react by restarting that computation.
+In both cases, it is only reasonable to react to an uncorrectable ECC
+error in a load from a read-only mapped file by re-reading that data
+from that file, then restarting that load instruction.
+In all cases, the kernel and the user application would need to continue
+execution, and would thus require an exact exception.
+
+Systems that offload processing of correctable ECC errors to software
+also require exact exceptions.
+After all, the software is going to need to be able to correct the error
+and then fix up the state to make it appear that the load had returned
+the fixed-up value.
+
+ECC errors are detected near the end of their corresponding load
+instructions' execution, so that any need for exact exceptions rules out
+the commiting of any subsequent stores until after the load has fetched
+(and possibly corrected) its value.
+
+So why are hardware architects reluctant to tighten their memory models
+to forbid reordering of earlier loads and later stores?
+
+If you would like an authoratative answer to this question, you should of
+course ask your friendly local hardware architect.
+In the meantime, here is some semi-informed speculation on this topic:
+
+\begin{enumerate}
+\item	Some hardware might choose to forego ECC, for example, in order to
+	reduce cost for low-end systems or to improve energy efficiency
+	for battery-powered systems.
+\item	ECC error correction might still be done in hardware, avoiding
+	the need for precise software-visible exceptions.
+\item	Some systems might prefer to immediately shut down in response to
+	an uncorrectable ECC error, perhaps due to safety considerations.
+	This would entirely avoid the need for software-visible
+	ECC-related exceptions.\footnote{
+		One motivation for immediate shutdown is that if there
+		are uncorrectable errors, there might soon be errors
+		that translate one valid bit pattern to another valid
+		bit pattern, which could result in a lack of safety.}
+\item	Someone might come up with a clever way of correcting ECC errors
+	in firmware, avoiding the need for precise software-visible
+	exceptions.
+\item	As late as early 2024, some GPGPUs have been observed reordering
+	earlier loads against later stores.
+	Other hardware architects might therefore feel the need to keep
+	this option open for their own systems.
+\end{enumerate}
+
+So although it is not unreasonable to continue asking hardware vendors
+to tighten their memory models so as to prohibit reordering of earlier
+loads and later stores, it also would not be too surprising for them to
+continue to refuse.
+
+\subsection{Status Quo and Focused Tooling}
+\label{sec:Status Quo and Focused Tooling}
+
+The theoretical possibility of OOTA cycles causes some tools to have
+difficulty identifying precisely which outcomes are impossible on
+real-world C++ implementations.
+One approach is for tooling to reject programs containing instances
+of \co{memory_order_relaxed} and \co{memory_order_consume}, so that
+developers desiring their code to be analyzed by such tools would
+avoid using these \co{memory_order} values.
+The is strong precedent for this strategy, with the common prohibition
+against side effects in function arguments being but one example.
+
+However, there is a large body of existing code that uses
+\co{memory_order_relaxed}, and it would be unfortunate if such tools
+could not be applied to this code.
+
+Another approach would be to add flags to C++ implementations
+to cause \co{memory_order_relaxed} to be interpreted as either
+\co{memory_order_acquire} (for loads), \co{memory_order_release} (for
+stores), or \co{memory_order_acq_rel} (for read-modify-write operations).
+On TSO systems and on systems featuring exact ECC exceptions, this
+would allow tooling to be brought to bear without performance or
+energy-efficiency consequences beyond forgone optimizations involving
+memory reference reordering.
+
+However, this would mean that programs compiled in this way would not
+be guaranteed to run correctly on weakly ordered systems that lack
+ECC (or that lack precise exceptions).
+In addition, this change is more strict than necessary, forbidding
+optimizations that tooling could in fact analyze.
+Therefore, the next section looks at standardizaing a less severe
+restriction.
+
+\subsection{Change Relaxed to Forbid Load Buffering}
+\label{sec:Change Relaxed to Forbid Load Buffering}
+
+Tooling does not require relaxed accesses become fully acquire and/or
+release, but rather only that implemetnations be forbidden from reordering
+prior relaxed loads with subsequent relaxed stores, as has been suggested
+many times over the
+years~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352}.
+
+This preserves portability while enabling tooling to handle all members
+of the \co{memory_order} enumeration, but inflicts some performance and
+energy-efficiency penalties~\cite{LukeGeeson2023TightenRelaxed} in
+code not requiring these ordering
+restrictions~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
+
+This suggests the addition of a \co{memory_order_load_store} member to
+the \co{memory_order} enumeration, a topic taken up by the next section.
+
+\subsection{Add Load-Store Memory Order that Forbids Load Buffering}
+\label{sec:Add Load-Store Memory Order that Forbids Load Buffering}
+
+The addition of a \co{memory_order_load_store} member to the
+\co{memory_order} enumeration has been suggested starting many years
+ago~\cite{HansBoehm2019OOTArevisitedAgain,DanielLustig2018PlacedBefore}.
+This does not resolve all shortcomings in the C++ memory
+model~\cite{PaulEMcKenney2023P0124R8-LKMM,DanielLustig2018PlacedBefore},
+but it would provide a portable \co{memory_order} that minimally
+restricted compiler and hardware optimizations while still permitting
+full analyzability by current software tools.
+
+This change would also leave \co{memory_order_relaxed} in place,
+allowing minimal-overhead accesses in fastpaths.
+These fastpaths would not be analyzable by generic tools, but could
+be handled by special-case tools that analyze the binaries to verify
+that required orderings are enforced by machine-language properties
+such as dependencies.
+And a tool that checks control dependencies has in fact been
+prototyped~\cite{PaulHeidekrueger2022N4910}.
+
+This suggests a combined strategy of adding \co{memory_order} members
+as needed to extend the reach of general-purpose tooling, while also
+identifying \co{memory_order_relaxed} idioms that are checked at the
+machine level using special-purpose tooling.\footnote{
+	Kudos to Peter Sewell for clearly articulating this possibility
+	as part of an overall strategy.}
+
+\clearpage
+
 \section{Illustrative Litmus Tests}
 \label{app:Illustrative Litmus Tests}
 
@@ -3322,554 +3870,6 @@ the value loaded.
 One way forward is to assume that interference could happen when
 determining which dependencies are semantic, and then do further analysis
 using that determination.
-
-\clearpage
-
-\section{Inter-Process Communications}
-\label{app:Inter-Process Communications}
-
-This section more clearly defines the ``coe'', ``fre'', and ``rfe''
-types of interprocess communication (also collectively called ``links'')
-and gives evidence on the temporal qualities of these different types.
-
-First, context.
-The final ``e'' in all three acronyms stands for ``external'' as opposed
-to within-thread communication (``coi'', ``fri'', and ``rfi'') and as
-also opposed to all communication, whether inter-thread or intra-thread
-(``co'', ``fr'', and ``rf'').
-
-Next, definitions:
-
-\begin{description}
-\item[coe]
-	Coherency (external), which connects a store to any other store
-	to that same object that overwrites either the first store's
-	value or that overwrites some later value.
-\item[fre]
-	From-read (external), which connects a load to any other store
-	object that overwrites either the value that the load returned
-	or that overwrites some later value.
-\item[rfe]
-	Reads-from (external), which connects a store to any load from
-	that same object that returns the value stored.
-\end{description}
-
-\begin{figure}[tb]
-\begin{center}
-\resizebox{4in}{!}{\includegraphics{ipc}}
-\caption{IPC Diagram for coe, fre, and rfe}
-\label{fig:IPC Diagram for coe, fre, and rfe}
-\end{center}
-\end{figure}
-
-Thirdly, Figure~\ref{fig:IPC Diagram for coe, fre, and rfe} illustrates
-the coe, fre, fri, and rfe links for four threads with time advancing
-from the top to the bottom of the figure.  Starting with coe, even though
-Thread~1's store was later in global time than that of Thread~0, that of
-Thread~1 came first in coe order, followed by those of Threads~2 and ~3.
-There is thus a coe link from Thread~1's store to every other store,
-from Thread~0's store to those of Threads~2 and~3, and from Thread~2's
-store to that of Thread~3.
-This situation can occur due to the initial placement and subsequent
-movement of cache lines.
-
-Thread~3's load reads the value stored by Thread~0's store, so there is
-an rfe link from that store to that load.  There is also an fre link from
-that load to Thread~2's store and an fri link to Thread~3's later store.
-Note that this fre link goes backwards in time.
-
-Finally, there might be a desire for hard evidence that coe and fre
-links really can go backwards in time.
-We provide this evidence on x86 to demonstrate that these effects
-are not confined to weakly ordered systems.
-This system is a dual-socket system with
-Intel(R) Xeon(R) Gold 6138 CPU @ 2.00GHz,
-each socket with 20~cores, each having a pair of hardware
-threads, for a grand total of 80 hardware threads.
-The code generating this data may be found in the \path{CodeSamples/cpu}
-directory of the git archive of the book
-``Is Parallel Programming Hard, And, If So, What Can You Do About
-It?''~\cite{McKenney2018ParallelProgramming-2018-12-08a}.\footnote{
-	\co{git://git.kernel.org/pub/scm/linux/kernel/git/paulmck/perfbook.git}}
-
-\begin{figure}[tb]
-\begin{center}
-\resizebox{4in}{!}{\includegraphics{coe-sh-out}}
-\caption{On x86, coe Links Are Atemporal}
-\label{fig:On x86; coe Links Are Atemporal}
-\end{center}
-\end{figure}
-
-Figure~\ref{fig:On x86; coe Links Are Atemporal}
-shows that coe links really are atemporal, that is, they can go backwards
-in time, and quite frequently at that, even on x86.
-The store-to-store latency is measured from the end of the ``winning''
-store to the beginning of the nonwinning store that started latest.
-Every data point on the negative x-axis represents a group of runs
-in which the winning store was not the last store.
-Thus, the winning store not being the last store is quite common, even
-on x86.
-
-\begin{figure}[tb]
-\begin{center}
-\resizebox{5in}{!}{\includegraphics{coe-out-1}}
-\caption{On x86, coe Links Form a Coherent Partial Order}
-\label{fig:On x86, coe Links Form a Coherent Partial Order}
-\end{center}
-\end{figure}
-
-However, Figure~\ref{fig:On x86, coe Links Form a Coherent Partial Order}
-shows that the order of reads of each value at each thread are
-consistent with a number of global orders, as required.\footnote{
-	Note that this data was not measured on the 80-CPU system, but
-	rather on a 16-CPU x86 laptop to avoid an unreadable diagram
-	containing 79 bubbles.}
-Working from the far left, one CPU saw the values 0, 11, and 9,
-a second CPU saw 3, 11, and 9, and so on.
-Although different CPUs saw different sequences of values, there is no
-disagreement on the order of the values that they could see.
-For example, all CPUs agree that the value 9 came last.
-This is an example of single-variable sequential consistency, and
-meets the coherence requirements of the C++ standard.
-
-\begin{figure}[tb]
-\begin{center}
-\resizebox{3in}{!}{\includegraphics{fre-sh-out}}
-\caption{On x86, fre Links Are Atemporal}
-\label{fig:On x86, fre Links Are Atemporal}
-\end{center}
-\end{figure}
-
-Figure~\ref{fig:On x86, fre Links Are Atemporal}
-plots a histogram of the elapsed time from the beginning of load to
-return the old value to the end of the store that provided the new value.
-Note well that most of the data falls into negative time, that is to
-say, in the most commonly occurring case, the last load of the old value
-executes about 60 timestamp periods (about 30~nanoseconds) \emph{after}
-the store that overwrote that same old value.
-That is, fre links can and do go backwards in time.
-This corresponds to the fre link between Thread~3 and Thread~2 depicted in
-Figure~\ref{fig:IPC Diagram for coe, fre, and rfe}.
-
-\begin{figure}[tb]
-\begin{center}
-\resizebox{3in}{!}{\includegraphics{rfe-sh-out}}
-\caption{On x86, rfe Links Are Temporal}
-\label{fig:On x86, rfe Links Are Temporal}
-\end{center}
-\end{figure}
-
-Figure~\ref{fig:On x86, rfe Links Are Temporal}
-plots a histogram of the elapsed time from a store of a new value
-to the first load of that new value.
-Note well that all of the data falls into positive time, indicating
-that rfe links always go forward in time, as those familiar with
-computer hardware and the laws of physics would expect.
-
-\begin{figure}[tb]
-\begin{center}
-\resizebox{4in}{!}{\includegraphics{coe}}
-\resizebox{4in}{!}{\includegraphics{fre}}
-\resizebox{4in}{!}{\includegraphics{rfe}}
-\caption{Propagation Delay and Temporal Properties of coe, fre, and rfe}
-\label{fig:Propagation Delay and Temporal Properties of coe, fre, and rfe}
-\end{center}
-\end{figure}
-
-Figure~\ref{fig:Propagation Delay and Temporal Properties of coe, fre, and rfe}
-shows how propagation delay explains the temporal properties of coe,
-fre, and rfe.
-The upper portion of the figure shows an atemporal coe, in which
-CPU~0 stores 1 to \co{x} after CPU~3 stores 2 to \co{x}, but
-the ordering of the stores is decided after the fact.
-In this case, the value of 2 from CPU~3's store overwrites the value
-of 1 from CPU~0's store, despite the fact that CPU~0's store
-happened later in time.
-One way that this could happen is that the cache line containing
-\co{x} happened to arrive at CPU~3 before arriving at CPU~0.
-A more fanciful explanation is that both values arrived at the
-interconnect at the saem time, and the interconnect made an
-arbitrary choice between the two.
-Either way, the end result is that an earlier store can overwrite
-a later store.
-
-The middle portion of the figure shows an atemporal fre, in which
-CPU~3's load obtains the old value of zero from \co{x} despite
-having executed long after CPU~0's store, courtesy of the fact
-that the new value of \co{x} had not yet propagated to CPU~3.
-
-The lower portion of the figure shows a temporal rfe.
-Because CPU~3's load cannot obtain the value stored by CPU~0 until
-after that value has propagated to CPU~3, the fact that CPU~3 obtains
-the new value implies that the load was executed after the store.
-
-And this is exactly why the C++ memory model guarantees ordering from
-rfe links but not the coe and fre links for relaxed accesses in the
-absence of other ordering from stronger atomic memory accesses or
-\co{atomic_thread_fence(memory_order_seq_cst}.
-
-\clearpage
-
-\section{User Influence Over Language Semantics}
-\label{app:User Influence Over Language Semantics}
-
-As noted earlier, the exact definition of a computer language is subject
-to some debate, with standards, implementations, and users all having
-some degree of
-influence~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2},
-and each of which is subject to change over time.
-It is natural to dismiss user influence when compared to the text of
-standards or the code in implementations, but both are subject to
-change and do change over time.
-The implementation is especially subject to change, for example,
-consider the following command line used to build the Linux kernel's
-\co{kernel/rcu/tree.c} C-language source file:
-
-~\\
-{
-	\scriptsize
-	\texttt{
-	gcc -Wp,-MMD,kernel/rcu/.tree.o.d -nostdinc
-	-I./arch/x86/include \\
-	-I./arch/x86/include/generated  -I./include
-	-I./arch/x86/include/uapi \\
-	-I./arch/x86/include/generated/uapi
-	-I./include/uapi -I./include/generated/uapi \\
-	-include ./include/linux/compiler-version.h
-	-include ./include/linux/kconfig.h \\
-	-include ./include/linux/compiler\_types.h -D\_\_KERNEL\_\_
-	-fmacro-prefix-map=./= \\
-	-Werror -std=gnu11 -fshort-wchar
-	-funsigned-char -fno-common -fno-PIE \\
-	-fno-strict-aliasing -mno-sse
-	-mno-mmx -mno-sse2 -mno-3dnow -mno-avx \\
-	-fcf-protection=branch
-	-fno-jump-tables -m64 -falign-jumps=1 -falign-loops=1 \\
-	-mno-80387 -mno-fp-ret-in-387 -mpreferred-stack-boundary=3
-	-mskip-rax-setup \\
-	-mtune=generic -mno-red-zone -mcmodel=kernel
-	-Wno-sign-compare \\
-	-fno-asynchronous-unwind-tables
-	-mindirect-branch=thunk-extern \\
-	-mindirect-branch-register
-	-mindirect-branch-cs-prefix -mfunction-return=thunk-extern
-	-fno-jump-tables -fpatchable-function-entry=16,16
-	-fno-delete-null-pointer-checks -O2 \\
-	-fno-allow-store-data-races
-	-fstack-protector-strong -fomit-frame-pointer \\
-	-fno-stack-clash-protection -falign-functions=16
-	-fno-strict-overflow -fno-stack-check \\
-	-fconserve-stack
-	-Wall -Wundef -Werror=implicit-function-declaration \\
-	-Werror=implicit-int -Werror=return-type -Werror=strict-prototypes \\
-	-Wno-format-security -Wno-trigraphs -Wno-frame-address
-	-Wno-address-of-packed-member \\
-	-Wframe-larger-than=2048 -Wno-main
-	-Wno-unused-but-set-variable \\
-	-Wno-unused-const-variable -Wvla
-	-Wno-pointer-sign -Wcast-function-type \\
-	-Wno-array-bounds
-	-Wno-alloc-size-larger-than -Wimplicit-fallthrough=5 \\
-	-Werror=date-time -Werror=incompatible-pointer-types
-	-Werror=designated-init \\
-	-Wenum-conversion
-	-Wno-unused-but-set-variable -Wno-unused-const-variable \\
-	-Wno-restrict -Wno-packed-not-aligned -Wno-format-overflow
-	-Wno-format-truncation \\
-	-Wno-stringop-overflow
-	-Wno-stringop-truncation -Wno-missing-field-initializers \\
-	-Wno-type-limits -Wno-shift-negative-value
-	-Wno-maybe-uninitialized \\
-	-Wno-sign-compare
-	-DKBUILD\_MODFILE='"kernel/rcu/tree"'
-	-DKBUILD\_BASENAME='"tree"' \\
-	-DKBUILD\_MODNAME='"tree"' -D\_\_KBUILD\_MODNAME=kmod\_tree \\
-	-c -o kernel/rcu/tree.o kernel/rcu/tree.c
-	}
-}
-
-We do not propose to explain all of these, and sufficiently motivated
-readers can avail themselves of the GCC documentation.
-We instead look at representative members of several categories.
-
-The \co{-funsigned-char} causes type \co{char} to be unsigned, which
-overrides per-architecture defaults, some of which treat \co{char}
-as signed and others as \co{unsigned}.
-This choice prevents a class of bugs, and also allows the kernel to make
-reliable use of the uppermost bit of variables of type \co{char}.
-It also affects the definition of ``semantic dependency'' by changing
-the arithmetic proporties of this type.
-In theory, the standard could specify the signedness of \co{char}, but the
-variety of existing practice in the 1980s prevented this.
-Plus machine instructions were much more expensive back then, so the
-signedness of \co{char} was much more of a performance concern than
-it is toda than
-it is todayy.
-
-The \co{-mno-sse} prevents GCC from making use of the SSE hardware.
-This is done for performance reasons, as it avoids the overhead of
-saving and restoring the state of this hardware when switching between
-user and kernel contexts.
-Similarly, the \co{-mcmodel=kernel} causes the kernel binary to be
-placed in the uppermost 2GB of the address space, again reducing
-the overhead of switching between user and kernel contexts.
-These are cases where the standard does not specify anything, nor
-should it.
-
-The \co{-fpatchable-function-entry=16,16} causes GCC to emit 16
-\co{nop} instructions at the beginning of each function, with
-the function's entry point being just after this string of \co{nop}
-instructions.
-The resulting buffers are used by the Linux-kernel tracing infrastructure
-which is in turn used for debugging, performance measurement, and
-monitoring.
-This is again clearly outside of the scope of the standard.
-
-The \co{-fstack-protector-strong} causes GCC to emit code that provides
-some protection against some clases of attacks based on buffer overflows.
-One could rightly argue code should simply avoid ever overflowing buffers,
-but things like memory allocators and userspace memory accesses must
-use code that can be difficult to distinguish from buffer overflows.
-It is not clear that the ever-increasing variety of attacks should
-affect the standard.
-
-The \co{-fno-strict-overflow} causes GCC to act as if signed integer
-overflow is defined behavior.
-Note well that this command-line option also affects the definition of
-``semantic dependency''.
-This might be a controversial choice, and another option would be to add
-a new set of signed integer types to the standard for which overflow is
-defined as wrapping, similar to the situation with unsigned integers.
-
-The \co{-Werror=strict-prototypes} causes GCC to warn if old-style
-non-ANSI function prototypes are used.
-This helps avoid certain classes of bugs.
-Warnings are by design outside of the scope of the standard.
-
-In other words, user preference can exert a nontrivial influence over
-language semantics, and in particular can affect some aspects of the
-definition of ``semantic dependency''.
-
-\clearpage
-
-\section{But What About Tooling?}
-\label{sec:But What About Tooling?}
-
-This paper focuses primarily on showing that, under commonly occurring
-constraints, OOTA cycles cannot form in real-world C++ implementations.
-
-But what about tooling?
-
-One entirely reasonable reaction is that, given the issues raised in
-Sections~\ref{sec:Properties of Semantic Dependencies}
-and~\ref{sec:The Fundamental Property of Semantic Dependencies},
-load/store reordering is the least of the problems faced by tooling.
-Nevertheless, this appendix expands on
-Section~\ref{sec:Semantic Dependencies and Tooling}
-by looking into the possibility of:
-
-\begin{enumerate}
-\item	Tooling focusing on only part of the language,
-\item	Changing the language to eliminate some aspects that are
-	troublesome for tooling (and potentially accepting performance
-	and energy-efficiency shortfalls), and
-\item	Changing the language to better delineate those portions that
-	tooling can easily accommodate.
-\end{enumerate}
-
-But first, the next section looks at why some weakly ordered
-implementations appear to forbid reordering of prior relaxed loads with
-later relaxed stores,\footnote{
-	Or, in memory-order-speak, forbid all load-buffering litmus tests.}
-despite the architecture permitting such reordering.
-
-\subsection{Load/Store Ordering: Hardware View for Software Hackers}
-\label{sec:Load/Store Ordering: Hardware View for Software Hackers}
-
-% @@@ Get citations
-
-Both the ARM and PowerPC memory models permit reordering prior loads
-against subsequent stores, but actual tests on recent hardware fail to
-produce any evidence of any such reordering.
-Nevertheless, thus far neither ARM nor PowerPC hardware architects
-have been willing to strengthen their memory models so as to forbid
-such reordering.
-% @@@ Cite Grisenthwaite
-
-This appendix offers some possible reasons for this odd juxtaposition
-of negative test results and flat refusal.
-
-One key point is that some hardware (including ARM and PowerPC) provides
-precise exceptions.
-For example, if a given load results in a segmentation violation
-exception, that exception will occur before any instructions following
-that load have committed.
-This means that a given load instruction's execution must have proceeded
-beyond the point where an exception might occur before any subsequent
-store can be permitted to commit, even if that store is completely
-unrelated to that load.
-For example, the later store cannot commit until all prior loads' address
-translations have completed successfully.
-
-However, if that load suffers a cache miss, address translation will have
-completed long before the load returns its value, meaning that a later
-store might well commit before the load completes.
-In fact, that later store might commit before the store that supplies the
-value returned by that load!
-Which explains why some hardware systems really do reorder prior loads
-and later stores.
-
-The question then becomes ``Why would weakly ordered systems fail to
-reorder prior loads with later stores?''
-
-One explanation is ECC errors.
-
-If correctable ECC errors were fixed up in hardware, then only uncorrectable
-ECC errors would be directly visible to software.
-If the only possible reaction to an uncorrectable ECC error was to
-terminate the program suffering that ECC error, it would be safe to
-allow subsequent stores to commit as soon as all prior loads' address
-translations had completed successfully.
-
-However, some kernels and applications have ways of handling even
-uncorrectable errors.
-Operating-system kernels encountering an ECC error might note that the
-affected data was being used by only one user process, and might react by
-killing that user process, taking care to account for memory shared with
-other processes.
-Some user applications might be note that the affected data affected only
-a particular computation, and might react by restarting that computation.
-In both cases, it is only reasonable to react to an uncorrectable ECC
-error in a load from a read-only mapped file by re-reading that data
-from that file, then restarting that load instruction.
-In all cases, the kernel and the user application would need to continue
-execution, and would thus require an exact exception.
-
-Systems that offload processing of correctable ECC errors to software
-also require exact exceptions.
-After all, the software is going to need to be able to correct the error
-and then fix up the state to make it appear that the load had returned
-the fixed-up value.
-
-ECC errors are detected near the end of their corresponding load
-instructions' execution, so that any need for exact exceptions rules out
-the commiting of any subsequent stores until after the load has fetched
-(and possibly corrected) its value.
-
-So why are hardware architects reluctant to tighten their memory models
-to forbid reordering of earlier loads and later stores?
-
-If you would like an authoratative answer to this question, you should of
-course ask your friendly local hardware architect.
-In the meantime, here is some semi-informed speculation on this topic:
-
-\begin{enumerate}
-\item	Some hardware might choose to forego ECC, for example, in order to
-	reduce cost for low-end systems or to improve energy efficiency
-	for battery-powered systems.
-\item	ECC error correction might still be done in hardware, avoiding
-	the need for precise software-visible exceptions.
-\item	Some systems might prefer to immediately shut down in response to
-	an uncorrectable ECC error, perhaps due to safety considerations.
-	This would entirely avoid the need for software-visible
-	ECC-related exceptions.\footnote{
-		One motivation for immediate shutdown is that if there
-		are uncorrectable errors, there might soon be errors
-		that translate one valid bit pattern to another valid
-		bit pattern, which could result in a lack of safety.}
-\item	Someone might come up with a clever way of correcting ECC errors
-	in firmware, avoiding the need for precise software-visible
-	exceptions.
-\item	As late as early 2024, some GPGPUs have been observed reordering
-	earlier loads against later stores.
-	Other hardware architects might therefore feel the need to keep
-	this option open for their own systems.
-\end{enumerate}
-
-So although it is not unreasonable to continue asking hardware vendors
-to tighten their memory models so as to prohibit reordering of earlier
-loads and later stores, it also would not be too surprising for them to
-continue to refuse.
-
-\subsection{Status Quo and Focused Tooling}
-\label{sec:Status Quo and Focused Tooling}
-
-The theoretical possibility of OOTA cycles causes some tools to have
-difficulty identifying precisely which outcomes are impossible on
-real-world C++ implementations.
-One approach is for tooling to reject programs containing instances
-of \co{memory_order_relaxed} and \co{memory_order_consume}, so that
-developers desiring their code to be analyzed by such tools would
-avoid using these \co{memory_order} values.
-The is strong precedent for this strategy, with the common prohibition
-against side effects in function arguments being but one example.
-
-However, there is a large body of existing code that uses
-\co{memory_order_relaxed}, and it would be unfortunate if such tools
-could not be applied to this code.
-
-Another approach would be to add flags to C++ implementations
-to cause \co{memory_order_relaxed} to be interpreted as either
-\co{memory_order_acquire} (for loads), \co{memory_order_release} (for
-stores), or \co{memory_order_acq_rel} (for read-modify-write operations).
-On TSO systems and on systems featuring exact ECC exceptions, this
-would allow tooling to be brought to bear without performance or
-energy-efficiency consequences beyond forgone optimizations involving
-memory reference reordering.
-
-However, this would mean that programs compiled in this way would not
-be guaranteed to run correctly on weakly ordered systems that lack
-ECC (or that lack precise exceptions).
-In addition, this change is more strict than necessary, forbidding
-optimizations that tooling could in fact analyze.
-Therefore, the next section looks at standardizaing a less severe
-restriction.
-
-\subsection{Change Relaxed to Forbid Load Buffering}
-\label{sec:Change Relaxed to Forbid Load Buffering}
-
-Tooling does not require relaxed accesses become fully acquire and/or
-release, but rather only that implemetnations be forbidden from reordering
-prior relaxed loads with subsequent relaxed stores, as has been suggested
-many times over the
-years~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352}.
-
-This preserves portability while enabling tooling to handle all members
-of the \co{memory_order} enumeration, but inflicts some performance and
-energy-efficiency penalties~\cite{LukeGeeson2023TightenRelaxed} in
-code not requiring these ordering
-restrictions~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
-
-This suggests the addition of a \co{memory_order_load_store} member to
-the \co{memory_order} enumeration, a topic taken up by the next section.
-
-\subsection{Add Load-Store Memory Order that Forbids Load Buffering}
-\label{sec:Add Load-Store Memory Order that Forbids Load Buffering}
-
-The addition of a \co{memory_order_load_store} member to the
-\co{memory_order} enumeration has been suggested starting many years
-ago~\cite{HansBoehm2019OOTArevisitedAgain,DanielLustig2018PlacedBefore}.
-This does not resolve all shortcomings in the C++ memory
-model~\cite{PaulEMcKenney2023P0124R8-LKMM,DanielLustig2018PlacedBefore},
-but it would provide a portable \co{memory_order} that minimally
-restricted compiler and hardware optimizations while still permitting
-full analyzability by current software tools.
-
-This change would also leave \co{memory_order_relaxed} in place,
-allowing minimal-overhead accesses in fastpaths.
-These fastpaths would not be analyzable by generic tools, but could
-be handled by special-case tools that analyze the binaries to verify
-that required orderings are enforced by machine-language properties
-such as dependencies.
-And a tool that checks control dependencies has in fact been
-prototyped~\cite{PaulHeidekrueger2022N4910}.
-
-This suggests a combined strategy of adding \co{memory_order} members
-as needed to extend the reach of general-purpose tooling, while also
-identifying \co{memory_order_relaxed} idioms that are checked at the
-machine level using special-purpose tooling.\footnote{
-	Kudos to Peter Sewell for clearly articulating this possibility
-	as part of an overall strategy.}
 
 % \section{History}
 % \label{sec:History}
