@@ -218,7 +218,9 @@ Since real-world CPUs cannot store something
 until they have determined its value,\footnote{
 	Another way of saying this is that real-world CPUs do not
 	make their stores visible to other CPUs until those stores
-	are no longer speculative.}
+	are no longer speculative.
+	See Section~\ref{sec:Hardware Architecture and Design}
+	for more discussion about hardware speculation.}
 the stores in lines~7 and~13 cannot take place until the CPU
 knows what values are loaded by lines~6 and~12, respectively.
 Thus the hardware orders these stores after their corresponding loads,
