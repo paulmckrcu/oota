@@ -2219,7 +2219,7 @@ shows causality test case 4, for which the \co{r1 == r2 == 1} result
 is to be forbidden.
 The \co{herd7} tool finds this OOTA result;
 the \co{S8} values given on line~3 of its output indicate
-that in this execution the variables \co{r1} and~\co{r2} were never
+that in the execution it describes, the variables \co{r1} and~\co{r2} were never
 assigned any specific value, so they could just as well be equal to
 one as to anything else.
 
@@ -2392,7 +2392,8 @@ semantic dependencies between their respective loads and stores, and
 so hardware dependency ordering will prevent an OOTA cycle from being
 realized.
 \co{P2()} has no semantic dependency, and \co{P3()}'s store does not
-occur in this execution because \co{r3} is zero.
+occur in this execution (i.e., the one described by the \co{exists} clause)
+because \co{r3} is zero.
 Thus neither of them contributes to an OOTA cycle.
 
 \subsection{Causality Test Case 11}
@@ -2464,7 +2465,8 @@ The \co{herd7} tool reports this result.
 \label{lst:Causality Test Case 14}
 \end{listing}
 
-In this execution, \co{P0()} has a semantic dependency from line~9 to
+In the execution described by the \co{exists} clause,
+\co{P0()} has a semantic dependency from line~9 to
 line~13 and \co{P1()} has a semantic dependency from line~18 to
 line~21.
 (There's also a semantic dependency from line~17 to line~21 but it
@@ -2487,7 +2489,8 @@ The \co{herd7} tool reports this result.
 \label{lst:Causality Test Case 15}
 \end{listing}
 
-This execution has an OOTA cycle involving \co{u} and~\co{v}.
+The execution described by the \co{exists} clause
+has an OOTA cycle involving \co{u} and~\co{v}.
 The dependency in \co{P0()} from line~13 to line~19 and the dependency
 in \co{P1()} from line~24 to line~27 are both semantic.
 The resulting hardware dependency ordering prevents the cycle from
