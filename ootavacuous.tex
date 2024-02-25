@@ -2012,8 +2012,10 @@ Then the C++ implementation could choose to act as if the source code
 had instead contained a single atomic load from the combined
 pair of objects, with the memory-ordering semantics of the first load.
 
-This provides an example of the ``one-to-one'' bullet of
-Section~\ref{sec:Volatile and Quasi Volatile Accesses}.
+This holds even when the atomic objects are quasi volatile,
+providing an example of how the ``one-to-one'' bullet of
+Section~\ref{sec:Volatile and Quasi Volatile Accesses} does not apply
+to them.
 
 \subsection{Semantic Dependencies and Tooling}
 \label{sec:Semantic Dependencies and Tooling}
