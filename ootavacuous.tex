@@ -981,7 +981,7 @@ An example is GCC's \co{-funsigned-char} command-line argument,
 which causes it to treat variables of type \co{char} as unsigned.
 More examples of user control over language semantics are given in
 Appendix~\ref{app:User Influence Over Language Semantics}
-and the discussion
+and by the discussion
 in~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2}.
 
 We will consider these user-specified compiler switch settings to fall
@@ -1899,7 +1899,7 @@ Section~\ref{sec:Volatile and Quasi Volatile Accesses}
 prohibits reordering of quasi volatile accesses when they are
 to the same object,
 but such reordering is in any case directly forbidden by the memory model
-(the four coherence rules in 6.9.2.2p14--19).
+(the four coherence rules in 6.9.2.2p14--19 \co{[intro.races]}).
 The ``onto'' bullet also largely reiterates restrictions that follow
 from the standard, in particular,
 that compilers should not invent atomic stores,
