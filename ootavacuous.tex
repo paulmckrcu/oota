@@ -454,7 +454,7 @@ where sdep is the set of semantic dependencies within
 each thread and rf is the set of store-to-load ``reads-from'' links,
 whether intra-thread
 (rfi) or between threads (rfe).\footnote{
-	See Appendix~\ref{app:Inter-Process Communications} for definitions
+	See Appendix~\ref{app:Interthread Communications} for definitions
 	and properties of rf, rfe, and rfi.}
 
 This is a fine definition and is consistent with the words in the C++
@@ -2139,66 +2139,71 @@ extended accordingly.
 \clearpage
 \appendix
 
-\section{Inter-Process Communications}
-\label{app:Inter-Process Communications}
+\section{Interthread Communications}
+\label{app:Interthread Communications}
 
-This section more clearly defines the ``coe'', ``fre'', and ``rfe''
-types of interprocess communication (also collectively called ``links'')
-and gives evidence on the temporal qualities of these different types.
+This section more precisely defines the ``coe'', ``fre'', and ``rfe''
+types of interthread communication (also collectively called ``links'')
+and presents information about their temporal qualities.
 
-First, context.
-The final ``e'' in all three acronyms stands for ``external'' as opposed
-to within-thread communication (``coi'', ``fri'', and ``rfi'') and as
-also opposed to all communication, whether inter-thread or intra-thread
-(``co'', ``fr'', and ``rf'').
+First, naming.
+The final ``e'' in all three acronyms stands for ``external'' (that
+is, between threads) as opposed to ``internal'' communication (within
+a thread: ``coi'', ``fri'', and ``rfi'') and also as opposed to all
+communication, whether interthread or intrathread (``co'', ``fr'', and
+``rf'').
 
 Next, definitions:
-
 \begin{description}
 \item[coe]
-	Coherency (external), which connects a store to any other store
-	to that same object that overwrites either the first store's
-	value or that overwrites some later value.
+	Coherence-order (external), which connects a store to any other store
+	for the same object that comes later in the object's
+	modification order, i.e., that overwrites either the first store's
+	value or some later value.
 \item[fre]
-	From-read (external), which connects a load to any other store
-	object that overwrites either the value that the load returned
-	or that overwrites some later value.
+	From-read (external), which connects a load to any store for
+	the same object that overwrites either the value that the load
+	returned or some later value.
 \item[rfe]
 	Reads-from (external), which connects a store to any load from
-	that same object that returns the value stored.
+	the same object that returns the value stored.
+	(Note: This means that the load retrieves the information
+	written by the store, as opposed to retrieving the information
+	from a different store that happened to write the same value.)
 \end{description}
 
 \begin{figure}[tb]
 \begin{center}
 \resizebox{4in}{!}{\includegraphics{ipc}}
-\caption{IPC Diagram for coe, fre, and rfe}
-\label{fig:IPC Diagram for coe, fre, and rfe}
+\caption{ITC Diagram for coe, fre, and rfe}
+\label{fig:ITC Diagram for coe, fre, and rfe}
 \end{center}
 \end{figure}
 
-Thirdly, Figure~\ref{fig:IPC Diagram for coe, fre, and rfe} illustrates
+Thirdly, Figure~\ref{fig:ITC Diagram for coe, fre, and rfe} illustrates
 the coe, fre, fri, and rfe links for four threads with time advancing
-from the top to the bottom of the figure.  Starting with coe, even though
-Thread~1's store was later in global time than that of Thread~0, that of
-Thread~1 came first in coe order, followed by those of Threads~2 and ~3.
+from the top to the bottom of the figure.  Start with coe: Even though
+Thread~1's store is later in global time than that of Thread~0, the
+Thread~1 store comes first in \co{x}'s modification order, then Thread-0's
+store, then those of Threads~2 and ~3.
 There is thus a coe link from Thread~1's store to every other store,
 from Thread~0's store to those of Threads~2 and~3, and from Thread~2's
 store to that of Thread~3.
 This situation can occur due to the initial placement and subsequent
 movement of cache lines.
 
-Thread~3's load reads the value stored by Thread~0's store, so there is
-an rfe link from that store to that load.  There is also an fre link from
-that load to Thread~2's store and an fri link to Thread~3's later store.
-Note that this fre link goes backwards in time.
+Thread~3's load reads the value written by Thread~0's store, so there is
+an rfe link from that store to that load.  In addition there is an fre link from
+the load to Thread~2's store and an fri link to Thread~3's later store.
+Note that the fre link goes backwards in time.
 
-Finally, there might be a desire for hard evidence that coe and fre
+Finally, the reader might desire hard evidence that coe and fre
 links really can go backwards in time.
 We provide this evidence on x86 to demonstrate that these effects
-are not confined to weakly ordered systems.
-This system is a dual-socket system with
-Intel(R) Xeon(R) Gold 6138 CPU @ 2.00GHz,
-each socket with 20~cores, each having a pair of hardware
+are not confined to weakly ordered architectures.
+The machine is a dual-socket system with
+Intel(R) Xeon(R) Gold 6138 CPUs @ 2.00~GHz,
+each socket with 20~cores and each core having a pair of hardware
 threads, for a grand total of 80 hardware threads.
 The code generating this data may be found in the \path{CodeSamples/cpu}
 directory of the git archive of the book
@@ -2217,12 +2222,18 @@ It?''~\cite{McKenney2018ParallelProgramming-2018-12-08a}.\footnote{
 Figure~\ref{fig:On x86; coe Links Are Atemporal}
 shows that coe links really are atemporal, that is, they can go backwards
 in time, and quite frequently at that, even on x86.
-The store-to-store latency is measured from the end of the ``winning''
-store to the beginning of the nonwinning store that started latest.
-Every data point on the negative x-axis represents a group of runs
-in which the winning store was not the last store.
-Thus, the winning store not being the last store is quite common, even
-on x86.
+During a run of the test, each of the threads stores a distinct value to
+the same atomic integer variable (all at about the same time), and each
+one records timestamps just before and just after its store.
+The ``winning'' store is the one whose value is retained in the
+variable at the end of the run, overwriting all the others.
+The store-to-store latency is measured from the beginning of the
+nonwinning store that started latest to the end of the winning store.
+Every data point on the negative x-axis thus represents a group of
+runs in which a nonwinning store started after the winning store
+finished.
+This demonstrates that the winning store quite commonly is not the
+last one, even on x86.
 
 \begin{figure}[tb]
 \begin{center}
@@ -2232,18 +2243,19 @@ on x86.
 \end{center}
 \end{figure}
 
-However, Figure~\ref{fig:On x86, coe Links Form a Coherent Partial Order}
-shows that the order of reads of each value at each thread are
-consistent with a number of global orders, as required.\footnote{
-	Note that this data was not measured on the 80-CPU system, but
-	rather on a 16-CPU x86 laptop to avoid an unreadable diagram
+Figure~\ref{fig:On x86, coe Links Form a Coherent Partial Order} shows
+that the sequence of values read from the atomic variable by each
+thread is consistent with a number of global orders, as
+required.\footnote{
+	Note that this data was not measured on the 80-thread system but
+	rather on a 16-thread x86 laptop, to avoid an unreadable diagram
 	containing 79 bubbles.}
-Working from the far left, one CPU saw the values 0, 11, and 9,
-a second CPU saw 3, 11, and 9, and so on.
-Although different CPUs saw different sequences of values, there is no
+Working from the far left, one thread saw the values 0, 11, and 9,
+a second thread saw 3, 11, and 9, and so on.
+Although different threads saw different sequences of values, there is no
 disagreement on the order of the values that they could see.
-For example, all CPUs agree that the value 9 came last.
-This is an example of single-variable sequential consistency, and
+For example, all threads agree that the value 9 came last.
+This is an example of single-variable sequential consistency, and it
 meets the coherence requirements of the C++ standard.
 
 \begin{figure}[tb]
@@ -2255,15 +2267,15 @@ meets the coherence requirements of the C++ standard.
 \end{figure}
 
 Figure~\ref{fig:On x86, fre Links Are Atemporal}
-plots a histogram of the elapsed time from the beginning of load to
-return the old value to the end of the store that provided the new value.
-Note well that most of the data falls into negative time, that is to
-say, in the most commonly occurring case, the last load of the old value
+plots a histogram of the elapsed time from the beginning of a load that
+returned an old value to the end of the store that provided the new value.
+Most of the data falls into negative time.
+In fact, in the most commonly occurring case the last load of an old value
 executes about 60 timestamp periods (about 30~nanoseconds) \emph{after}
-the store that overwrote that same old value.
-That is, fre links can and do go backwards in time.
-This corresponds to the fre link between Thread~3 and Thread~2 depicted in
-Figure~\ref{fig:IPC Diagram for coe, fre, and rfe}.
+the store which overwrote that old value.
+This shows that fre links can and do go backwards in global time,
+corresponding to the fre link between Thread~3 and Thread~2 in
+Figure~\ref{fig:ITC Diagram for coe, fre, and rfe}.
 
 \begin{figure}[tb]
 \begin{center}
@@ -2274,10 +2286,10 @@ Figure~\ref{fig:IPC Diagram for coe, fre, and rfe}.
 \end{figure}
 
 Figure~\ref{fig:On x86, rfe Links Are Temporal}
-plots a histogram of the elapsed time from a store of a new value
+plots a histogram of the elapsed time from the store of a new value
 to the first load of that new value.
-Note well that all of the data falls into positive time, indicating
-that rfe links always go forward in time, as those familiar with
+Here all of the data falls into positive time, indicating
+that rfe links always go forward in global time, as those familiar with
 computer hardware and the laws of physics would expect.
 
 \begin{figure}[tb]
@@ -2294,15 +2306,15 @@ Figure~\ref{fig:Propagation Delay and Temporal Properties of coe, fre, and rfe}
 shows how propagation delay explains the temporal properties of coe,
 fre, and rfe.
 The upper portion of the figure shows an atemporal coe, in which
-CPU~0 stores 1 to \co{x} after CPU~3 stores 2 to \co{x}, but
-the ordering of the stores is decided after the fact.
+CPU~0 stores 1 to \co{x} after CPU~3 stores 2 but
+the modification order of \co{x} is decided after the fact.
 In this case, the value of 2 from CPU~3's store overwrites the value
 of 1 from CPU~0's store, despite the fact that CPU~0's store
-happened later in time.
-One way that this could happen is that the cache line containing
-\co{x} happened to arrive at CPU~3 before arriving at CPU~0.
-A more fanciful explanation is that both values arrived at the
-interconnect at the saem time, and the interconnect made an
+happened later in global time.
+One way this could happen is if the cache line containing
+\co{x} arrived at CPU~3 before arriving at CPU~0.
+A more fanciful explanation is that both values arrived at an
+interconnect at the same time, and the interconnect made an
 arbitrary choice between the two.
 Either way, the end result is that an earlier store can overwrite
 a later store.
@@ -2313,14 +2325,14 @@ having executed long after CPU~0's store, courtesy of the fact
 that the new value of \co{x} had not yet propagated to CPU~3.
 
 The lower portion of the figure shows a temporal rfe.
-Because CPU~3's load cannot obtain the value stored by CPU~0 until
+Because a load on CPU~3 cannot obtain the value stored by CPU~0 until
 after that value has propagated to CPU~3, the fact that CPU~3 obtains
 the new value implies that the load was executed after the store.
 
 And this is exactly why the C++ memory model guarantees ordering from
-rfe links but not the coe and fre links for relaxed accesses in the
+rfe links but not from coe and fre links for relaxed accesses (in the
 absence of other ordering from stronger atomic memory accesses or
-\co{atomic_thread_fence(memory_order_seq_cst}.
+\co{atomic_thread_fence(memory_order_seq_cst)}).
 
 \clearpage
 
