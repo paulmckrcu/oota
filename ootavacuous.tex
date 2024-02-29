@@ -2342,97 +2342,103 @@ absence of other ordering from stronger atomic memory accesses or
 As noted earlier, the exact definition of a computer language is subject
 to some debate, with standards, implementations, and users all having
 some degree of
-influence~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2},
-and each of which is subject to change over time.
+influence~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2}.
 It is natural to dismiss user influence when compared to the text of
 standards or the code in implementations, but both are subject to
 change and do change over time.
-The implementation is especially subject to change, for example,
-consider the following command line used to build the Linux kernel's
+An especially easy way for users to influence the implementation is by
+means of command-line flags and switch settings.
+As an example,
+consider the following command line used to compile the Linux kernel's
 \co{kernel/rcu/tree.c} C-language source file:
 
-~\\
+\begin{quote}
 {
 	\scriptsize
-	\texttt{
+	\texttt{\noindent
 	gcc -Wp,-MMD,kernel/rcu/.tree.o.d -nostdinc
 	-I./arch/x86/include \\
 	-I./arch/x86/include/generated  -I./include
 	-I./arch/x86/include/uapi \\
 	-I./arch/x86/include/generated/uapi
-	-I./include/uapi -I./include/generated/uapi \\
-	-include ./include/linux/compiler-version.h
+	-I./include/uapi \\
+	-I./include/generated/uapi \\
+	-include ./include/linux/compiler-version.h \\
 	-include ./include/linux/kconfig.h \\
-	-include ./include/linux/compiler\_types.h -D\_\_KERNEL\_\_
-	-fmacro-prefix-map=./= \\
-	-Werror -std=gnu11 -fshort-wchar
-	-funsigned-char -fno-common -fno-PIE \\
-	-fno-strict-aliasing -mno-sse
+	-include ./include/linux/compiler\_types.h \\
+	-D\_\_KERNEL\_\_
+	-fmacro-prefix-map=./=
+	-Werror -std=gnu11 -fshort-wchar \\
+	-funsigned-char -fno-common -fno-PIE
+	-fno-strict-aliasing \\
+	-mno-sse
 	-mno-mmx -mno-sse2 -mno-3dnow -mno-avx \\
 	-fcf-protection=branch
-	-fno-jump-tables -m64 -falign-jumps=1 -falign-loops=1 \\
-	-mno-80387 -mno-fp-ret-in-387 -mpreferred-stack-boundary=3
-	-mskip-rax-setup \\
+	-fno-jump-tables -m64 -falign-jumps=1 \\
+	-falign-loops=1 -mno-80387 -mno-fp-ret-in-387 \\
+	-mpreferred-stack-boundary=3 -mskip-rax-setup \\
 	-mtune=generic -mno-red-zone -mcmodel=kernel
 	-Wno-sign-compare \\
 	-fno-asynchronous-unwind-tables
 	-mindirect-branch=thunk-extern \\
 	-mindirect-branch-register
-	-mindirect-branch-cs-prefix -mfunction-return=thunk-extern
-	-fno-jump-tables -fpatchable-function-entry=16,16
-	-fno-delete-null-pointer-checks -O2 \\
-	-fno-allow-store-data-races
-	-fstack-protector-strong -fomit-frame-pointer \\
-	-fno-stack-clash-protection -falign-functions=16
-	-fno-strict-overflow -fno-stack-check \\
-	-fconserve-stack
-	-Wall -Wundef -Werror=implicit-function-declaration \\
-	-Werror=implicit-int -Werror=return-type -Werror=strict-prototypes \\
-	-Wno-format-security -Wno-trigraphs -Wno-frame-address
-	-Wno-address-of-packed-member \\
-	-Wframe-larger-than=2048 -Wno-main
-	-Wno-unused-but-set-variable \\
-	-Wno-unused-const-variable -Wvla
-	-Wno-pointer-sign -Wcast-function-type \\
-	-Wno-array-bounds
+	-mindirect-branch-cs-prefix \\
+	-mfunction-return=thunk-extern -fno-jump-tables \\
+	-fpatchable-function-entry=16,16
+	-fno-delete-null-pointer-checks \\
+	-O2 -fno-allow-store-data-races
+	-fstack-protector-strong \\
+	-fomit-frame-pointer
+	-fno-stack-clash-protection -falign-functions=16 \\
+	-fno-strict-overflow -fno-stack-check -fconserve-stack
+	-Wall -Wundef \\
+	-Werror=implicit-function-declaration
+	-Werror=implicit-int \\
+	-Werror=return-type
+	-Werror=strict-prototypes -Wno-format-security \\
+	-Wno-trigraphs -Wno-frame-address \\
+	-Wno-address-of-packed-member
+	-Wframe-larger-than=2048 -Wno-main \\
+	-Wno-unused-but-set-variable -Wno-unused-const-variable -Wvla \\
+	-Wno-pointer-sign -Wcast-function-type -Wno-array-bounds \\
 	-Wno-alloc-size-larger-than -Wimplicit-fallthrough=5 \\
-	-Werror=date-time -Werror=incompatible-pointer-types
-	-Werror=designated-init \\
-	-Wenum-conversion
-	-Wno-unused-but-set-variable -Wno-unused-const-variable \\
-	-Wno-restrict -Wno-packed-not-aligned -Wno-format-overflow
-	-Wno-format-truncation \\
-	-Wno-stringop-overflow
-	-Wno-stringop-truncation -Wno-missing-field-initializers \\
-	-Wno-type-limits -Wno-shift-negative-value
-	-Wno-maybe-uninitialized \\
-	-Wno-sign-compare
-	-DKBUILD\_MODFILE='"kernel/rcu/tree"'
-	-DKBUILD\_BASENAME='"tree"' \\
-	-DKBUILD\_MODNAME='"tree"' -D\_\_KBUILD\_MODNAME=kmod\_tree \\
+	-Werror=date-time -Werror=incompatible-pointer-types \\
+	-Werror=designated-init -Wenum-conversion
+	-Wno-unused-but-set-variable \\
+	-Wno-unused-const-variable -Wno-restrict -Wno-packed-not-aligned \\
+	-Wno-format-overflow 
+	-Wno-format-truncation -Wno-stringop-overflow \\
+	-Wno-stringop-truncation
+	-Wno-missing-field-initializers \\
+	-Wno-type-limits
+	-Wno-shift-negative-value -Wno-maybe-uninitialized \\
+	-Wno-sign-compare 
+	-DKBUILD\_MODFILE='"kernel/rcu/tree"' \\
+	-DKBUILD\_BASENAME='"tree"' -DKBUILD\_MODNAME='"tree"' \\
+	-D\_\_KBUILD\_MODNAME=kmod\_tree \\
 	-c -o kernel/rcu/tree.o kernel/rcu/tree.c
 	}
 }
+\end{quote}
 
 We do not propose to explain all of these, and sufficiently motivated
 readers can avail themselves of the GCC documentation.
 We instead look at representative members of several categories.
 
-The \co{-funsigned-char} causes type \co{char} to be unsigned, which
+The \co{-funsigned-char} causes the \co{char} type to be unsigned, which
 overrides per-architecture defaults, some of which treat \co{char}
 as signed and others as \co{unsigned}.
 This choice prevents a class of bugs, and also allows the kernel to make
 reliable use of the uppermost bit of variables of type \co{char}.
 It also affects the definition of ``semantic dependency'' by changing
 the arithmetic proporties of this type.
-In theory, the standard could specify the signedness of \co{char}, but the
-variety of existing practice in the 1980s prevented this.
+In theory, the standard could have specified the signedness of \co{char}
+but the variety of existing practice in the 1980s prevented this.
 Plus machine instructions were much more expensive back then, so the
 signedness of \co{char} was much more of a performance concern than
-it is toda than
-it is todayy.
+it is today.
 
-The \co{-mno-sse} prevents GCC from making use of the SSE hardware.
+The \co{-mno-sse} prevents GCC from making use of the processor's SSE hardware.
 This is done for performance reasons, as it avoids the overhead of
 saving and restoring the state of this hardware when switching between
 user and kernel contexts.
@@ -2449,10 +2455,10 @@ instructions.
 The resulting buffers are used by the Linux-kernel tracing infrastructure
 which is in turn used for debugging, performance measurement, and
 monitoring.
-This is again clearly outside of the scope of the standard.
+This is again clearly outside the scope of the standard.
 
 The \co{-fstack-protector-strong} causes GCC to emit code that provides
-some protection against some clases of attacks based on buffer overflows.
+some protection against some classes of attacks based on buffer overflows.
 One could rightly argue code should simply avoid ever overflowing buffers,
 but things like memory allocators and userspace memory accesses must
 use code that can be difficult to distinguish from buffer overflows.
@@ -2460,9 +2466,8 @@ It is not clear that the ever-increasing variety of attacks should
 affect the standard.
 
 The \co{-fno-strict-overflow} causes GCC to act as if signed integer
-overflow is defined behavior.
-Note well that this command-line option also affects the definition of
-``semantic dependency''.
+overflow is defined behavior,
+which also affects the definition of ``semantic dependency''.
 This might be a controversial choice, and another option would be to add
 a new set of signed integer types to the standard for which overflow is
 defined as wrapping, similar to the situation with unsigned integers.
@@ -2470,9 +2475,9 @@ defined as wrapping, similar to the situation with unsigned integers.
 The \co{-Werror=strict-prototypes} causes GCC to warn if old-style
 non-ANSI function prototypes are used.
 This helps avoid certain classes of bugs.
-Warnings are by design outside of the scope of the standard.
+Warnings are by design outside the scope of the standard.
 
-In other words, user preference can exert a nontrivial influence over
+To sum up, user preference can exert a nontrivial influence over
 language semantics, and in particular can affect some aspects of the
 definition of ``semantic dependency''.
 
@@ -2493,15 +2498,14 @@ load/store reordering is the least of the problems faced by tooling.
 Nevertheless, this appendix expands on
 Section~\ref{sec:Semantic Dependencies and Tooling}
 by looking into the possibility of:
-
-\begin{enumerate}
+\begin{itemize}
 \item	Tooling focusing on only part of the language,
 \item	Changing the language to eliminate some aspects that are
 	troublesome for tooling (and potentially accepting performance
 	and energy-efficiency shortfalls), and
 \item	Changing the language to better delineate those portions that
 	tooling can easily accommodate.
-\end{enumerate}
+\end{itemize}
 
 But first, the next section looks at why some weakly ordered
 implementations appear to forbid reordering of prior relaxed loads with
@@ -2514,7 +2518,7 @@ despite the architecture permitting such reordering.
 
 % @@@ Get citations
 
-Both the ARM and PowerPC memory models permit reordering prior loads
+Both the ARM and PowerPC architectural memory models permit reordering prior loads
 against subsequent stores, but actual tests on recent hardware fail to
 produce any evidence of any such reordering.
 Nevertheless, thus far neither ARM nor PowerPC hardware architects
@@ -2537,11 +2541,11 @@ unrelated to that load.
 For example, the later store cannot commit until all prior loads' address
 translations have completed successfully.
 
-However, if that load suffers a cache miss, address translation will have
+However, if the load suffers a cache miss, address translation will have
 completed long before the load returns its value, meaning that a later
 store might well commit before the load completes.
-In fact, that later store might commit before the store that supplies the
-value returned by that load!
+In fact, that later store might commit before the store which supplies the
+value returned by the load!
 Which explains why some hardware systems really do reorder prior loads
 and later stores.
 
@@ -2563,7 +2567,7 @@ Operating-system kernels encountering an ECC error might note that the
 affected data was being used by only one user process, and might react by
 killing that user process, taking care to account for memory shared with
 other processes.
-Some user applications might be note that the affected data affected only
+Some user applications might note that the corrupted data affected only
 a particular computation, and might react by restarting that computation.
 In both cases, it is only reasonable to react to an uncorrectable ECC
 error in a load from a read-only mapped file by re-reading that data
@@ -2585,11 +2589,11 @@ the commiting of any subsequent stores until after the load has fetched
 So why are hardware architects reluctant to tighten their memory models
 to forbid reordering of earlier loads and later stores?
 
-If you would like an authoratative answer to this question, you should of
+If you would like an authoritative answer to this question, you should of
 course ask your friendly local hardware architect.
 In the meantime, here is some semi-informed speculation on this topic:
 
-\begin{enumerate}
+\begin{itemize}
 \item	Some hardware might choose to forego ECC, for example, in order to
 	reduce cost for low-end systems or to improve energy efficiency
 	for battery-powered systems.
@@ -2610,7 +2614,7 @@ In the meantime, here is some semi-informed speculation on this topic:
 	earlier loads against later stores.
 	Other hardware architects might therefore feel the need to keep
 	this option open for their own systems.
-\end{enumerate}
+\end{itemize}
 
 So although it is not unreasonable to continue asking hardware vendors
 to tighten their memory models so as to prohibit reordering of earlier
@@ -2648,7 +2652,7 @@ be guaranteed to run correctly on weakly ordered systems that lack
 ECC (or that lack precise exceptions).
 In addition, this change is more strict than necessary, forbidding
 optimizations that tooling could in fact analyze.
-Therefore, the next section looks at standardizaing a less severe
+Therefore, the next section looks at standardizing a less severe
 restriction.
 
 \subsection{Change Relaxed to Forbid Load Buffering}
