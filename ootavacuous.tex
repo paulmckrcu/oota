@@ -367,9 +367,13 @@ This section describes the fragment, thereby giving an overview of
 the \co{herd7} tool.
 
 The first line identifies it as a C-language litmus test and gives it
-a name.
+a name, and this name identifies the litmus test's source file within
+the \path{litmus} directory in the \url{https://github.com/paulmckrcu/oota}
+repository.
 Lines~2--5 initialize variables, in this case setting the initial
 values of the global shared variables \co{x} and \co{y} to zero.
+Variables that are not explicitly initialized are initialized by
+default to zero.
 Lines~7--13 define the first thread, \co{P0()}, and lines~15--21
 define the second thread, \co{P1()}.\footnote{
 	The ``P'' stands for ``process'', which is \co{herd7}'s name
