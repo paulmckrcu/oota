@@ -1626,7 +1626,7 @@ void thread2() {
 }
 \end{verbatim}
 \end{quote}
-A compiler using global analysis and treating \co{x} and \co{y} as
+A loose C++ compiler using global analysis and treating \co{x} and \co{y} as
 quasi-volatile objects could omit the two loads, replacing them in the
 machine code with simple assignments ``\co{r1 = 42}'' and
 ``\co{r2 = 42}''.
