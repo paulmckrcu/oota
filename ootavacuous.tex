@@ -2136,24 +2136,38 @@ quasi-volatile behavior.
 
 This paper has refined the definition of ``OOTA cycle'' from
 \co{acyclic(sdep; rf)} to \co{acyclic(sdep; rfe)}, which enables the
-application the laws of physics (and thus of temporal reasoning) to OOTA
+application of the laws of physics (and thus of temporal reasoning) to OOTA
 analysis of the C++ memory model.
-This reasoning shows that correct real-world C++ implementations relying
-on single-threaded analyses are inherently incapable of producing OOTA
-cycles in UB-free programs using volatile atomics.
+This refinement, combined with a survey of code containing non-trivial
+semantic dependencies, uncovered some shortcomings in typical definitions of
+``semantic dependency'', pointing out examples where semantic dependencies
+are a function of an execution rather than of the source code, and also
+examples where a single semantic dependency extends from multiple loads
+to a store, but not from any one of those loads to that same store.
+These complex dependencies motivated a generalization of the definition
+of ``OOTA cycle'', which is shown in
+Section~\ref{sec:Semantic Dependencies Can Be Many To One}.
 
-C++ implementations that additionally refrain from inventing atomic loads
-and that also ensure that each atomic load that is executed corresponds
-to a specific load in the abstract machine are incapable of producing
-OOTA cycles in UB-free programs using nonvolatile as well
-as volatile atomics.
+This generalization, combined with a focus on compiler-based C++
+implementations using single-threaded analyses, led to the fundamental
+property of semantic dependency shown in
+Section~\ref{sec:The Fundamental Property of Semantic Dependencies}.
+This property in turn led to the precise definition of ``semantic
+dependency'' shown in
+Section~\ref{sec:For Compilers Using Single-Thread Analysis}.
+These definitions are then used in
+Section~\ref{sec:Verifying the Fundamental Property}
+to demonstrate that correct real-world compiler-based C++
+implementations relying on single-threaded analyses are inherently
+incapable of producing OOTA cycles in UB-free programs using volatile
+atomics.
 
-This paper also uncovers some shortcomings in typical definitions of
-``semantic dependency'', pointing out examples where a single semantic
-dependency extends from multiple loads to a store, but not from any one
-of those loads to that same store.
-We therefore propose that the definition of semantic dependency be
-extended accordingly.
+C++ implementations that additionally confine optimizations of code
+containing nonvolatile atomic operations to the quasi-volatile limitations
+outlined in
+Section~\ref{sec:Volatile and Quasi Volatile Accesses}
+are incapable of producing OOTA cycles in UB-free programs using
+nonvolatile as well as volatile atomics.
 
 \clearpage
 \appendix
