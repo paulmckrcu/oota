@@ -824,8 +824,8 @@ code, of course---determines within each thread a unique, linearly
 ordered series of steps to be carried out by the abstract machine.
 However, there is no ordering relation between steps carried out
 in different threads.  Even if a load in one thread reads from a
-store in another thread, we don't require the store to come before
-the load.
+store in another thread, the standard does not require the store to come
+before the load.
 
 With the compiler-based implementations we are considering,
 the choices for the nondeterministic pathways are ``frozen'' into the
