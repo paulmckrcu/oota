@@ -588,7 +588,8 @@ But there \emph{is} a semantic dependency from the \emph{pair}
 \{\co{y},~\co{z}\} to \co{x},
 because changes to both \co{y} and \co{z}
 can cause the value stored in \co{x} to change.
-This means that accurate definitions of sdep cannot always rely on
+This means that, prior work~\cite{PaulEMcKenney2016OOTA}
+notwithstanding, accurate definitions of sdep cannot always rely on
 single-variable perturbations;
 they must consider changes to multiple variables.
 See Appendix~\ref{app:Non-Trivial Semantic Dependencies}
