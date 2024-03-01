@@ -2122,14 +2122,26 @@ C++ implementation executes those threads unchanged.
 Future analyses might examine the possibility of ``flattening''
 optimizations that combine multiple threads into one.
 
+This paper shows that semantic dependencies are relative to specific
+executions of a program rather than strictly of the source code of that
+program.
+Future work might expand on
+Section~\ref{sec:Relative versus Absolute Dependency},
+further exploring absolute semantic dependencies that are special cases
+where semantic dependencies can be a function strictly of the source code.
+
 This paper considers only fragments of programs whose threads
 communicate using shared memory.
-Future work might include the effects of input and output, as well
-as code that reads out the current time, that uses thread IDs,
-or that operates on pointer values.
+Future work might include the effects of input and output, as well as
+code that reads out the current time, that uses thread IDs, or that
+operates on pointer values
+(see Section~\ref{sec:Effect of Memory Layout}).
 
-Finally, future work might more precisely delineate the limits of
-quasi-volatile behavior.
+Finally, future work might expand on
+Sections~\ref{sec:Global Analysis and Volatile versus Quasi Volatile},
+and~\ref{sec:Merging Quasi-Volatile Loads}
+so as to more precisely delineate the limits of permissible quasi-volatile
+behavior.
 
 \section{Conclusion}
 \label{sec:Conclusion}
