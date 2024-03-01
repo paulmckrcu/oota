@@ -2122,6 +2122,15 @@ C++ implementation executes those threads unchanged.
 Future analyses might examine the possibility of ``flattening''
 optimizations that combine multiple threads into one.
 
+This paper considers only fragments of programs whose threads
+communicate using shared memory.
+Future work might include the effects of input and output, as well
+as code that reads out the current time, that uses thread IDs,
+or that operates on pointer values.
+
+Finally, future work might more precisely delineate the limits of
+quasi-volatile behavior.
+
 \section{Conclusion}
 \label{sec:Conclusion}
 
