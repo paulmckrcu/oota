@@ -929,7 +929,7 @@ In particular, when running in a nonbenign environment a program's
 volatile loads can return unpredictable values.
 They don't necessarily read from stores (in contrast to nonvolatile loads,
 which always must return the value of the store they read from).
-This implies that volatile load-acquire's do not synchronize with
+This implies that volatile load-acquires do not synchronize with
 volatile store-releases in the sense of the C++ memory model,\footnote{
 	However, they might instead synchronize with store-releases in
 	device firmware (or vice versa), roughly speaking.}
