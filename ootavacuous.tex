@@ -1002,7 +1002,7 @@ Recall the Simple OOTA example in Listing~\ref{lst:Simple OOTA} on
 page~\pageref{lst:Simple OOTA},
 in which \co{thread1()} loads the value of \co{x} and stores it in
 \co{y} while \co{thread2()} does the reverse.
-A globally optimizing compiler given that program might
+A globally optimizing loose C++ compiler given that program might
 transform it to the following before translating it into machine code,
 if the compiler is sufficiently perverse:
 \begin{quote}
@@ -1032,7 +1032,10 @@ The only justification a compiler could have for generating output like
 this is that it knows exactly what accesses will be performed by both
 threads, and therefore it knows that it will not violate the loose C++
 memory model by assuming each thread's load reads from the other's
-store.
+store.\footnote{
+	Such a compiler could presumably instead choose to avoid this
+	OOTA cycle, for example, by retaining the loads from \co{x}
+	and \co{y}.}
 A similar justification can underlie the reasoning in
 section~\ref{sec:Semantic Dependencies Affected by Cross-Thread Optimizations};
 in principle an analysis of the complete program could lead a compiler
