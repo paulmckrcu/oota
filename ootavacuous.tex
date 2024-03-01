@@ -1548,9 +1548,11 @@ which marks the end of the common period by going different ways in
 $H$ and $G$.
 Just as in the previous case, since the branch behaves differently in
 the two executions it must be ordered after one of the $R'_i$ loads.
-And then so must $W'$, because the execution of any instruction following
-a conditional- or computed-branch instruction is ordered after that
-branch.
+And then so must $W'$, because any instruction following a conditional-
+or computed-branch instruction must commit after that branch
+commits.\footnote{
+	But note that a load might obtain its value from memory before
+	previous instructions have committed.}
 QED.
 
 \medskip
