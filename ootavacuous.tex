@@ -630,7 +630,7 @@ We leave aside the question of how the implementation would know this,
 given that \co{y} and \co{z} cannot be updated simultaneously
 and are subject to change at any time by
 other threads (a point we will return to in
-section~\ref{sec:Global Optimization Can Destroy Dependencies}).
+Section~\ref{sec:Global Optimization Can Destroy Dependencies}).
 % The usual way in the Linux kernel is via a union, but it is probably
 % best to ignore that possibility.
 
@@ -818,7 +818,7 @@ from which it reads and the value of the load.
 We ignore issues of signal handlers and I/O;
 in any case our litmus-test programs don't use them
 (but see the discussion of volatile loads in
-section~\ref{sec:Relation Between Abstract and Hardware Executions} below).
+Section~\ref{sec:Relation Between Abstract and Hardware Executions} below).
 The totality of this information---along with the program's source
 code, of course---determines within each thread a unique, linearly
 ordered series of steps to be carried out by the abstract machine.
@@ -942,7 +942,7 @@ properly in either kind of environment.
 Therefore the compiler must generally treat accesses to volatile objects
 as a form of I/O, and it may not
 invent, omit, merge, or reorder these accesses, as we will discuss in
-section~\ref{sec:Volatile and Quasi Volatile Accesses} below.
+Section~\ref{sec:Volatile and Quasi Volatile Accesses} below.
 
 Given this relation between abstract and hardware executions, it is time
 to turn our attention to the tool that selects hardware execution so as
@@ -1037,7 +1037,7 @@ store.\footnote{
 	OOTA cycle, for example, by retaining the loads from \co{x}
 	and \co{y}.}
 A similar justification can underlie the reasoning in
-section~\ref{sec:Semantic Dependencies Affected by Cross-Thread Optimizations};
+Section~\ref{sec:Semantic Dependencies Affected by Cross-Thread Optimizations};
 in principle an analysis of the complete program could lead a compiler
 to conclude that \co{y} will always be equal to \co{z} whenever a
 particular \co{y - z} expression is evaluated, allowing the compiler
@@ -1284,7 +1284,7 @@ However, dependencies aren't the only mechanism capable of forcing
 ordering in hardware executions.
 The simplest alternative is a load reading from a store in another
 thread, i.e., the rfe relation.
-As mentioned in section~\ref{sec:Simple OOTA Cycle} above, a CPU does
+As mentioned in Section~\ref{sec:Simple OOTA Cycle} above, a CPU does
 not make the value of a store instruction available for other CPUs to
 load until the store commits or some time later.
 And after this happens, it takes some time for the information about
@@ -1382,7 +1382,7 @@ For compilers that perform only single-thread analysis, not global
 analysis, quasi-volatile is sufficient.
 In this setting we can relate abstract and hardware executions by
 means of the map of accesses described in
-section~\ref{sec:Volatile and Quasi Volatile Accesses}.
+Section~\ref{sec:Volatile and Quasi Volatile Accesses}.
 The key insight is that this allows us to consider semantic
 dependencies at the level of the machine code, where they are much
 more tractable.
@@ -1411,7 +1411,7 @@ same in the two programs.
 
 We begin by recognizing that semantic dependencies are relative to a
 particular execution and a particular implementation,
-as described in section~\ref{sec:Properties of Semantic Dependencies}.
+as described in Section~\ref{sec:Properties of Semantic Dependencies}.
 The same source code may or may not contain a semantic dependency,
 according to the details of the execution in question and the
 machine code produced by the compiler.
@@ -1508,7 +1508,7 @@ Aside from these minor adjustments, the definition remains unchanged.
 
 Of course we want to check that our definition of semantic dependency
 satisfies the Fundamental Property of
-section~\ref{sec:The Fundamental Property of Semantic Dependencies}.
+Section~\ref{sec:The Fundamental Property of Semantic Dependencies}.
 Given the information we have already presented, the demonstration is
 easy.
 
@@ -1657,7 +1657,7 @@ This is a possible topic for future research.
 
 Part of our demonstration of the Fundamental Property of semantic
 dependencies relies on the fact, stated in
-section~\ref{sec:Abstract Executions},
+Section~\ref{sec:Abstract Executions},
 that an abstract execution of a thread is entirely determined by the
 values obtained for its loads.
 But when we compare abstract executions of the same thread in two
@@ -1695,7 +1695,7 @@ may be merged with an earlier load in one execution and with a
 later load in another.
 This is demonstrated in the following, which is a variant of
 the example in
-section~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}:
+Section~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}:
 \begin{quote}
 \begin{verbatim}
 int r1 = (x != 0);
@@ -3569,7 +3569,7 @@ one as to anything else.
 \end{listing}
 
 This test case is virtually the same as the Simple OOTA cycle
-discussed in section~\ref{sec:Simple OOTA Cycle}, the only difference
+discussed in Section~\ref{sec:Simple OOTA Cycle}, the only difference
 being the final values of the variables.
 
 \subsection{Causality Test Case 5}
