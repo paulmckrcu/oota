@@ -1958,7 +1958,7 @@ Without line~9, if the value loaded into \co{r1} is one then the final value
 of \co{x} must be two.
 With line~9, the final value of \co{x} can be one even when the
 value loaded into \co{r1} is one.
-The compiler is therefore forbidden from duplicating the store of one
+The compiler is therefore forbidden from duplicating atomic stores
 unless it can prove that doing so does not negatively affect the
 program's observable behaviors.
 Again, the compiler might be able to prove that there
@@ -1993,7 +1993,7 @@ are no other accesses to \co{x} at the time of the duplicated store.
 Although one can argue that it is functionally correct to invent atomic
 loads as long as the loaded value is not used, doing so can result in
 extra cache misses for no good purpose.
-And even duplicating an atomic load can lead to incorrect results if done
+And duplicating an atomic load can even lead to incorrect results if done
 carelessly.
 To see this, consider
 Listing~\ref{lst:Example Duplicated Load}.
@@ -2026,7 +2026,7 @@ to prevent them.
 Acting as if a redundant store was omitted from the source
 code cannot create an OOTA cycle, because any valid execution (OOTA or not)
 of the program with the first of a back-to-back pair of nonvolatile
-relaxed atomic stores omitted is essentially a valid execution of the
+relaxed atomic stores omitted is a valid execution of the
 program with the store present.
 
 \paragraph{Fused Accesses of Adjacent Nonvolatile Atomic Objects}
