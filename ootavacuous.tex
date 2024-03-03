@@ -1280,7 +1280,14 @@ committing $J$'s action and outputs.
 Thus dependencies force instructions to commit in order, even on
 weakly ordered architectures.
 
-However, dependencies aren't the only mechanism capable of forcing
+We will say that one instruction is ordered after another to mean that
+the CPU forces it to commit after the other one commits.
+Hence instructions are ordered after the instructions they depend on.
+(Note that this implies nothing about when a load instruction retrieves
+its value from memory; it may do so long before it or a prior
+instruction commits.)
+
+Dependencies aren't the only mechanism that can lead to
 ordering in hardware executions.
 The simplest alternative is a load reading from a store in another
 thread, i.e., the rfe relation.
@@ -1549,10 +1556,7 @@ $H$ and $G$.
 Just as in the previous case, since the branch behaves differently in
 the two executions it must be ordered after one of the $R'_i$ loads.
 And then so must $W'$, because any instruction following a conditional-
-or computed-branch instruction must commit after that branch
-commits.\footnote{
-	But note that a load might obtain its value from memory before
-	previous instructions have committed.}
+or computed-branch instruction must commit after the branch commits.
 QED.
 
 \medskip
