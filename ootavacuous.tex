@@ -230,11 +230,7 @@ and this ordering prevents the OOTA result.
 This paper will follow P2055R0~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
 in using the term \emph{full C++} to denote the standard including the
 prohibition above.
-{\it Contra\/} that article, we will use the term \emph{loose C++}\footnote{
-	There is some discomfort with this name, so this footnote
-	is reserved for future bikeshedding.}
-% @@@ Alternatives thus far: OOTA-prone C++, OOTA-enabled C++,
-% @@@ relaxed C++, OOTA C++, OOTA-agnostic C++.
+{\it Contra\/} that article, we will use the term \emph{loose C++}
 (rather than \emph{strict C++}, which seems too similar to
 \emph{full C++} for comfort)
 to denote a hypothetical standard that excludes this prohibition, but
@@ -373,8 +369,8 @@ the \path{litmus} directory in the \url{https://github.com/paulmckrcu/oota}
 repository.
 Lines~2--5 initialize variables, in this case setting the initial
 values of the global shared variables \co{x} and \co{y} to zero.
-Variables that are not explicitly initialized are initialized by
-default to zero.
+Variables that are not explicitly initialized are initialized
+to zero by default.
 Lines~7--13 define the first thread, \co{P0()}, and lines~15--21
 define the second thread, \co{P1()}.\footnote{
 	The ``P'' stands for ``process'', which is \co{herd7}'s name
@@ -1033,9 +1029,8 @@ this is that it knows exactly what accesses will be performed by both
 threads, and therefore it knows that it will not violate the loose C++
 memory model by assuming each thread's load reads from the other's
 store.\footnote{
-	Such a compiler could presumably instead choose to avoid this
-	OOTA cycle, for example, by retaining the loads from \co{x}
-	and \co{y}.}
+	A less perverse compiler could choose to avoid the
+	OOTA cycle simply by not making this transformation.}
 A similar justification can underlie the reasoning in
 Section~\ref{sec:Semantic Dependencies Affected by Cross-Thread Optimizations};
 in principle an analysis of the complete program could lead a compiler
@@ -2129,18 +2124,18 @@ Future analyses might examine the possibility of ``flattening''
 optimizations that combine multiple threads into one.
 
 This paper shows that semantic dependencies are relative to specific
-executions of a program rather than strictly of the source code of that
-program.
+executions of a program and the specific compiler in use rather than
+being determined solely by the source code.
 Future work might expand on
 Section~\ref{sec:Relative versus Absolute Dependency},
-further exploring absolute semantic dependencies that are special cases
-where semantic dependencies can be a function strictly of the source code.
+exploring special cases in which absolute semantic dependencies are
+functions just of the source code.
 
-This paper considers only fragments of programs whose threads
+This paper considers only programs whose threads
 communicate using shared memory.
-Future work might include the effects of input and output, as well as
-code that reads out the current time, that uses thread IDs, or that
-operates on pointer values
+Future work might include the effects of input and output or
+other operations which can vary from one execution to another,
+such as those based on the current time, process IDs, or pointer values
 (see Section~\ref{sec:Effect of Memory Layout}).
 
 Finally, future work might expand on
@@ -2152,40 +2147,39 @@ behavior for quasi-volatile object accesses.
 \section{Conclusion}
 \label{sec:Conclusion}
 
-This paper has refined the definition of ``OOTA cycle'' from
-\co{acyclic(sdep; rf)} to \co{acyclic(sdep; rfe)}, which enables the
-application of the laws of physics (and thus of temporal reasoning) to OOTA
-analysis of the C++ memory model.
-This refinement, combined with a survey of code containing non-trivial
-semantic dependencies, uncovered some shortcomings in typical definitions of
-``semantic dependency'', pointing out examples where semantic dependencies
-are a function of an execution rather than of the source code, and also
-examples where a single semantic dependency extends from multiple loads
-to a store, but not from any one of those loads to that same store.
+This paper has presented samples of code containing non-trivial
+semantic dependencies, uncovering some shortcomings in typical definitions of
+``semantic dependency''.
+It pointed out examples where semantic dependencies
+are a function of an execution rather than of the source code, and examples
+where a single semantic dependency extends from multiple loads
+to a store but not from any one of those loads.
 These complex dependencies motivated a generalization of the definition
 of ``OOTA cycle'', which is shown in
 Section~\ref{sec:Semantic Dependencies Can Be Many To One}.
 
-This generalization, combined with a focus on compiler-based C++
-implementations using single-threaded analyses, led to the fundamental
-property of semantic dependency shown in
+This generalization, combined with a focus on compiler-based loose C++
+implementations using single-thread analysis, and a consideration of
+the relation between source code and machine code, led to the formulation
+of the Fundamental Property of semantic dependency shown in
 Section~\ref{sec:The Fundamental Property of Semantic Dependencies}.
-This property in turn led to the precise definition of ``semantic
-dependency'' shown in
+This in turn led to a precise definition of ``semantic dependency'' given in
 Section~\ref{sec:For Compilers Using Single-Thread Analysis}.
-These definitions are then used in
+This definition was used in
 Section~\ref{sec:Verifying the Fundamental Property}
-to demonstrate that correct real-world compiler-based C++
-implementations relying on single-threaded analyses are inherently
-incapable of producing OOTA cycles in UB-free programs using volatile
-atomics.
+to demonstrate that these implementations are
+incapable of producing OOTA cycles in UB-free programs,
+provided they treat all nonvolatile atomic objects as
+quasi volatile, obeying the limitations outlined in
+Section~\ref{sec:Volatile and Quasi Volatile Accesses}.
 
-C++ implementations that additionally confine optimizations of code
-containing nonvolatile atomic operations to the quasi-volatile limitations
-outlined in
-Section~\ref{sec:Volatile and Quasi Volatile Accesses}
-are incapable of producing OOTA cycles in UB-free programs using
-nonvolatile as well as volatile atomics.
+A variant definition of ``semantic dependency'' given in
+Section~\ref{sec:For Compilers Using Global Analysis}, appropriate for
+compiler-based loose C++ implementations that don't restrict
+their code transformations to those based on single-thread analysis,
+was used to show that such implementations
+are incapable of producing OOTA cycles in UB-free programs
+provided they treat all atomic objects as volatile.
 
 \clearpage
 \appendix
