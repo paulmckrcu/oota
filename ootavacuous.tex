@@ -2201,11 +2201,11 @@ Next, definitions:
 \begin{description}
 \item[coe]
 	Coherence-order (external), which connects a store to any other store
-	for the same object that comes later in the object's
+	to the same object that comes later in the object's
 	modification order, i.e., that overwrites either the first store's
 	value or some later value.
 \item[fre]
-	From-read (external), which connects a load to any store for
+	From-read (external), which connects a load to any store to
 	the same object that overwrites either the value that the load
 	returned or some later value.
 \item[rfe]
@@ -2228,8 +2228,8 @@ Thirdly, Figure~\ref{fig:ITC Diagram for coe, fre, and rfe} illustrates
 the coe, fre, fri, and rfe links for four threads with time advancing
 from the top to the bottom of the figure.  Start with coe: Even though
 Thread~1's store is later in global time than that of Thread~0, the
-Thread~1 store comes first in \co{x}'s modification order, then Thread-0's
-store, then those of Threads~2 and ~3.
+Thread~1 store comes first in \co{x}'s modification order, then Thread~0's
+store, then those of Threads~2 and~3.
 There is thus a coe link from Thread~1's store to every other store,
 from Thread~0's store to those of Threads~2 and~3, and from Thread~2's
 store to that of Thread~3.
@@ -2238,7 +2238,7 @@ movement of cache lines.
 
 Thread~3's load reads the value written by Thread~0's store, so there is
 an rfe link from that store to that load.  In addition there is an fre link from
-the load to Thread~2's store and an fri link to Thread~3's later store.
+the load to Thread~2's earlier store and an fri link to Thread~3's later store.
 Note that the fre link goes backwards in time.
 
 Finally, the reader might desire hard evidence that coe and fre
