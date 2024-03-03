@@ -2536,8 +2536,10 @@ constraints, OOTA cycles cannot form in real-world C++ implementations.
 But what about tooling?
 
 One entirely reasonable reaction is that, given the issues raised in
-Sections~\ref{sec:Properties of Semantic Dependencies}
-and~\ref{sec:The Fundamental Property of Semantic Dependencies},
+Section~\ref{sec:Properties of Semantic Dependencies},
+Section~\ref{sec:C++ Compilers},
+and
+Section~\ref{sec:Outstanding Issues},
 load/store reordering is the least of the problems faced by tooling.
 Nevertheless, this appendix expands on
 Section~\ref{sec:Semantic Dependencies and Tooling}
@@ -2552,7 +2554,7 @@ by looking into the possibility of:
 \end{itemize}
 
 But first, the next section looks at why some weakly ordered
-implementations appear to forbid reordering of prior relaxed loads with
+computer hardware appears to forbid reordering of prior relaxed loads with
 later relaxed stores,\footnote{
 	Or, in memory-order-speak, forbid all load-buffering litmus tests.}
 despite the architecture permitting such reordering.
@@ -2703,7 +2705,7 @@ restriction.
 \label{sec:Change Relaxed to Forbid Load Buffering}
 
 Tooling does not require relaxed accesses become fully acquire and/or
-release, but rather only that implemetnations be forbidden from reordering
+release, but rather only that implementations be forbidden from reordering
 prior relaxed loads with subsequent relaxed stores, as has been suggested
 many times over the
 years~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352}.
