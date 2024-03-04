@@ -2761,87 +2761,262 @@ of defining sdep and identifying OOTA cycles.
 This appendix evaluates them using the \co{herd7} tool and also using
 manual analysis.
 
-\subsection{Simple Reordering as Litmus Test}
-\label{app:Simple Reordering as Litmus Test}
+\subsection{Semantic Dependencies and \co{volatile}}
+\label{app:Semantic Dependencies and volatile}
 
-Listing~\ref{lst:Simple Reordering as Litmus Test}
-shows how
-Listing~\ref{lst:Simple Reordering}
-can be recast into a \co{herd7} litmus test.
+The Linux kernel uses volatile accesses to constrain the compiler,
+and it is worth looking at the example shown in
+Listing~\ref{lst:Non-Volatile Accesses and Dependencies}
+to see how this works.
 
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/simple-reordering.litmus @@
-\caption{Simple Reordering as Litmus Test}
-\label{lst:Simple Reordering as Litmus Test}
+\begin{listing}
+\begin{verbatim}
+ 1 atomic<int> x, y;
+ 2
+ 3 void thread1() {
+ 4   int r1 = x.load(memory_order_relaxed);
+ 5   y.store(r1, memory_order_relaxed);
+ 6 }
+\end{verbatim}
+\caption{Non-Volatile Accesses and Dependencies}
+\label{lst:Non-Volatile Accesses and Dependencies}
 \end{listing}
 
-\subsection{Non-LB Litmus Tests}
-\label{app:Non-LB Litmus Tests}
+Because both \co{x} and \co{y} are nonvolatile, the compiler is
+free to assume that the value loaded by line~4 will be some value
+stored to \co{x} or its initial value.
+Because there are no stores to \co{x}, the only remaining possibility
+is the default-initialized value of zero.
+Therefore, the C++ implementation is within its rights to substitute
+the constant zero for \co{r1} on line~5, eliminating the semantic
+dependency that would otherwise extend from line~4 to line~5.
+This in turn enables the implementation to reorder line~5 to
+precede line~4.
 
-Listing~\ref{lst:Non-LB Litmus Test}
-shows a litmus test that can produce an OOTA cycle, but that is not
-a member of the load-buffering (LB) class of litmus tests.
-Suppose that lines~9 and~10 both somehow return the value 21.
-Then line~12 will store the value 42 to \co{x}, which will cause
-line~17 to store 21 to \co{y} and line~22 to store 21 to \co{z},
-thus justifying the values initially loaded by lines~9 and~10.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-non-lb.litmus @@
-\caption{Non-LB Litmus Test}
-\label{lst:Non-LB Litmus Test}
+\begin{listing}
+\begin{verbatim}
+ 1 atomic<volatile int> x, y;
+ 2
+ 3 void thread1() {
+ 4   int r1 = x.load(memory_order_relaxed);
+ 5   y.store(r1, memory_order_relaxed);
+ 6 }
+\end{verbatim}
+\caption{Volatile Accesses and Dependencies}
+\label{lst:Volatile Accesses and Dependencies}
 \end{listing}
 
-All thread's loads' return values affect the value stored, so all
-threads have semantic dependencies between their respective relaxed
-atomic loads and relaxed atomic stores.
-Therefore, an OOTA cycle cannot form in a compiler-based C++
-implementation.
+One way to preserve this dependency is use of \co{volatile}, as shown in
+Listing~\ref{lst:Volatile Accesses and Dependencies}.
+Now the implementation is forbidden from assuming that the value loaded
+by line~4 has any relation to any stores to or initialization of \co{x},
+even if \co{x} is placed in normal memory.
 
-Note that in a C++ implementation that (erroneously) permitted an OOTA
-cycle to form, that cycle would involve both \co{r0} and \co{r1}.
+In this case, the \co{volatile} keyword alerts the implementation to
+the possibility of interfering accesses to \co{x} from outside the
+program, for example, due to \co{x} being:
 
-\subsection{Multi-Cycle Litmus Tests}
-\label{app:Multi-Cycle Litmus Tests}
+\begin{itemize}
+\item	Allocated in an MMIO region of the address space.
+\item	Modified by an unknown-to-the-implementation thread
+	or signal handler.
+\item	Subject to I/O-device DMA operations.
+\item	Modified by debugger commands.
+\item	Modified by accesses to facilities such as \path{/dev/mem}.
+\item	Modified by as-yet-unwritten dynamically linked libraries.
+\item	Modified by some other mechanism of the reader's choosing.
+\end{itemize}
 
-Listing~\ref{lst:Multi-Cycle Litmus Test}
-shows an expansion to four threads of Causality Test Case 4, which is shown in
-Listing~\ref{lst:Causality Test Case 4}
-and discussed in
-Appendix~\ref{app:Causality Test Case 4}.
-The \co{herd7} tool shows multiple different possible OOTA cycles,
-as expected.
-However, the value returned by each thread's load directly affects the
-value stored, so there is a semantic dependency in each thread.
-Therefore, none of these OOTA cycles can happen in a compiler-based
-C++ implementation.
+These possibilities force the implementation to preserve the semantic
+dependency from line~4 to line~5.
+They can also prevent the formation of OOTA cycles local to the
+implementation because such inteference means that the volatile loads
+might be reading from something that the implementation knows nothing
+about.
+
+The developer is free to arrange for \co{x} to be free of any
+interference, thus obtaining predictable behavior along with the
+preserved semantic dependency.
+However, this example invalidates the rough definition of semantic
+dependency from
+Section~\ref{sec:Simple OOTA Cycle}
+because the value loaded from \co{x} will always be the initial value
+of zero, so that it is at best dubious to talk about any changes in
+the value loaded.
+
+One way forward is to assume that interference could happen when
+determining which dependencies are semantic, and then do further analysis
+using that determination.
+
+\subsection{Non-Trivial Semantic Dependencies}
+\label{app:Non-Trivial Semantic Dependencies}
+
+Most of the examples in this paper involve simple semantic dependencies
+connecting a single load to a single store.
+One exception appears in
+Appendix~\ref{app:Non-LB Litmus Tests},
+but this section will present a more difficult example.
 
 \begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-two-source.litmus @@
-\caption{Multi-Cycle Litmus Test}
-\label{lst:Multi-Cycle Litmus Test}
+@@ DisplayRunLitmus litmus/oota-mult-0.litmus @@
+\caption{OOTA Multiplication Example, Initial Value Zero}
+\label{lst:OOTA Multiplication Example, Initial Value Zero}
 \end{listing}
 
-\subsection{Three-Process Version of JMM Causality Test Case 4}
-\label{app:Three-Process Version of JMM Causality Test Case 4}
+Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
+shows an example that builds on the multiplication-by-zero
+discussion in
+Section~\ref{sec:Semantic Dependencies and Source Code}.
+Line~11 of \co{P0()} stores to \co{z} the product of the values loaded from
+\co{x} and \co{y} on lines~9 and~10, respectively.
+Similarly, lines~16 and~17 store to \co{x} and \co{y}, respectively,
+the value that line~15 loads from \co{z}.
+Because all three variables are initialized to zero, and because loads
+can be ordered before any store, there is an execution in which all
+three loads return the value zero, in which case all three stores will
+of course store the value zero.
+In any related execution where the value loaded from \co{y} remains zero,
+nonzero values loaded from \co{x} cannot affect the value stored by
+line~11 to \co{z}.
+Only executions which load different (that is, nonzero) values from
+both \co{x} and \co{y} can cause the value stored to \co{z} to change
+from zero to a nonzero value.
 
-Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4}
-shows a different way of expanding
-Listing~\ref{lst:Causality Test Case 4}
-(discussed in
-Appendix~\ref{app:Causality Test Case 4})
-from two threads to three threads.
-The \co{herd7} tool finds OOTA values, as expected.
+Therefore, as noted in
+Section~\ref{sec:Semantic Dependencies and Source Code},
+in an execution where the loads from both \co{x} and \co{y} return zero,
+there is no semantic dependency from the load from \co{x} to the
+store to \co{z}, nor is there a semantic dependency from the load
+from \co{y} to the store to \co{z}.
+However, there \emph{is} a semantic dependency from the \emph{combination}
+of the loads from \co{x} and \co{y} to the store to \co{z}.
+For example, the (forbidden) execution that satisfies the \co{exists}
+clause, which would be an OOTA cycle.
 
 \begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-3proc.litmus @@
-\caption{Three-Process Version of JMM Causality Test Case 4}
-\label{lst:Three-Process Version of JMM Causality Test Case 4}
+@@ DisplayRunLitmus litmus/oota-mult-0-cond.litmus @@
+\caption{OOTA Conditional Multiplication Example, Initial Value Zero}
+\label{lst:OOTA Conditional Multiplication Example, Initial Value Zero}
 \end{listing}
 
-All threads have straightforward semantic dependencies from their
-relaxed atomic loads to their relaxed atomic stores, which prevents this
-OOTA cycle on compiler-based C++ implementations.
+For further evidence that there is no semantic dependency from \co{y}
+to \co{z} in executions where the load from \co{x} is zero, see the
+equivalent\footnote{
+	But equivalent only because the atomics are all nonvolatile!}
+program shown in
+Listing~\ref{lst:OOTA Conditional Multiplication Example, Initial Value Zero}.
+Here, there is not even a load from \co{y} in executions where the
+load from \co{x} returns zero, so there cannot possibly be a semantic
+dependency involving this non-existent load.
+A similar transformation would load \co{x} only in executions where the
+load from \co{y} returned nonzero, which similarly emphasizes the lack
+of any semantic dependency between \co{x} and \co{z}.
+
+In both
+Listings~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
+and~\ref{lst:OOTA Conditional Multiplication Example, Initial Value Zero},
+an OOTA cycle (such as the one indicated by their \co{exists} clauses)
+would need to affect both the \co{x} and the \co{y} components of this
+compound semantic dependency.
+This situation poses a challenge to current work on semantic dependencies,
+which typically restricts such dependencies to a single load and store.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-mult-1.litmus @@
+\caption{OOTA Multiplication Example, Initial Value 1}
+\label{lst:OOTA Multiplication Example, Initial Value 1}
+\end{listing}
+
+In contrast, consider
+Listing~\ref{lst:OOTA Multiplication Example, Initial Value 1},
+which differs from
+Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
+only in the initial values (1 instead of 0) and the \co{exists}
+clause (0 instead of 1).
+Note that an execution satisfying the \co{exists} clause is again
+a (forbidden) OOTA cycle.
+
+Starting with the intuitive execution where the values loaded from \co{x}
+and \co{y} on lines~9 and~10 are the value 1 (that is, nonzero), executions
+that differ only in the value loaded from either \co{x} or \co{y} will
+still affect the value stored to \co{z} by line~11.
+There is therefore one semantic dependency from the load from \co{x}
+to the store to \co{z} and another separate semantic dependency from
+the load from \co{y} to the store to \co{z}, which matches typical
+definitions of semantic dependency.
+Yet
+Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
+and
+Listing~\ref{lst:OOTA Multiplication Example, Initial Value 1}
+can be thought of as being merely two different executions of the same
+program.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-mult3-0.litmus @@
+\caption{OOTA Three-Factor Multiplication Example, Initial Value Zero}
+\label{lst:OOTA Three-Factor Multiplication Example, Initial Value Zero}
+\end{listing}
+
+Because the only two solutions to $x^2 = x$ are the values zero and one,
+Listings~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
+and~\ref{lst:OOTA Multiplication Example, Initial Value 1}
+each have but one OOTA cycle, and an execution having nonzero non-one
+initial values could have at most two OOTA cycles, all of which are
+(again) forbidden by the C++ language.
+Listing~\ref{lst:OOTA Three-Factor Multiplication Example, Initial Value Zero}
+addressses this limitation by multiplying the values obtained from three
+different loads.
+Because $x^3 = x$ has three solutions ($\left\{ -1, 0, 1 \right\}$),
+this execution could have up to three (yet again, forbidden) OOTA cycles.
+
+Much more elaborate examples can be constructed, for example,
+involving sums of products of values loaded.
+Reverting back to short-form code fragments, consider the following:
+
+\begin{quote}
+\begin{verbatim}
+z = w * x + w * y + w;
+\end{verbatim}
+\end{quote}
+
+This has the following semantic dependencies when all of \co{w},
+\co{x}, and \co{y} are zero:
+
+\begin{enumerate}
+\item	From the combination of \co{w} and \co{x} to \co{z}.
+\item	From the combination of \co{w} and \co{y} to \co{z}.
+\item	From \co{w} to \co{z}.
+\end{enumerate}
+
+Despite appearances, these are not redundant.
+The last semantic dependency does not imply the first, because given
+that \co{w} becomes nonzero, a change in \co{x} further changes
+the value stored to \co{z}.
+Similar reasoning shows that the last semantic dependency does not
+imply the second.
+Much more elaborate examples can easily be constructed.
+
+This raises the question of how to determine the set of semantic
+dependencies in a given execution of a given fragment of code.
+The short answer is that when running on a real-world system, 
+any C++ program is a finite-state machine, which, unlike Turing-complete
+systems, can be analyzed, as demonstrated in
+Section~\ref{sec:Hardware Dependencies, Instruction Ordering, and the Fundamental Property}.
+
+One might ask why semantic dependencies can be nontrivial when hardware
+address, control, and data dependencies are much more straightforward.
+Answers include:
+(1)~Respecting dependencies even when they reduce to a constant,
+(2)~Less-aggressive optimizations, and
+(3)~Lack of undefined behavior.
+
+This situation further underscores the per-execution nature of semantic
+dependencies as well as the need for an improved definition of ``semantic
+dependency''.
+In
+Section~\ref{sec:A Definition of Semantic Dependency},
+we expand the traditional definition to include dependencies extending
+from groups of loads to a single store.
 
 \subsection{Why rfe Instead of Tried-And-True rf?}
 \label{app:Why rfe Instead of Tried-And-True rf?}
@@ -3143,176 +3318,6 @@ This means that a C++ implementation might be wise to adhere to the
 same restriction that avoids data races for loads from non-atomic
 variables in order to avoid expensive cache misses.
 
-\subsection{Non-Trivial Semantic Dependencies}
-\label{app:Non-Trivial Semantic Dependencies}
-
-Most of the examples in this paper involve simple semantic dependencies
-connecting a single load to a single store.
-One exception appears in
-Appendix~\ref{app:Non-LB Litmus Tests},
-but this section will present a more difficult example.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-mult-0.litmus @@
-\caption{OOTA Multiplication Example, Initial Value Zero}
-\label{lst:OOTA Multiplication Example, Initial Value Zero}
-\end{listing}
-
-Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
-shows an example that builds on the multiplication-by-zero
-discussion in
-Section~\ref{sec:Semantic Dependencies and Source Code}.
-Line~11 of \co{P0()} stores to \co{z} the product of the values loaded from
-\co{x} and \co{y} on lines~9 and~10, respectively.
-Similarly, lines~16 and~17 store to \co{x} and \co{y}, respectively,
-the value that line~15 loads from \co{z}.
-Because all three variables are initialized to zero, and because loads
-can be ordered before any store, there is an execution in which all
-three loads return the value zero, in which case all three stores will
-of course store the value zero.
-In any related execution where the value loaded from \co{y} remains zero,
-nonzero values loaded from \co{x} cannot affect the value stored by
-line~11 to \co{z}.
-Only executions which load different (that is, nonzero) values from
-both \co{x} and \co{y} can cause the value stored to \co{z} to change
-from zero to a nonzero value.
-
-Therefore, as noted in
-Section~\ref{sec:Semantic Dependencies and Source Code},
-in an execution where the loads from both \co{x} and \co{y} return zero,
-there is no semantic dependency from the load from \co{x} to the
-store to \co{z}, nor is there a semantic dependency from the load
-from \co{y} to the store to \co{z}.
-However, there \emph{is} a semantic dependency from the \emph{combination}
-of the loads from \co{x} and \co{y} to the store to \co{z}.
-For example, the (forbidden) execution that satisfies the \co{exists}
-clause, which would be an OOTA cycle.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-mult-0-cond.litmus @@
-\caption{OOTA Conditional Multiplication Example, Initial Value Zero}
-\label{lst:OOTA Conditional Multiplication Example, Initial Value Zero}
-\end{listing}
-
-For further evidence that there is no semantic dependency from \co{y}
-to \co{z} in executions where the load from \co{x} is zero, see the
-equivalent\footnote{
-	But equivalent only because the atomics are all nonvolatile!}
-program shown in
-Listing~\ref{lst:OOTA Conditional Multiplication Example, Initial Value Zero}.
-Here, there is not even a load from \co{y} in executions where the
-load from \co{x} returns zero, so there cannot possibly be a semantic
-dependency involving this non-existent load.
-A similar transformation would load \co{x} only in executions where the
-load from \co{y} returned nonzero, which similarly emphasizes the lack
-of any semantic dependency between \co{x} and \co{z}.
-
-In both
-Listings~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
-and~\ref{lst:OOTA Conditional Multiplication Example, Initial Value Zero},
-an OOTA cycle (such as the one indicated by their \co{exists} clauses)
-would need to affect both the \co{x} and the \co{y} components of this
-compound semantic dependency.
-This situation poses a challenge to current work on semantic dependencies,
-which typically restricts such dependencies to a single load and store.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-mult-1.litmus @@
-\caption{OOTA Multiplication Example, Initial Value 1}
-\label{lst:OOTA Multiplication Example, Initial Value 1}
-\end{listing}
-
-In contrast, consider
-Listing~\ref{lst:OOTA Multiplication Example, Initial Value 1},
-which differs from
-Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
-only in the initial values (1 instead of 0) and the \co{exists}
-clause (0 instead of 1).
-Note that an execution satisfying the \co{exists} clause is again
-a (forbidden) OOTA cycle.
-
-Starting with the intuitive execution where the values loaded from \co{x}
-and \co{y} on lines~9 and~10 are the value 1 (that is, nonzero), executions
-that differ only in the value loaded from either \co{x} or \co{y} will
-still affect the value stored to \co{z} by line~11.
-There is therefore one semantic dependency from the load from \co{x}
-to the store to \co{z} and another separate semantic dependency from
-the load from \co{y} to the store to \co{z}, which matches typical
-definitions of semantic dependency.
-Yet
-Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
-and
-Listing~\ref{lst:OOTA Multiplication Example, Initial Value 1}
-can be thought of as being merely two different executions of the same
-program.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-mult3-0.litmus @@
-\caption{OOTA Three-Factor Multiplication Example, Initial Value Zero}
-\label{lst:OOTA Three-Factor Multiplication Example, Initial Value Zero}
-\end{listing}
-
-Because the only two solutions to $x^2 = x$ are the values zero and one,
-Listings~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
-and~\ref{lst:OOTA Multiplication Example, Initial Value 1}
-each have but one OOTA cycle, and an execution having nonzero non-one
-initial values could have at most two OOTA cycles, all of which are
-(again) forbidden by the C++ language.
-Listing~\ref{lst:OOTA Three-Factor Multiplication Example, Initial Value Zero}
-addressses this limitation by multiplying the values obtained from three
-different loads.
-Because $x^3 = x$ has three solutions ($\left\{ -1, 0, 1 \right\}$),
-this execution could have up to three (yet again, forbidden) OOTA cycles.
-
-Much more elaborate examples can be constructed, for example,
-involving sums of products of values loaded.
-Reverting back to short-form code fragments, consider the following:
-
-\begin{quote}
-\begin{verbatim}
-z = w * x + w * y + w;
-\end{verbatim}
-\end{quote}
-
-This has the following semantic dependencies when all of \co{w},
-\co{x}, and \co{y} are zero:
-
-\begin{enumerate}
-\item	From the combination of \co{w} and \co{x} to \co{z}.
-\item	From the combination of \co{w} and \co{y} to \co{z}.
-\item	From \co{w} to \co{z}.
-\end{enumerate}
-
-Despite appearances, these are not redundant.
-The last semantic dependency does not imply the first, because given
-that \co{w} becomes nonzero, a change in \co{x} further changes
-the value stored to \co{z}.
-Similar reasoning shows that the last semantic dependency does not
-imply the second.
-Much more elaborate examples can easily be constructed.
-
-This raises the question of how to determine the set of semantic
-dependencies in a given execution of a given fragment of code.
-The short answer is that when running on a real-world system, 
-any C++ program is a finite-state machine, which, unlike Turing-complete
-systems, can be analyzed, as demonstrated in
-Section~\ref{sec:Hardware Dependencies, Instruction Ordering, and the Fundamental Property}.
-
-One might ask why semantic dependencies can be nontrivial when hardware
-address, control, and data dependencies are much more straightforward.
-Answers include:
-(1)~Respecting dependencies even when they reduce to a constant,
-(2)~Less-aggressive optimizations, and
-(3)~Lack of undefined behavior.
-
-This situation further underscores the per-execution nature of semantic
-dependencies as well as the need for an improved definition of ``semantic
-dependency''.
-In
-Section~\ref{sec:A Definition of Semantic Dependency},
-we expand the traditional definition to include dependencies extending
-from groups of loads to a single store.
-
 \subsection{OOTA From Undefined-Behavior Optimizations}
 \label{app:OOTA From Undefined-Behavior Optimizations}
 
@@ -3367,92 +3372,87 @@ were converted to be volatile.
 Therefore, this paper focuses on UB-free programs, rare though these
 beasts might be among large-scale C++ programs running in production.
 
-\subsection{Semantic Dependencies and \co{volatile}}
-\label{app:Semantic Dependencies and volatile}
+\subsection{Three-Process Version of JMM Causality Test Case 4}
+\label{app:Three-Process Version of JMM Causality Test Case 4}
 
-The Linux kernel uses volatile accesses to constrain the compiler,
-and it is worth looking at the example shown in
-Listing~\ref{lst:Non-Volatile Accesses and Dependencies}
-to see how this works.
+Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4}
+shows a different way of expanding
+Listing~\ref{lst:Causality Test Case 4}
+(discussed in
+Appendix~\ref{app:Causality Test Case 4})
+from two threads to three threads.
+The \co{herd7} tool finds OOTA values, as expected.
 
-\begin{listing}
-\begin{verbatim}
- 1 atomic<int> x, y;
- 2
- 3 void thread1() {
- 4   int r1 = x.load(memory_order_relaxed);
- 5   y.store(r1, memory_order_relaxed);
- 6 }
-\end{verbatim}
-\caption{Non-Volatile Accesses and Dependencies}
-\label{lst:Non-Volatile Accesses and Dependencies}
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-3proc.litmus @@
+\caption{Three-Process Version of JMM Causality Test Case 4}
+\label{lst:Three-Process Version of JMM Causality Test Case 4}
 \end{listing}
 
-Because both \co{x} and \co{y} are nonvolatile, the compiler is
-free to assume that the value loaded by line~4 will be some value
-stored to \co{x} or its initial value.
-Because there are no stores to \co{x}, the only remaining possibility
-is the default-initialized value of zero.
-Therefore, the C++ implementation is within its rights to substitute
-the constant zero for \co{r1} on line~5, eliminating the semantic
-dependency that would otherwise extend from line~4 to line~5.
-This in turn enables the implementation to reorder line~5 to
-precede line~4.
+All threads have straightforward semantic dependencies from their
+relaxed atomic loads to their relaxed atomic stores, which prevents this
+OOTA cycle on compiler-based C++ implementations.
 
-\begin{listing}
-\begin{verbatim}
- 1 atomic<volatile int> x, y;
- 2
- 3 void thread1() {
- 4   int r1 = x.load(memory_order_relaxed);
- 5   y.store(r1, memory_order_relaxed);
- 6 }
-\end{verbatim}
-\caption{Volatile Accesses and Dependencies}
-\label{lst:Volatile Accesses and Dependencies}
+\subsection{Non-LB Litmus Tests}
+\label{app:Non-LB Litmus Tests}
+
+Listing~\ref{lst:Non-LB Litmus Test}
+shows a litmus test that can produce an OOTA cycle, but that is not
+a member of the load-buffering (LB) class of litmus tests.
+Suppose that lines~9 and~10 both somehow return the value 21.
+Then line~12 will store the value 42 to \co{x}, which will cause
+line~17 to store 21 to \co{y} and line~22 to store 21 to \co{z},
+thus justifying the values initially loaded by lines~9 and~10.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-non-lb.litmus @@
+\caption{Non-LB Litmus Test}
+\label{lst:Non-LB Litmus Test}
 \end{listing}
 
-One way to preserve this dependency is use of \co{volatile}, as shown in
-Listing~\ref{lst:Volatile Accesses and Dependencies}.
-Now the implementation is forbidden from assuming that the value loaded
-by line~4 has any relation to any stores to or initialization of \co{x},
-even if \co{x} is placed in normal memory.
+All thread's loads' return values affect the value stored, so all
+threads have semantic dependencies between their respective relaxed
+atomic loads and relaxed atomic stores.
+Therefore, an OOTA cycle cannot form in a compiler-based C++
+implementation.
 
-In this case, the \co{volatile} keyword alerts the implementation to
-the possibility of interfering accesses to \co{x} from outside the
-program, for example, due to \co{x} being:
+Note that in a C++ implementation that (erroneously) permitted an OOTA
+cycle to form, that cycle would involve both \co{r0} and \co{r1}.
 
-\begin{itemize}
-\item	Allocated in an MMIO region of the address space.
-\item	Modified by an unknown-to-the-implementation thread
-	or signal handler.
-\item	Subject to I/O-device DMA operations.
-\item	Modified by debugger commands.
-\item	Modified by accesses to facilities such as \path{/dev/mem}.
-\item	Modified by as-yet-unwritten dynamically linked libraries.
-\item	Modified by some other mechanism of the reader's choosing.
-\end{itemize}
+\subsection{Multi-Cycle Litmus Tests}
+\label{app:Multi-Cycle Litmus Tests}
 
-These possibilities force the implementation to preserve the semantic
-dependency from line~4 to line~5.
-They can also prevent the formation of OOTA cycles local to the
-implementation because such inteference means that the volatile loads
-might be reading from something that the implementation knows nothing
-about.
+Listing~\ref{lst:Multi-Cycle Litmus Test}
+shows an expansion to four threads of Causality Test Case 4, which is shown in
+Listing~\ref{lst:Causality Test Case 4}
+and discussed in
+Appendix~\ref{app:Causality Test Case 4}.
+The \co{herd7} tool shows multiple different possible OOTA cycles,
+as expected.
+However, the value returned by each thread's load directly affects the
+value stored, so there is a semantic dependency in each thread.
+Therefore, none of these OOTA cycles can happen in a compiler-based
+C++ implementation.
 
-The developer is free to arrange for \co{x} to be free of any
-interference, thus obtaining predictable behavior along with the
-preserved semantic dependency.
-However, this example invalidates the rough definition of semantic
-dependency from
-Section~\ref{sec:Simple OOTA Cycle}
-because the value loaded from \co{x} will always be the initial value
-of zero, so that it is at best dubious to talk about any changes in
-the value loaded.
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-two-source.litmus @@
+\caption{Multi-Cycle Litmus Test}
+\label{lst:Multi-Cycle Litmus Test}
+\end{listing}
 
-One way forward is to assume that interference could happen when
-determining which dependencies are semantic, and then do further analysis
-using that determination.
+\subsection{Simple Reordering as Litmus Test}
+\label{app:Simple Reordering as Litmus Test}
+
+Listing~\ref{lst:Simple Reordering as Litmus Test}
+shows how
+Listing~\ref{lst:Simple Reordering}
+can be recast into a \co{herd7} litmus test.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/simple-reordering.litmus @@
+\caption{Simple Reordering as Litmus Test}
+\label{lst:Simple Reordering as Litmus Test}
+\end{listing}
 
 % \section{History}
 % \label{sec:History}
