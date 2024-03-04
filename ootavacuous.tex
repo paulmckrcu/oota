@@ -2800,8 +2800,6 @@ implementation.
 
 Note that in a C++ implementation that (erroneously) permitted an OOTA
 cycle to form, that cycle would involve both \co{r0} and \co{r1}.
-However, we conjecture that tools designed to find OOTA cycles could
-satisfy themselves with having found either of the two resulting cycles.
 
 \subsection{Multi-Cycle Litmus Tests}
 \label{app:Multi-Cycle Litmus Tests}
@@ -3215,8 +3213,6 @@ and~\ref{lst:OOTA Conditional Multiplication Example, Initial Value Zero},
 an OOTA cycle (such as the one indicated by their \co{exists} clauses)
 would need to affect both the \co{x} and the \co{y} components of this
 compound semantic dependency.
-However, we again conjecture that tools designed to find OOTA cycles could
-satisfy themselves with having found either of the two resulting cycles.
 This situation poses a challenge to current work on semantic dependencies,
 which typically restricts such dependencies to a single load and store.
 
