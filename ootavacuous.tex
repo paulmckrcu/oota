@@ -150,33 +150,35 @@ In broad terms,
 OOTA occurs theoretically when a group of threads load from each others' stores
 and each thread's store depends on the value returned by that thread's load.
 The collection of loads and stores forms an \emph{OOTA cycle}.
-In the most extreme cases a nonsensical value can pop up ``out of thin air'',
+In the most extreme cases a nonsensical value can pop up ``out of thin air'';
 however, as shown by
 Listing~\ref{lst:OOTA Cycle},
 OOTA cycles need not involve nonsensical values.
 
-\subsubsection{Simple Reordering}
-\label{sec:Simple Reordering}
-
-It is important to distinguish true OOTA cycles from OOTA-like
-behavior caused by simple reordering.
-An example of simple reordering is shown in
-Listing~\ref{lst:Simple Reordering}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
-Both the C++ compiler and the CPU are within their rights to reorder
-lines~12 and~13, which can result in all of \co{x}, \co{y}, \co{r1},
-and \co{r2} having the value 42 as follows:
-\begin{enumerate}
-\item   Line~13 stores 42 to \co{x}.
-\item   Line~6 loads 42 from \co{x} into \co{r1}.
-\item   Line~7 stores \co{r1}, and thus 42, to \co{y}.
-\item   Line~12 loads 42 from \co{y} to \co{r2}.
-\end{enumerate}
-Current C++ implementations can and do exhibit this reordering behavior.
-
 \subsubsection{Simple OOTA Cycle}
 \label{sec:Simple OOTA Cycle}
 
-In contrast,
+\begin{listing}[tbp]
+\begin{verbatim}
+ 1 atomic<int> x(0);
+ 2 atomic<int> y(0);
+ 3
+ 4 void thread1()
+ 5 {
+ 6   int r1 = x.load(memory_order_relaxed);
+ 7   y.store(r1, memory_order_relaxed);
+ 8 }
+ 9
+10 void thread2()
+11 {
+12   int r2 = y.load(memory_order_relaxed);
+13   x.store(r2, memory_order_relaxed);
+14 }
+\end{verbatim}
+\caption{Simple OOTA}
+\label{lst:Simple OOTA}
+\end{listing}
+
 Listing~\ref{lst:Simple OOTA}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
 shows a simple example where an OOTA cycle might result in all of \co{x},
 \co{y}, \co{r1}, and \co{r2} having final values of 42, despite the fact
@@ -230,17 +232,8 @@ knows what values are loaded by lines~6 and~12, respectively.
 Thus the hardware orders these stores after their corresponding loads,
 and this ordering prevents the OOTA result.
 
-This paper will follow P2055R0~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
-in using the term \emph{full C++} to denote the standard including the
-prohibition above.
-{\it Contra\/} that article, we will use the term \emph{loose C++}
-(rather than \emph{strict C++}, which seems too similar to
-\emph{full C++} for comfort)
-to denote a hypothetical standard that excludes this prohibition, but
-is otherwise identical to full C++.
-Unqualified \emph{C++} means full C++.
-
-The next section looks at how prior work has refined these issues.
+\subsubsection{Simple Reordering}
+\label{sec:Simple Reordering}
 
 \begin{listing}[tbp]
 \begin{verbatim}
@@ -263,26 +256,34 @@ The next section looks at how prior work has refined these issues.
 \label{lst:Simple Reordering}
 \end{listing}
 
-\begin{listing}[tbp]
-\begin{verbatim}
- 1 atomic<int> x(0);
- 2 atomic<int> y(0);
- 3
- 4 void thread1()
- 5 {
- 6   int r1 = x.load(memory_order_relaxed);
- 7   y.store(r1, memory_order_relaxed);
- 8 }
- 9
-10 void thread2()
-11 {
-12   int r2 = y.load(memory_order_relaxed);
-13   x.store(r2, memory_order_relaxed);
-14 }
-\end{verbatim}
-\caption{Simple OOTA}
-\label{lst:Simple OOTA}
-\end{listing}
+It is important to distinguish true OOTA cycles from OOTA-like
+behavior caused by simple reordering.
+An example of simple reordering is shown in
+Listing~\ref{lst:Simple Reordering}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
+Both the C++ compiler and the CPU are within their rights to reorder
+lines~12 and~13, which can result in all of \co{x}, \co{y}, \co{r1},
+and \co{r2} having the value 42 as follows:
+\begin{enumerate}
+\item   Line~13 stores 42 to \co{x}.
+\item   Line~6 loads 42 from \co{x} into \co{r1}.
+\item   Line~7 stores \co{r1}, and thus 42, to \co{y}.
+\item   Line~12 loads 42 from \co{y} to \co{r2}.
+\end{enumerate}
+Current C++ implementations can and do exhibit this reordering behavior.
+
+\medskip
+
+This paper will follow P2055R0~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
+in using the term \emph{full C++} to denote the standard including the
+prohibition of OOTA mentioned above.
+{\it Contra\/} that article, we will use the term \emph{loose C++}
+(rather than \emph{strict C++}, which seems too similar to
+\emph{full C++} for comfort)
+to denote a hypothetical standard that excludes this prohibition, but
+is otherwise identical to full C++.
+Unqualified \emph{C++} means full C++.
+
+The next section looks at how prior work has refined these issues.
 
 \subsection{Prior Work}
 \label{sec:Prior Work}
