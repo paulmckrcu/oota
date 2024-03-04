@@ -126,7 +126,7 @@ to bring real-world constraints to bear, starting with the laws of
 physics, informally demonstrating that these constraints prevent
 OOTA cycles containing only volatile and quasi-volatile atomics from
 occurring in undefined-behavior-free C++ programs running on correctly
-constructed C++ compiler-based implemen- tations that are restricted to
+constructed C++ compiler-based implementations that are restricted to
 single-threaded analysis in our current universe.
 
 Finally,
@@ -2795,7 +2795,7 @@ thus justifying the values initially loaded by lines~9 and~10.
 All thread's loads' return values affect the value stored, so all
 threads have semantic dependencies between their respective relaxed
 atomic loads and relaxed atomic stores.
-Therefore, an OOTA cycle cannot form in a correct real-world C++
+Therefore, an OOTA cycle cannot form in a compiler-based C++
 implementation.
 
 Note that in a C++ implementation that (erroneously) permitted an OOTA
@@ -2815,7 +2815,7 @@ The \co{herd7} tool shows multiple different possible OOTA cycles,
 as expected.
 However, the value returned by each thread's load directly affects the
 value stored, so there is a semantic dependency in each thread.
-Therefore, none of these OOTA cycles can happen in a correct real-world
+Therefore, none of these OOTA cycles can happen in a compiler-based
 C++ implementation.
 
 \begin{listing}[tbp]
@@ -2843,7 +2843,7 @@ The \co{herd7} tool finds OOTA values, as expected.
 
 All threads have straightforward semantic dependencies from their
 relaxed atomic loads to their relaxed atomic stores, which prevents this
-OOTA cycle on correct real-world C++ implementations.
+OOTA cycle on compiler-based C++ implementations.
 
 \subsection{Why rfe Instead of Tried-And-True rf?}
 \label{app:Why rfe Instead of Tried-And-True rf?}
@@ -2920,7 +2920,7 @@ stored to \co{z}, there will be a global-time delay between each of
 \co{P0()}'s loads and its store to \co{z}, preventing a value-17 OOTA
 cycle from forming.
 
-Either way, the value-17 OOTA cycle cannot occur in a correct real-world
+Either way, the value-17 OOTA cycle cannot occur in a compiler-based
 C++ implementation.
 Yes, an implementation that proves that the value 17 is always
 stored to \co{z} can satisfy the \co{exists} clause, but because
