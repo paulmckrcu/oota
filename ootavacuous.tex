@@ -58,29 +58,32 @@ The Indefatigible TBD
 Audience: SG1
 
 \begin{abstract}
-	The out-of-thin-air (OOTA) properties of the specification
-	of \co{memory_order_relaxed} have resulted in considerable
-	consternation over the years.
+	The out-of-thin-air (OOTA) properties
+	of \co{memory_order_relaxed} in the C++ memory model
+	have caused considerable consternation over the years.
 	Attempts to create memory models that rule out OOTA behaviors
-	have either been non-executable, complex, or unloved by C++
-	implementers, and this paper summarizes some of the challenges.
+	have been either non-executable, complex, or unloved by C++
+	implementers
+	(and this paper describes some of the challenges of coming to
+	grips with the key notion of semantic dependency).
 	But at the same time, we know of no instances of OOTA behavior
 	in real C++ implementations.
 
-	This paper refactors the commonly used condition for classifying
-	OOTA behavior, which permits bringing to bear constraints from
-	long-standing laws of physics and from hardware systems.
-	In this initial work, we focus on shared-memory programs running
-	on C++ implementations based on compilers and computing hardware
-	(including CPUs and GPGPUs).
-	We present informal arguments that these constraints and
-	limitations prevent OOTA cycles containing only volatile atomics
-	from occurring in undefined-behavior-free C++ programs running on
-	correctly constructed C++ compiler-based implementations that are
-	restricted to single-threaded analysis in our current universe.
-	We extend this work to nonvolatile atomics by defining
-	quasi-volatile behavior that we conjecture that usable real-world
-	C++ implementations must adhere to.
+	We focus on shared-memory programs and
+	C++ implementations based on traditional compilers and
+	computing hardware, including CPUs and GPGPUs.
+	This context permits us to consider the detailed relations
+	between source code and machine code required by the restricted
+	nature of volatile atomic accesses.
+	The OOTA problem is much more tractable at the hardware level
+	than at the source level, thanks to existing formal hardware
+	models, and
+	we show that the constraints in these models prevent OOTA cycles
+	involving only volatile atomics from occurring in
+	undefined-behavior-free C++ programs (under these implementations).
+	We also extend this work to nonvolatile atomics by defining
+	``quasi-volatile'' behavior that we expect C++ implementations
+	will adhere to if they perform single-thread analysis.
 \end{abstract}
 
 \pagebreak
