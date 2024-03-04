@@ -3295,8 +3295,8 @@ This raises the question of how to determine the set of semantic
 dependencies in a given execution of a given fragment of code.
 The short answer is that when running on a real-world system, 
 any C++ program is a finite-state machine, which, unlike Turing-complete
-systems, can be analyzed.
-% @@@ reference to cbmc appendix.
+systems, can be analyzed, as demonstrated in
+Section~\ref{sec:Hardware Dependencies, Instruction Ordering, and the Fundamental Property}.
 
 One might ask why semantic dependencies can be nontrivial when hardware
 address, control, and data dependencies are much more straightforward.
@@ -3308,8 +3308,10 @@ Answers include:
 This situation further underscores the per-execution nature of semantic
 dependencies as well as the need for an improved definition of ``semantic
 dependency''.
-We propose expanding the traditional definition to include dependencies
-extending from groups of loads to a single store.
+In
+Section~\ref{sec:A Definition of Semantic Dependency},
+we expand the traditional definition to include dependencies extending
+from groups of loads to a single store.
 
 \subsection{OOTA From Undefined-Behavior Optimizations}
 \label{app:OOTA From Undefined-Behavior Optimizations}
