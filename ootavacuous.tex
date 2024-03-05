@@ -78,8 +78,9 @@ Audience: SG1
 	level than at the source level, thanks to existing formal
 	hardware models.
 	We show that these models' constraints prevent OOTA cycles
-	that involve only volatile atomics from occurring in
-	undefined-behavior-free C++ programs (under these implementations).
+	from occurring in undefined-behavior-free C++ programs running
+	on compiler-based implementations, provided the cycles involve
+	only volatile atomics.
 	We also extend this work to nonvolatile atomics by defining
 	``quasi-volatile'' behavior that we expect C++ implementations
 	will adhere to if they perform single-thread analysis.
