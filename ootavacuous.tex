@@ -3399,19 +3399,19 @@ All threads have straightforward semantic dependencies from their
 relaxed atomic loads to their relaxed atomic stores, which prevents this
 OOTA cycle on compiler-based C++ implementations.
 
-\subsection{Multi-Cycle Litmus Tests}
-\label{app:Multi-Cycle Litmus Tests}
+\subsection{Multi-Cycle Litmus Test}
+\label{app:Multi-Cycle Litmus Test}
 
 Listing~\ref{lst:Multi-Cycle Litmus Test}
-shows an expansion to four threads of Causality Test Case 4, which is shown in
+expands
 Listing~\ref{lst:Causality Test Case 4}
-and discussed in
-Appendix~\ref{app:Causality Test Case 4}.
+in a different way, moving to four threads but having only the
+original two variables \co{x} and \co{y}.
 The \co{herd7} tool shows multiple different possible OOTA cycles,
 as expected.
 However, the value returned by each thread's load directly affects the
 value stored, so there is a semantic dependency in each thread.
-Therefore, none of these OOTA cycles can happen in a compiler-based
+Therefore, none of these OOTA cycles can arise in a compiler-based
 C++ implementation.
 
 \begin{listing}[tbp]
