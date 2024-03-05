@@ -2795,8 +2795,6 @@ is the default-initialized value of zero.
 Therefore, the C++ implementation is within its rights to substitute
 the constant zero for \co{r1} on line~5, eliminating the semantic
 dependency that would otherwise extend from line~4 to line~5.
-This in turn enables the implementation to reorder line~5 to
-precede line~4.
 
 \begin{listing}
 \begin{verbatim}
@@ -2814,8 +2812,7 @@ precede line~4.
 One way to preserve this dependency is use of \co{volatile}, as shown in
 Listing~\ref{lst:Volatile Accesses and Dependencies}.
 Now the implementation is forbidden from assuming that the value loaded
-by line~4 has any relation to any stores to or initialization of \co{x},
-even if \co{x} is placed in normal memory.
+by line~4 has any relation to any stores to or initialization of \co{x}.
 
 In this case, the \co{volatile} keyword alerts the implementation to
 the possibility of interfering accesses to \co{x} from outside the
