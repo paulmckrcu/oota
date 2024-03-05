@@ -3032,7 +3032,7 @@ Section~\ref{sec:OOTA: rf vs. rfe}
 Listings~\ref{lst:OOTA With an Intra-Process Store-Load Link}
 and~\ref{lst:OOTA With an Intra-Process Store-Load Link, Optimized})
 demonstrate that rf can be atemporal, they demonstrate neither
-OOTA cycles nor OOTA-like behavior in full C++ compiler.
+OOTA cycles nor OOTA-like behavior in full C++ compilers.
 This appendix provides more involved examples that can be optimized
 so as to demonstrate OOTA-like behavior.
 
@@ -3048,9 +3048,9 @@ so as to demonstrate OOTA-like behavior.
 \label{lst:OOTA With an Intra-Process Store-Load Link, Optimized}
 \end{listing}
 
-Listing~\ref{lst:Why rfe Instead of Tried-And-True rf?}
-revises
 Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4 With Max and Min}
+revises
+Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4}
 so that the value stored to \co{y} is forced to be at most the
 value 17, and the value stored to \co{z} is forced to be at least the
 value 17.
@@ -3100,7 +3100,7 @@ cycle from forming.
 
 Either way, the value-17 OOTA cycle cannot occur in a compiler-based
 C++ implementation.
-Yes, a compielr that proves that the value 17 is always
+Yes, a compiler that proves that the value 17 is always
 stored to \co{z} can satisfy the \co{exists} clause, but because
 there is no semantic dependency to \co{P0()}'s store to \co{z},
 this is not an OOTA cycle.
@@ -3136,7 +3136,8 @@ outcome.
 
 This example demonstrates why OOTA cycles must be defined in terms
 of (sdep $\cup$ rfe), or in \co{herd7} nomenclature,
-\co{acyclic(sdep; rfe)}.
+\co{acyclic(sdep; rfe)}, as discussed in
+Section~\ref{sec:OOTA: rf vs. rfe}.
 
 \subsection{Inventing Atomic Loads}
 \label{app:Inventing Atomic Loads}
