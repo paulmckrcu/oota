@@ -1299,6 +1299,10 @@ faster than the speed of light.
 Since the load instruction cannot commit until its output (the value it
 reads) is fully determined, it must commit after the store it reads
 from.
+(To be fair, this should be considered more as a \emph{result} of
+ordering rather than a \emph{cause} of ordering, in that
+if a load commits before a store on another thread then it
+cannot possibly read from that store.)
 
 A similarly straightforward mechanism for ordering is conditional or
 computed branches.
