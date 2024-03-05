@@ -2792,7 +2792,7 @@ free to assume that the value loaded by line~4 will be some value
 stored to \co{x} or its initial value.
 Because there are no stores to \co{x}, the only remaining possibility
 is the default-initialized value of zero.
-Therefore, the C++ implementation is within its rights to substitute
+Therefore, the C++ compiler is within its rights to substitute
 the constant zero for \co{r1} on line~5, eliminating the semantic
 dependency that would otherwise extend from line~4 to line~5.
 
@@ -2811,16 +2811,16 @@ dependency that would otherwise extend from line~4 to line~5.
 
 One way to preserve this dependency is use of \co{volatile}, as shown in
 Listing~\ref{lst:Volatile Accesses and Dependencies}.
-Now the implementation is forbidden from assuming that the value loaded
+Now the compiler is forbidden from assuming that the value loaded
 by line~4 has any relation to any stores to or initialization of \co{x}.
 
-In this case, the \co{volatile} keyword alerts the implementation to
+In this case, the \co{volatile} keyword alerts the compiler to
 the possibility of interfering accesses to \co{x} from outside the
 program, for example, due to \co{x} being:
 
 \begin{itemize}
 \item	Allocated in an MMIO region of the address space.
-\item	Modified by an unknown-to-the-implementation thread
+\item	Modified by an unknown-to-the-compiler thread
 	or signal handler.
 \item	Subject to I/O-device DMA operations.
 \item	Modified by debugger commands.
@@ -2829,7 +2829,7 @@ program, for example, due to \co{x} being:
 \item	Modified by some other mechanism of the reader's choosing.
 \end{itemize}
 
-These possibilities force the implementation to preserve the semantic
+These possibilities force the compiler to preserve the semantic
 dependency from line~4 to line~5.
 This preserved dependency helps prevent the formation of OOTA cycles
 even in situations where there is no interference.\footnote{
@@ -3031,7 +3031,7 @@ Section~\ref{sec:OOTA: rf vs. rfe}
 Listings~\ref{lst:OOTA With an Intra-Process Store-Load Link}
 and~\ref{lst:OOTA With an Intra-Process Store-Load Link, Optimized})
 demonstrate that rf can be atemporal, they demonstrate neither
-OOTA cycles nor OOTA-like behavior in full C++ implementations.
+OOTA cycles nor OOTA-like behavior in full C++ compiler.
 This appendix provides more involved examples that can be optimized
 so as to demonstrate OOTA-like behavior.
 
@@ -3069,9 +3069,9 @@ Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4 With Max and
 to flatten \co{PO()} and \co{P1()} into a single thread, so that the
 resulting \co{P0()} has an rfi link instead of an rfe link connecting
 the store to and load from \co{y}.
-This means that a C++ implementation could prove that the value 17 is
+This means that a C++ compiler could prove that the value 17 is
 always stored to \co{z} by examining \co{P0()} in isolation, given that
-it is also legal for a C++ implementation to replace the value loaded
+it is also legal for a C++ compiler to replace the value loaded
 from \co{y} with the value just stored.\footnote{
 	This is not an option in C because atomic operations are volatile,
 	and thus observed behavior.}
@@ -3088,18 +3088,18 @@ that C++ respects neither control nor data dependencies.
 However, the \co{herd7} tool does not identify this cycle, perhaps due
 to its restrictions on its handling of arithmetic on OOTA values.
 
-In a real-world implementation that proves that the value 17 is always
-stored to \co{z}, there is no semantic dependency to
-\co{P0()}'s store to \co{z}, but there is to all of the other relaxed
+Given a compiler that proves that the value 17 is always
+stored to \co{z}, there might be no semantic dependency to
+\co{P0()}'s store to \co{z}, but must be to all of the other relaxed
 atomic stores.
-On the other hand, if the implementation does not prove the value
+On the other hand, if the compiler does not prove the value
 stored to \co{z}, there will be a global-time delay between each of
 \co{P0()}'s loads and its store to \co{z}, preventing a value-17 OOTA
 cycle from forming.
 
 Either way, the value-17 OOTA cycle cannot occur in a compiler-based
 C++ implementation.
-Yes, an implementation that proves that the value 17 is always
+Yes, a compielr that proves that the value 17 is always
 stored to \co{z} can satisfy the \co{exists} clause, but because
 there is no semantic dependency to \co{P0()}'s store to \co{z},
 this is not an OOTA cycle.
@@ -3164,10 +3164,10 @@ form.
 \end{listing}
 
 But is \co{P0()}'s dependency a semantic dependency?
-For example, is a real-world C++ implementation permitted to
+For example, is a C++ compiler permitted to
 duplicate \co{P0()}'s load from \co{x} and then make use of both loads'
 values?
-If this is permitted, then the implementation would be within its rights
+If this is permitted, then the compiler would be within its rights
 to transform
 Listing~\ref{lst:No Invented Atomic Loads}
 into
@@ -3176,7 +3176,7 @@ Listing~\ref{lst:Atomic Loads Invented}.
 Because the values of \co{r1}, \co{r2}, and \co{r3} are all known to be
 either zero or one, if the values returned by the two loads from \co{x}
 differ, then one of those two values must be equal to that from \co{y}.
-If the implementation is further permitted to make a runtime choice
+If the compiler is further permitted to make a runtime choice
 between the two values loaded from \co{x}, it could always choose the
 one that was equal to the value loaded from \co{y}, as shown by the
 \co{if} statement on line~13.
@@ -3185,7 +3185,7 @@ which would permit the store to be ordered before the load from \co{y},
 as shown in lines~14 and~15.
 Doing so permits the OOTA-like outcome of \co{r3 == r4 == 1}.
 
-The implementation might also drop the load from \co{y}, whose value
+The compiler might also drop the load from \co{y}, whose value
 is now unused except by the \co{exists} clause.
 However, the \co{exists} clause is considered to be observable behavior,
 which means that the load from \co{y} must remain.
@@ -3197,7 +3197,7 @@ which means that the load from \co{y} must remain.
 \end{listing}
 
 One possible reaction to this situation is to declare that useful
-real-world C++ implementations should never duplicate nonvolatile
+C++ compilers should never duplicate nonvolatile
 relaxed atomic loads.
 But suppose that the initial code was as shown in
 Listing~\ref{lst:Unused Extra Atomic Load}?\footnote{
@@ -3226,7 +3226,7 @@ creative use of the multiple values loaded.
 \end{listing}
 
 But suppose that we drop the single-thread-analysis constraint for
-the moment, and suppose that the C++ implementation is able to prove
+the moment, and suppose that the compiler is able to prove
 that the only modification of a given atomic variable is to atomically
 increment it, as is the case for \co{y} in
 Listing~\ref{lst:Only Atomic Increment}.
@@ -3237,7 +3237,7 @@ Listing~\ref{lst:Only Atomic Increment}.
 \label{lst:Only Atomic Increment, Optimized}
 \end{listing}
 
-Is a C++ implementation within its rights to behave as if the code
+Is a C++ compiler within its rights to behave as if the code
 shown in
 Listing~\ref{lst:Only Atomic Increment}
 was instead as shown in
@@ -3267,7 +3267,7 @@ There are a number of possible reactions to these situations:
 	nonvolatile relaxed atomic loads from the same object should
 	be permitted only if the two loads could be reordered to be
 	adjacent to each other.
-\item	Any time an implementation might be tempted to invent uses from
+\item	Any time a compiler might be tempted to invent uses from
 	values from nonvolatile relaxed atomic loads from the same
 	object, the loads should instead be fused into a single load.
 	This reaction might be attractive to those who carefully consider
@@ -3283,7 +3283,7 @@ There are a number of possible reactions to these situations:
 
 There are situations where inventing loads from non-atomic objects
 is customary, for example, when hoisting a load out of a loop.
-In this case, implementations might hoist the load from x out of
+In this case, compilers might hoist the load from x out of
 the loop:
 
 \begin{quote}
@@ -3294,7 +3294,7 @@ for (i = 0; i < limit i++)
 \end{verbatim}
 \end{quote}
 
-A C++ implementation might act as if the program had instead been this:
+A compiler might act as if the program had instead been this:
 
 \begin{quote}
 \begin{verbatim}
@@ -3306,26 +3306,26 @@ for (i = 0; i < limit i++)
 \end{quote}
 
 Note that passing \co{x} to the call to \co{do_something_with()} is important
-because this allows the C++ implementation to assume that accesses to \co{x}
+because this allows the compiler to assume that accesses to \co{x}
 will not result in a data race.
 Without this assumption, the above transformation might introduce a data
 race when \co{limit} is less than or equal to zero.
 
 But if \co{x} is a nonvolatile atomic, then there are no worries about
 data races.
-In theory, the implementation could make the above transformation without
+In theory, the compiler could make the above transformation without
 worry, especially given that the value loaded from \co{x} is discarded in
 the case where \co{limit} is less than or equal to zero.
 Except that the data-race worry is replaced by a cache-miss worry.
 After all, optimizations are supposed to speed things up.
-This means that a C++ implementation might be wise to adhere to the
+This means that a compiler might be wise to adhere to the
 same restriction that avoids data races for loads from non-atomic
 variables in order to avoid expensive cache misses.
 
 \subsection{OOTA From Undefined-Behavior Optimizations}
 \label{app:OOTA From Undefined-Behavior Optimizations}
 
-Many C++ implementations carry out optimizations based on the assumption
+Many compilers carry out optimizations based on the assumption
 that UB cannot happen, and these optimizations can result in OOTA cycles,
 with a simple example shown in
 Listing~\ref{lst:OOTA Due To Divide-By-Zero UB}.
@@ -3339,14 +3339,14 @@ Listing~\ref{lst:OOTA Due To Divide-By-Zero UB}.
 On line~14 of this listing, the value of \co{r2} must be either zero
 or one due to the comparison on line~13.
 If it is the value one, then there is a divide-by-zero error, which
-enables the C++ implementation to assume that the value of \co{r1} is
+enables the compiler to assume that the value of \co{r1} is
 always zero.
-This in turn allows the implementation to behave as if the expression
+This in turn allows the compiler to behave as if the expression
 stored to \co{y} on line~14 was the constant 1, at which point there
 is no semantic dependency from the load from \co{x} on line~13 to the
 store to \co{y} on line~14.
 
-The implementation is then within its rights to act as if lines~13 and~14
+The compiler is then within its rights to act as if lines~13 and~14
 were interchanged.
 At which point, the order of execution could be as follows:
 
@@ -3363,7 +3363,7 @@ code that would have resulted in division-by-zero UB.
 It is tempting to consider using techniques
 % Appendix~\ref{app:Aside on Undefined Behavior}
 that prevent back-propagation of UB, but these are ineffective in this
-case because the C++ implementation can detect and exploit UB when
+case because the compiler can detect and exploit UB when
 considering line~14 in isolation.
 Once the constant 1 is substituted for line~14's expression, the
 hardware is free to reorder lines~13 and~14 even if a compiler-based
@@ -3502,7 +3502,7 @@ Even omniscient compilers will observe a semantic dependency from
 
 Either way no OOTA cycle will occur, with omniscient compilers
 having no cycle at all because of the lack of an sdep link in \co{P0()},
-and other implementations prevented by hardware
+and other compilers prevented by hardware
 dependency ordering from realizing the cycle.
 
 \subsection{Causality Test Case 2}
