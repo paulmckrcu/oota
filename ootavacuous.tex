@@ -2800,7 +2800,7 @@ precede line~4.
 
 \begin{listing}
 \begin{verbatim}
- 1 atomic<volatile int> x, y;
+ 1 volatile atomic<int> x, y;
  2
  3 void thread1() {
  4   int r1 = x.load(memory_order_relaxed);
