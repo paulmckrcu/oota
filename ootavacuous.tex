@@ -63,9 +63,7 @@ Audience: SG1
 	have caused considerable consternation over the years.
 	Attempts to create memory models that rule out OOTA behaviors
 	have been either non-executable, complex, or unloved by C++
-	implementers
-	(and this paper describes some of the challenges of coming to
-	grips with the key notion of semantic dependency).
+	implementers.
 	But at the same time, we know of no instances of OOTA behavior
 	in real C++ implementations.
 
@@ -75,11 +73,12 @@ Audience: SG1
 	This context permits us to consider the detailed relations
 	between source code and machine code required by the restricted
 	nature of volatile atomic accesses.
-	The OOTA problem is much more tractable at the hardware level
-	than at the source level, thanks to existing formal hardware
-	models, and
-	we show that the constraints in these models prevent OOTA cycles
-	involving only volatile atomics from occurring in
+	The OOTA problem and the related challenge of coming to grips
+	with semantic dependency are much more tractable at the hardware
+	level than at the source level, thanks to existing formal
+	hardware models.
+	We show that these models' constraints prevent OOTA cycles
+	that involve only volatile atomics from occurring in
 	undefined-behavior-free C++ programs (under these implementations).
 	We also extend this work to nonvolatile atomics by defining
 	``quasi-volatile'' behavior that we expect C++ implementations
