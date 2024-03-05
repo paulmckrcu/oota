@@ -3399,6 +3399,27 @@ All threads have straightforward semantic dependencies from their
 relaxed atomic loads to their relaxed atomic stores, which prevents this
 OOTA cycle on compiler-based C++ implementations.
 
+\subsection{Multi-Cycle Litmus Tests}
+\label{app:Multi-Cycle Litmus Tests}
+
+Listing~\ref{lst:Multi-Cycle Litmus Test}
+shows an expansion to four threads of Causality Test Case 4, which is shown in
+Listing~\ref{lst:Causality Test Case 4}
+and discussed in
+Appendix~\ref{app:Causality Test Case 4}.
+The \co{herd7} tool shows multiple different possible OOTA cycles,
+as expected.
+However, the value returned by each thread's load directly affects the
+value stored, so there is a semantic dependency in each thread.
+Therefore, none of these OOTA cycles can happen in a compiler-based
+C++ implementation.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-two-source.litmus @@
+\caption{Multi-Cycle Litmus Test}
+\label{lst:Multi-Cycle Litmus Test}
+\end{listing}
+
 \subsection{Non-LB Litmus Tests}
 \label{app:Non-LB Litmus Tests}
 
@@ -3424,27 +3445,6 @@ implementation.
 
 Note that in a C++ implementation that (erroneously) permitted an OOTA
 cycle to form, that cycle would involve both \co{r0} and \co{r1}.
-
-\subsection{Multi-Cycle Litmus Tests}
-\label{app:Multi-Cycle Litmus Tests}
-
-Listing~\ref{lst:Multi-Cycle Litmus Test}
-shows an expansion to four threads of Causality Test Case 4, which is shown in
-Listing~\ref{lst:Causality Test Case 4}
-and discussed in
-Appendix~\ref{app:Causality Test Case 4}.
-The \co{herd7} tool shows multiple different possible OOTA cycles,
-as expected.
-However, the value returned by each thread's load directly affects the
-value stored, so there is a semantic dependency in each thread.
-Therefore, none of these OOTA cycles can happen in a compiler-based
-C++ implementation.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-two-source.litmus @@
-\caption{Multi-Cycle Litmus Test}
-\label{lst:Multi-Cycle Litmus Test}
-\end{listing}
 
 \subsection{Simple Reordering as Litmus Test}
 \label{app:Simple Reordering as Litmus Test}
