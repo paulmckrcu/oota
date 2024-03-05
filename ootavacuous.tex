@@ -2831,10 +2831,10 @@ program, for example, due to \co{x} being:
 
 These possibilities force the implementation to preserve the semantic
 dependency from line~4 to line~5.
-They can also prevent the formation of OOTA cycles local to the
-implementation because such inteference means that the volatile loads
-might be reading from something that the implementation knows nothing
-about.
+This preserved dependency helps prevent the formation of OOTA cycles
+even in situations where there is no interference.\footnote{
+	When there is interference, the definition of ``OOTA cycle''
+	does not apply.}
 
 The developer is free to arrange for \co{x} to be free of any
 interference, thus obtaining predictable behavior along with the
