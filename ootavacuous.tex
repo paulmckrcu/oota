@@ -2859,7 +2859,7 @@ Section~\ref{sec:Global Analysis and Volatile versus Quasi Volatile}.
 Most of the examples in this paper involve simple semantic dependencies
 connecting a single load to a single store.
 One exception appears in
-Appendix~\ref{app:Non-LB Litmus Tests},
+Appendix~\ref{app:Non-LB Litmus Test},
 but this section will present a more difficult example.
 
 \begin{listing}[tbp]
@@ -3420,8 +3420,8 @@ C++ implementation.
 \label{lst:Multi-Cycle Litmus Test}
 \end{listing}
 
-\subsection{Non-LB Litmus Tests}
-\label{app:Non-LB Litmus Tests}
+\subsection{Non-LB Litmus Test}
+\label{app:Non-LB Litmus Test}
 
 Listing~\ref{lst:Non-LB Litmus Test}
 shows a litmus test that can produce an OOTA cycle, but that is not
@@ -3444,7 +3444,8 @@ Therefore, an OOTA cycle cannot form in a compiler-based C++
 implementation.
 
 Note that in a C++ implementation that (erroneously) permitted an OOTA
-cycle to form, that cycle would involve both \co{r0} and \co{r1}.
+cycle to form, that cycle would involve both of \co{P0()}'s \co{r0}
+and \co{r1} local variables.
 
 \subsection{Simple Reordering as Litmus Test}
 \label{app:Simple Reordering as Litmus Test}
