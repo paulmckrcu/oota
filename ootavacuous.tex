@@ -3156,7 +3156,7 @@ First, consider Listing~\ref{lst:No Invented Atomic Loads}.
 At first glance, this might appear straightforward.
 \co{P0()}'s store to \co{z} clearly depends on its load from \co{y},
 and \co{P1()}'s store to \co{y} clearly depends on its load from \co{z}.
-If both dependencies are semantic dependency, the OOTA cycle cannot
+If both dependencies are semantic dependencies, the OOTA cycle cannot
 form.
 
 \begin{listing}[tbp]
@@ -3260,7 +3260,7 @@ There are a number of possible reactions to these situations:
 	semantic dependency.
 \item	Attempts to use real-world constraints to prevent OOTA cycles
 	are futile.
-\item	Implementations should not invent uses for values from
+\item	Compilers should not invent uses for values from
 	nonvolatile relaxed atomic loads.
 	If it turns out that there are useful optimizations that invent
 	such uses, then such optimizations must be applied only with
@@ -3276,7 +3276,7 @@ There are a number of possible reactions to these situations:
 	the pointlessness of keeping two loads that return the same value
 	on the one hand or the cache-miss overhead incurred when closely
 	spaced loads return different values on the other.
-\item	Implementations that invent nonvolatile atomic loads or invent
+\item	Compilers that invent nonvolatile atomic loads or invent
 	new uses for nonvolatile atomic loads can adversely affect
 	observed behavior, for example, by introducing error into code
 	attempting to do statistical sampling.
@@ -3308,8 +3308,8 @@ for (i = 0; i < limit i++)
 \end{quote}
 
 Note that passing \co{x} to the call to \co{do_something_with()} is important
-because this allows the compiler to assume that accesses to \co{x}
-will not result in a data race.
+because this allows the compiler to assume that inventing additional
+accesses to \co{x} will not result in a data race.
 Without this assumption, the above transformation might introduce a data
 race when \co{limit} is less than or equal to zero.
 
