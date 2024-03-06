@@ -2861,7 +2861,7 @@ store to \co{z}, nor is there a semantic dependency from the load
 from \co{y} to the store to \co{z}.
 However, there \emph{is} a semantic dependency from the \emph{combination}
 of the loads from \co{x} and \co{y} to the store to \co{z}.
-An example is given by the (forbidden) execution that satisfies the
+An example is given by the execution that satisfies the
 \co{exists} clause on line~20, which would be an OOTA cycle.
 
 \begin{listing}[tbp]
@@ -2905,7 +2905,7 @@ Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
 only in the initial values (1 instead of 0) and the \co{exists}
 clause (0 instead of 1).
 Note that an execution satisfying the \co{exists} clause is again
-a (forbidden) OOTA cycle.
+a OOTA cycle.
 
 Starting with the intuitive execution where the values loaded from \co{x}
 and \co{y} on lines~9 and~10 are the value 1 (that is, nonzero), executions
@@ -2932,13 +2932,12 @@ Because the only two solutions to $x^2 = x$ are the values zero and one,
 Listings~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
 and~\ref{lst:OOTA Multiplication Example, Initial Value 1}
 each have only one OOTA cycle, and an execution having initial values
-of (say) two could have at most two OOTA cycles, both of which are
-(again) forbidden by the C++ language.
+of (say) two could have at most two OOTA cycles.
 Listing~\ref{lst:OOTA Three-Factor Multiplication Example, Initial Value Zero}
 goes one step further by multiplying the values obtained from three
 different loads.
 Because $x^3 = x$ has three solutions ($\left\{ -1, 0, 1 \right\}$),
-this execution could have up to three (yet again, forbidden) OOTA cycles.
+this execution could have up to three OOTA cycles.
 
 Much more elaborate examples can be constructed, for example,
 involving sums of products of values loaded.
