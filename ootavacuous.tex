@@ -2754,12 +2754,12 @@ to see how this works.
 \label{lst:Non-Volatile Accesses and Dependencies}
 \end{listing}
 
-Because both \co{x} and \co{y} are nonvolatile, the compiler is
-free to assume that the value loaded by line~4 will be some value
+Because both \co{x} and \co{y} are nonvolatile, a C++ compiler is
+free to assume that the value loaded by line~4 will be either some value
 stored to \co{x} or its initial value.
-Because there are no stores to \co{x}, the only remaining possibility
+And because there are no stores to \co{x}, the only remaining possibility
 is the default-initialized value of zero.
-Therefore, the C++ compiler is within its rights to substitute
+Therefore, the compiler is within its rights to substitute
 the constant zero for \co{r1} on line~5, eliminating the semantic
 dependency that would otherwise extend from line~4 to line~5.
 
@@ -2782,9 +2782,8 @@ Now the compiler is forbidden from assuming that the value loaded
 by line~4 has any relation to any stores to or initialization of \co{x}.
 
 In this case, the \co{volatile} keyword alerts the compiler to
-the possibility of interfering accesses to \co{x} from outside the
+the possibility of interfering changes to \co{x} from outside the
 program, for example, due to \co{x} being:
-
 \begin{itemize}
 \item	Allocated in an MMIO region of the address space.
 \item	Modified by an unknown-to-the-compiler thread
@@ -2795,11 +2794,10 @@ program, for example, due to \co{x} being:
 \item	Modified by as-yet-unwritten dynamically linked libraries.
 \item	Modified by some other mechanism of the reader's choosing.
 \end{itemize}
-
 These possibilities force the compiler to preserve the semantic
-dependency from line~4 to line~5.
-This preserved dependency helps prevent the formation of OOTA cycles
-even in situations where there is no interference.\footnote{
+dependency from line~4 to line~5,
+and this preserved dependency helps prevent the formation of OOTA cycles
+in environments where there is no interference.\footnote{
 	When there is interference, the definition of ``OOTA cycle''
 	does not apply.}
 
@@ -2910,7 +2908,7 @@ a OOTA cycle.
 Starting with the intuitive execution where the values loaded from \co{x}
 and \co{y} on lines~9 and~10 are the value 1 (that is, nonzero), executions
 that differ only in the value loaded from either \co{x} or \co{y} will
-still affect the value stored to \co{z} by line~11.
+now affect the value stored to \co{z} by line~11.
 There is therefore one semantic dependency from the load from \co{x}
 to the store to \co{z} and another separate semantic dependency from
 the load from \co{y} to the store to \co{z}, which matches typical
@@ -2953,13 +2951,14 @@ any C++ program is a finite-state machine, which, unlike Turing-complete
 systems, can be analyzed, as demonstrated in
 Section~\ref{sec:Hardware Dependencies, Instruction Ordering, and the Fundamental Property}.
 
-One might ask why semantic dependencies can be complicated when hardware
-address, control, and data dependencies are much more straightforward.
+One might ask why semantic dependencies can be so complicated when hardware
+dependencies are much more straightforward.
 The reason is that, unlike compilers, hardware:
-(1)~Respects dependencies even when they reduce to a constant,
-(2)~Optimizes much less aggressively, if at all, and
-(3)~Lacks undefined behavior.
-
+\begin{itemize}
+\item	Respects dependencies even when they reduce to a constant,
+\item	Optimizes much less aggressively, if at all, and
+\item	Lacks undefined behavior.
+\end{itemize}
 This situation further underscores the per-execution nature of semantic
 dependencies as well as the need for an improved definition of ``semantic
 dependency''.
