@@ -92,53 +92,19 @@ Audience: SG1
 
 \pagebreak
 
-\section{Introduction}
+\section{Introduction and Background}
 \label{sec:Introduction}
 
 This paper shows that compiler-based C++ implementations subject to
-reasonable real-world constraints cannot exhibit OOTA cycles.
-Section~\ref{sec:Background}
-provides background on the problem of OOTA cycles, including a
-brief summary of prior work.
-Section~\ref{sec:OOTA and Semantic Dependencies}
-motivates a shift in definition of OOTA cycle and reviews properties of
-semantic dependencies, showing that these properties are a function of
-executions rather than simply of the source code.
-This leads into
-Section~\ref{sec:What is an Execution?},
-which describes properties of abstract and hardware executions, along
-with the relationship between the two.
+reasonable constraints on how they treat accesses to atomic objects
+cannot exhibit out-of-thin-air (OOTA) cycles.
+It follows that these implementations hardly need to take any special
+action to avoid OOTA.
+In fact, for many compilers the constraints boil down to a simple
+``Don't invent or duplicate atomic accesses'', which is probably
+something the compiler wouldn't do anyway.
 
-This in turn leads to
-Section~\ref{sec:C++ Compilers}, which describes properties of the tool
-commonly used to create hardware executions with the proper relationship
-to a given set of abstract executions, namely  the compiler.
-Section~\ref{sec:Hardware Dependencies, Instruction Ordering, and the
-Fundamental Property}
-then combines hardware dependencies and instruction ordering to arrive
-at the fundamental property of semantic dependencies, which
-Section~\ref{sec:A Definition of Semantic Dependency} uses to
-arrive at a definition of the term ``semantic dependency''.
-
-This sets the stage for
-Section~\ref{sec:Real-World Constraints}
-to bring real-world constraints to bear, starting with the laws of
-physics, informally demonstrating that these constraints prevent
-OOTA cycles containing only volatile and quasi-volatile atomics from
-occurring in undefined-behavior-free C++ programs running on correctly
-constructed C++ compiler-based implementations that are restricted to
-single-threaded analysis in our current universe.
-
-Finally,
-Section~\ref{sec:Future Directions}
-lists a few possible future directions for this work and
-Section~\ref{sec:Conclusion}
-presents concluding remarks.
-
-\section{Background}
-\label{sec:Background}
-
-This section provides a brief overview of the OOTA problem, followed
+We begin with a brief overview of the OOTA problem, followed
 by an equally brief summary of prior work in this area, and ending
 with a quick overview of the \co{herd7} tool that will be used to
 evaluate litmus tests.
