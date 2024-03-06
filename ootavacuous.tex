@@ -2945,34 +2945,8 @@ different loads.
 Because $x^3 = x$ has three solutions ($\left\{ -1, 0, 1 \right\}$),
 this execution could have up to three OOTA cycles.
 
-Much more elaborate examples can be constructed, for example,
-involving sums of products of values loaded.
-Reverting back to short-form code fragments, consider the following:
-
-\begin{quote}
-\begin{verbatim}
-z = w * x + w * y + w;
-\end{verbatim}
-\end{quote}
-
-This has the following semantic dependencies when all of \co{w},
-\co{x}, and \co{y} are zero:
-
-\begin{enumerate}
-\item	From the combination of \co{w} and \co{x} to \co{z}.
-\item	From the combination of \co{w} and \co{y} to \co{z}.
-\item	From \co{w} to \co{z}.
-\end{enumerate}
-
-Despite appearances, these are not redundant.
-The last semantic dependency does not imply the first, because given
-that \co{w} becomes nonzero, a change in \co{x} further changes
-the value stored to \co{z}.
-Similar reasoning shows that the last semantic dependency does not
-imply the second.
-Much more elaborate examples can easily be constructed.
-
-This raises the question of how to determine the set of semantic
+Much more elaborate examples can be constructed,
+which raises the question of how to determine the set of semantic
 dependencies in a given execution of a given fragment of code.
 The short answer is that when running on a real-world system, 
 any C++ program is a finite-state machine, which, unlike Turing-complete
