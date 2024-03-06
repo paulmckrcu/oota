@@ -2953,11 +2953,11 @@ any C++ program is a finite-state machine, which, unlike Turing-complete
 systems, can be analyzed, as demonstrated in
 Section~\ref{sec:Hardware Dependencies, Instruction Ordering, and the Fundamental Property}.
 
-One might ask why semantic dependencies can be nontrivial when hardware
+One might ask why semantic dependencies can be complicated when hardware
 address, control, and data dependencies are much more straightforward.
 The reason is that, unlike compilers, hardware:
 (1)~Respects dependencies even when they reduce to a constant,
-(2)~Less-aggressively optimizes, and
+(2)~Optimizes much less aggressively, if at all, and
 (3)~Lacks undefined behavior.
 
 This situation further underscores the per-execution nature of semantic
