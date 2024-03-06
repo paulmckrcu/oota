@@ -2931,7 +2931,13 @@ program.
 Because the only two solutions to $x^2 = x$ are the values zero and one,
 Listings~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
 and~\ref{lst:OOTA Multiplication Example, Initial Value 1}
-each have only one OOTA cycle, and an execution having initial values
+each have only one OOTA cycle,\footnote{
+	Note well that the initial values cannot be said to have come
+	out of thin air.
+	Although it is possible to have an OOTA cycle that does not
+	involve the initial values, but happens to have the same value,
+	the software would not be able to tell the difference.}
+and an execution having initial values
 of (say) two could have at most two OOTA cycles.
 Listing~\ref{lst:OOTA Three-Factor Multiplication Example, Initial Value Zero}
 goes one step further by multiplying the values obtained from three
