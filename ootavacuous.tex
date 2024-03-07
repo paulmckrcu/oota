@@ -2884,9 +2884,9 @@ of a semantic dependency between \co{x} and \co{z}.
 In both
 Listings~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
 and~\ref{lst:OOTA Conditional Multiplication Example, Initial Value Zero},
-an OOTA cycle (such as those indicated by their respective \co{exists} clauses)
-would need to affect both the \co{x} and the \co{y} components of this
-compound semantic dependency.
+an OOTA cycle having non-zero values (such as those indicated by their
+respective \co{exists} clauses) would need to affect both the \co{x}
+and the \co{y} components of this compound semantic dependency.
 This situation poses a challenge to current work on semantic dependencies,
 which are typically restricted to a single load and store.
 
@@ -2929,14 +2929,17 @@ program.
 Because the only two solutions to $x^2 = x$ are the values zero and one,
 Listings~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
 and~\ref{lst:OOTA Multiplication Example, Initial Value 1}
-each have only one OOTA cycle,\footnote{
-	Note well that the initial values cannot be said to have come
-	out of thin air.
-	Although it is possible to have an OOTA cycle that does not
-	involve the initial values, but happens to have the same value,
-	the software would not be able to tell the difference.}
-and an execution having initial values
-of (say) two could have at most two OOTA cycles.
+each have only two OOTA cycles.
+Note well that although software cannot distinguish the initial
+values from those of an OOTA cycle having those same values, there is
+a very real difference in the corresponding executions.
+To wit, an execution not corresponding to an OOTA cycle will read at
+least one initialization value, while an execution corresponding to an
+OOTA cycle with those same values will read only from that cycle's stores.
+On the other hand, in a similar program having initial values of (say)
+two, both executions containing OOTA cycles would be distinguishable
+from the initial values.
+
 Listing~\ref{lst:OOTA Three-Factor Multiplication Example, Initial Value Zero}
 goes one step further by multiplying the values obtained from three
 different loads.
