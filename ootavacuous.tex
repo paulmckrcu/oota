@@ -2973,8 +2973,21 @@ from groups of loads to a single store.
 \subsection{Why rfe Instead of Tried-And-True rf?}
 \label{app:Why rfe Instead of Tried-And-True rf?}
 
-Although the examples presented in
+Listings~\ref{lst:OOTA With an Intra-Process Store-Load Link}
+and~\ref{lst:OOTA With an Intra-Process Store-Load Link, Optimized}
+show the examples from
 Section~\ref{sec:OOTA: rf vs. rfe}
+in the form of litmus tests.
+A compiler is allowed to transform the program in
+Listing~\ref{lst:OOTA With an Intra-Process Store-Load Link}
+to the form of
+Listing~\ref{lst:OOTA With an Intra-Process Store-Load Link, Optimized},
+which demonstrates that intra-thread reads-from (rfi) links may be
+eliminated by the compiler and therefore should not be used in a
+definition of OOTA.
+This section provides more involved examples to drive this point home.
+
+Although the examples presented in
 (and shown as litmus tests in
 Listings~\ref{lst:OOTA With an Intra-Process Store-Load Link}
 and~\ref{lst:OOTA With an Intra-Process Store-Load Link, Optimized})
@@ -2993,6 +3006,24 @@ so as to demonstrate OOTA-like behavior.
 @@ DisplayRunLitmus litmus/oota-3-2-proc-opt.litmus @@
 \caption{OOTA With an Intra-Process Store-Load Link, Optimized}
 \label{lst:OOTA With an Intra-Process Store-Load Link, Optimized}
+\end{listing}
+
+The first step towards these more involved examples is shown in
+Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4},
+which expands
+Listing~\ref{lst:Causality Test Case 4}
+(discussed in
+Appendix~\ref{app:Causality Test Case 4})
+from two threads to three threads.
+The \co{herd7} tool finds OOTA values, as expected.
+All threads have straightforward semantic dependencies from their
+relaxed atomic loads to their relaxed atomic stores, which prevents this
+OOTA cycle on compiler-based C++ implementations.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-3proc.litmus @@
+\caption{Three-Process Version of JMM Causality Test Case 4}
+\label{lst:Three-Process Version of JMM Causality Test Case 4}
 \end{listing}
 
 Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4 With Max and Min}
@@ -3324,27 +3355,6 @@ are converted to volatile.
 
 Therefore, this paper focuses on UB-free programs, rare though these
 beasts might be among large-scale C++ programs running in production.
-
-\subsection{Three-Process Version of JMM Causality Test Case 4}
-\label{app:Three-Process Version of JMM Causality Test Case 4}
-
-Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4}
-expands
-Listing~\ref{lst:Causality Test Case 4}
-(discussed in
-Appendix~\ref{app:Causality Test Case 4})
-from two threads to three threads.
-The \co{herd7} tool finds OOTA values, as expected.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-3proc.litmus @@
-\caption{Three-Process Version of JMM Causality Test Case 4}
-\label{lst:Three-Process Version of JMM Causality Test Case 4}
-\end{listing}
-
-All threads have straightforward semantic dependencies from their
-relaxed atomic loads to their relaxed atomic stores, which prevents this
-OOTA cycle on compiler-based C++ implementations.
 
 \subsection{Multi-Cycle Litmus Test}
 \label{app:Multi-Cycle Litmus Test}
