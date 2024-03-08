@@ -2979,7 +2979,7 @@ Section~\ref{sec:OOTA: rf vs. rfe}
 Listings~\ref{lst:OOTA With an Intra-Process Store-Load Link}
 and~\ref{lst:OOTA With an Intra-Process Store-Load Link, Optimized})
 demonstrate that rf can be atemporal, they demonstrate neither
-OOTA cycles nor OOTA-like behavior in full C++ compilers.
+OOTA cycles nor OOTA-like behavior in compiler-based C++ implementations.
 This appendix provides more involved examples that can be optimized
 so as to demonstrate OOTA-like behavior.
 
@@ -3030,7 +3030,7 @@ from \co{y} with the value just stored.\footnote{
 \label{lst:Why rfe Instead of Tried-And-True rf?}
 \end{listing}
 
-In the confines of the C++ abstract machine (omitting the no-OOTA
+Within the confines of the C++ abstract machine (omitting the no-OOTA
 restriction), this allows a value-17 OOTA cycle, courtesy of the fact
 that C++ respects neither control nor data dependencies.
 However, the \co{herd7} tool does not identify this cycle, perhaps due
