@@ -2987,15 +2987,6 @@ eliminated by the compiler and therefore should not be used in a
 definition of OOTA.
 This section provides more involved examples to drive this point home.
 
-Although the examples presented in
-(and shown as litmus tests in
-Listings~\ref{lst:OOTA With an Intra-Process Store-Load Link}
-and~\ref{lst:OOTA With an Intra-Process Store-Load Link, Optimized})
-demonstrate that rf can be atemporal, they demonstrate neither
-OOTA cycles nor OOTA-like behavior in compiler-based C++ implementations.
-This appendix provides more involved examples that can be optimized
-so as to demonstrate OOTA-like behavior.
-
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-3-2-proc.litmus @@
 \caption{OOTA With an Intra-Process Store-Load Link}
