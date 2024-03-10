@@ -383,14 +383,22 @@ Line~9 contains \co{Sometimes} (as opposed to \co{Never} or \co{Always}),
 indicating that some executions satisfy the \co{exists} clause and
 others do not.
 
-The earlier examples shown in
-Listings~\ref{lst:Simple OOTA}
-and~\ref{lst:Simple Reordering}
-can be recast as similar \co{herd7} litmus tests, as shown in
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/simple-reordering.litmus @@
+\caption{Simple Reordering as Litmus Test}
+\label{lst:Simple Reordering as Litmus Test}
+\end{listing}
+
+Later examples will usually combine the litmus test and the \co{herd7}
+output into one listing, as shown in
+Listing~\ref{lst:Simple Reordering as Litmus Test},
+which recasts
+Listing~\ref{lst:Simple Reordering}
+into litmus-test form.
+Listing~\ref{lst:Simple OOTA}
+can be also recast as a \co{herd7} litmus test, as shown in
 Listing~\ref{lst:Causality Test Case 4}
-on page~\pageref{lst:Causality Test Case 4}
-and Listing~\ref{lst:Simple Reordering as Litmus Test}
-on page~\pageref{lst:Simple Reordering as Litmus Test}, respectively.
+on page~\pageref{lst:Causality Test Case 4}.
 Other OOTA-related litmus tests may be found in
 Appendix~\ref{app:Illustrative Litmus Tests}
 and
@@ -3382,20 +3390,6 @@ implementation.
 Note that in a C++ implementation that (erroneously) permitted an OOTA
 cycle to form, that cycle would involve both of \co{P0()}'s \co{r0}
 and \co{r1} local variables.
-
-% \subsection{Simple Reordering as Litmus Test}
-% \label{app:Simple Reordering as Litmus Test}
-
-% Listing~\ref{lst:Simple Reordering as Litmus Test}
-% shows how
-% Listing~\ref{lst:Simple Reordering}
-% can be recast into a \co{herd7} litmus test.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/simple-reordering.litmus @@
-\caption{Simple Reordering as Litmus Test}
-\label{lst:Simple Reordering as Litmus Test}
-\end{listing}
 
 % \section{History}
 % \label{sec:History}
