@@ -3181,10 +3181,24 @@ the previously discarded value in \co{r0}.
 \label{lst:Unused Inventing Non-Boolean Atomic Loads}
 \end{listing}
 
-This is not restricted to booleans, as can be seen in
+This issue is not restricted to booleans.
+For example, if given the code fragment shown in
+Figure~\ref{lst:OOTA Cycle}
+on
+page~\pageref{lst:OOTA Cycle},
+is the compiler permitted to act as if the code was instead as shown in
+Listing~\ref{lst:Unused Inventing Non-Boolean Atomic Loads}?
+Here, if the value loaded by line~9 is something other than 42,
+the load is retried on line~11, and perhaps a third time on line~14.
+If the value loaded in all three cases is something other than 42,
+then line~16 stores the last value loaded, and otherwise, the constant
+42 is stored by either line~18, 20, or~23.
+Despite the fact that the code in both listings can be argued to be
+equivalent, it is difficult to argue that a reasonable compiler
+would act as if the code in
+Figure~\ref{lst:OOTA Cycle}
+was instead that shown in
 Listing~\ref{lst:Unused Inventing Non-Boolean Atomic Loads}.
-This example is more straightforward in that it does not make quite so
-creative use of the multiple values loaded.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/inc.litmus @@
@@ -3291,6 +3305,9 @@ variables in order to avoid expensive cache misses.
 
 \subsection{OOTA From Undefined-Behavior Optimizations}
 \label{app:OOTA From Undefined-Behavior Optimizations}
+
+This section departs from one of the rules for this paper by considering
+an example having undefined behavior.
 
 Many compilers carry out optimizations based on the assumption
 that UB cannot happen, and these optimizations can result in OOTA cycles,
