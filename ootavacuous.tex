@@ -2316,7 +2316,13 @@ plots a histogram of the elapsed time from the store of a new value
 to the first load of that new value.
 Here all of the data falls into positive time, indicating
 that rfe links always go forward in global time, as those familiar with
-computer hardware and the laws of physics would expect.
+computer hardware, limits on speculative execution, and the laws of
+physics would expect.\footnote{
+	Our apologies to those who might feel that this is belaboring
+	the obvious.
+	And please understand that these points have proven helpful to
+	some of those whose whose work has never strayed too close to
+	hardware.}
 
 \begin{figure}[tb]
 \begin{center}
