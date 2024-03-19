@@ -3330,62 +3330,74 @@ A compiler might be wise to adhere to the
 same restriction that avoids data races for loads from non-atomic
 variables in order to avoid potentially expensive cache misses.
 
-\subsection{OOTA From Undefined-Behavior Optimizations}
-\label{app:OOTA From Undefined-Behavior Optimizations}
-
-This section departs from one of the rules for this paper by considering
-an example having undefined behavior.
+\subsection{Undefined Behavior and Unwise Optimization}
+\label{app:Undefined Behavior and Unwise Optimization}
 
 Many compilers carry out optimizations based on the assumption
-that UB cannot happen, and these optimizations can result in OOTA cycles,
-with a simple example shown in
-Listing~\ref{lst:OOTA Due To Divide-By-Zero UB}.
+that undefined behavior (UB) cannot happen,
+and if not performed carefully, these optimizations may be invalid
+because of OOTA-like interactions.
+A simple example is shown in
+Listing~\ref{lst:OOTA-Like Behavior Due To Divide-By-Zero UB}.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-div-ub.litmus @@
-\caption{OOTA Due To Divide-By-Zero UB}
-\label{lst:OOTA Due To Divide-By-Zero UB}
+\caption{OOTA-Like Behavior Due To Divide-By-Zero UB}
+\label{lst:OOTA-Like Behavior Due To Divide-By-Zero UB}
 \end{listing}
 
-On line~14 of this listing, the value of \co{r2} must be either zero
-or one due to the comparison on line~13.
-If it is the value one, then there is a divide-by-zero error, which
-enables the compiler to assume that the value of \co{r1} is
-always zero.
-This in turn allows the compiler to behave as if the expression
-stored to \co{y} on line~14 was the constant 1, at which point there
-is no semantic dependency from the load from \co{x} on line~13 to the
-store to \co{y} on line~14.
+On line~14 of this listing, the computation \co{1 / (r2 <= 0)}
+will yield one if \co{r2} is not positive and will result in UB
+otherwise (a divide-by-zero error).
+It may not be obvious, but the program is in fact UB-free---there are
+no abstract executions in which \co{r2} is greater than zero.
+To see why not, consider that in any such execution
+\co{P1()} would not store anything to \co{y};
+it certainly would not store a positive value.
+This means that the value loaded on line~8 would have to be \co{y}'s
+initial value of zero, and so would the value stored to \co{x} on
+line~9, and hence it would not be possible for the load on line~13
+to get a positive value for \co{r2} after all.
 
-The compiler is then within its rights to act as if lines~13 and~14
-were interchanged.
-At which point, the order of execution could be as follows:
+Even for a compiler analyzing \co{P1()} in isolation,
+it is clear that either line~14 will store one to \co{y} or
+else the division by zero will cause UB.
+This allows the compiler to assume that the store will always
+take place, on the grounds that UB cannot happen,
+and so the compiler may optimize the comparison and division
+by replacing the whole expression with a constant \co{1}.
+There will then be no dependency from the load on line~13
+to the store and thus nothing forcing the store to execute
+after the load.
 
+When the resulting program runs on a weakly ordered architecture,
+the execution could go as follows:
 \begin{enumerate}
-\item	Line~14 stores the constant 1 to \co{y}.
-\item	Line~8 loads the constant 1 from \co{y}, setting \co{r1} to 1.
-\item	Line~9 stores the constant 1 to \co{x}.
-\item	Line~8 loads the constant 1 from \co{x}, setting \co{r2} to 1.
+\item	Line~14 executes out of order, storing the constant \co{1} to \co{y}.
+\item	Line~8 loads one from \co{y}, setting \co{r1} to one.
+\item	Line~9 stores one to \co{x}.
+\item	Line~13 loads one from \co{x}, setting \co{r2} to one.
 \end{enumerate}
+The final result would satisfy the \co{exists} clause,
+exhibiting observable behavior (\co{r2} is one at the end)
+that no abstract execution of the original program could produce.
+(This could happen even if all of the atomic objects in
+Listing~\ref{lst:OOTA-Like Behavior Due To Divide-By-Zero UB}
+were converted to volatile.)
 
-Please note that the OOTA-like cycle called out in the \co{exists}
-clause can happen even though the program never actually executes any
-code that would have resulted in division-by-zero UB.
+This result shows that the proposed optimization was invalid.
+To prevent the unwanted behavior, the compiler would have to take an
+extra step to force the optimized store on line~14 to be ordered after
+the load on line~13, possibly by changing the load to a load-acquire
+or changing the store to a store-release.
+
+In other words, the compiler would have to preserve the dependency
+ordering that the UB-based optimization would otherwise destroy.
 It is tempting to consider using techniques
 % Appendix~\ref{app:Aside on Undefined Behavior}
 that prevent back-propagation of UB, but these are ineffective in this
 case because the compiler can detect and exploit UB when
 considering line~14 in isolation.
-Once the constant 1 is substituted for line~14's expression, the
-hardware is free to reorder lines~13 and~14 even if a compiler-based
-C++ implementation refrains from doing so.
-Note that this OOTA-like cycle can appear even if all of the atomic
-operations in
-Listing~\ref{lst:OOTA Due To Divide-By-Zero UB}
-are converted to volatile.
-
-Therefore, this paper focuses on UB-free programs, rare though these
-beasts might be among large-scale C++ programs running in production.
 
 \subsection{Multi-Cycle Litmus Test}
 \label{app:Multi-Cycle Litmus Test}
