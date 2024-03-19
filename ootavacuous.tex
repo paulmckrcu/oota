@@ -3071,11 +3071,11 @@ storing a constant 17 to \co{z} rather than going through the
 computations on lines~15--17 of
 Listing~\ref{lst:Why rfe Instead of Tried-And-True rf?},
 it will generate an executable which could produce the all-17's result
-described by the ``exists'' clause.
+described by the \co{exists} clause.
 (See Listing~\ref{lst:Why rfe Instead of Tried-And-True rf When z=17?},
 where the store to \co{z} has been moved up to line~9.\footnote{
 	The load from \co{y} on line~15 is retained even though it is
-	not used, because \co{r3} appears in the ``exists'' clause and
+	not used, because \co{r3} appears in the \co{exists} clause and
 	hence its final value is considered observable behavior.})
 This would not be an OOTA cycle, because in either form of the program
 the store to~\co{z} in \co{P0} is not semantically dependent on the
