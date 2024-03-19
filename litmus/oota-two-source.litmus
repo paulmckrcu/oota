@@ -1,4 +1,4 @@
-C oota-causality-two-source
+C oota-two-source
 {
 	[x] = 0;
 	[y] = 0;
