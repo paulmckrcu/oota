@@ -3114,8 +3114,8 @@ is no genuine semantic dependency in one of the participating threads.
 \subsection{Inventing Atomic Loads}
 \label{app:Inventing Atomic Loads}
 
-This section contains several example litmus tests from the active
-mind of Alan Stern, expanding on the material presented in
+This section contains several example litmus tests
+expanding on the material presented in
 Section~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}.
 
 \begin{listing}[tbp]
@@ -3124,12 +3124,11 @@ Section~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}.
 \label{lst:No Invented Atomic Loads}
 \end{listing}
 
-First, consider Listing~\ref{lst:No Invented Atomic Loads}.
-At first glance, this might appear straightforward.
+Consider Listing~\ref{lst:No Invented Atomic Loads}.
+At first glance, it might appear straightforward.
 \co{P0()}'s store to \co{z} clearly depends on its load from \co{y},
 and \co{P1()}'s store to \co{y} clearly depends on its load from \co{z}.
-If both dependencies are semantic dependencies, the OOTA cycle cannot
-form.
+If both dependencies are semantic, the OOTA cycle cannot be realized.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-load-invented.litmus @@
@@ -3137,32 +3136,55 @@ form.
 \label{lst:Atomic Loads Invented}
 \end{listing}
 
-But is \co{P0()}'s dependency a semantic dependency?
-For example, is a C++ compiler permitted to
+But is \co{P0()}'s dependency truly semantic?
+Imagine what might happen if a C++ compiler is permitted to
 duplicate \co{P0()}'s load from \co{x} and then make use of both loads'
-values?
-If this is permitted, then the compiler would be within its rights
-to transform
+values.
+This would allow a compiler to transform
 Listing~\ref{lst:No Invented Atomic Loads}
 into
 Listing~\ref{lst:Atomic Loads Invented}.
 
-Because the values of \co{r1}, \co{r2}, and \co{r3} are all known to be
-either zero or one, if the values returned by the two loads from \co{x}
-differ, then one of those two values must be equal to that from \co{y}.
-If the compiler is further permitted to make a runtime choice
-between the two values loaded from \co{x}, it could always choose the
-one that was equal to the value loaded from \co{y}, as shown by the
-\co{if} statement on line~13.
-This would mean that the store to \co{z} was always the constant 1,
-which would permit the store to be ordered before the load from \co{y},
-as shown in lines~14 and~15.
-Doing so permits the OOTA-like outcome of \co{r3 == r4 == 1}.
+Because of the comparisons against zero on lines~9 and~10 of
+Listing~\ref{lst:No Invented Atomic Loads},
+the values of \co{r1} and \co{r2} are known to be either zero or one.
+Hence if the values of \co{r1a} and \co{r1b} on lines~9 and~10 of
+Listing~\ref{lst:Atomic Loads Invented}
+differ (say because \co{P2()} changes the value of \co{x}
+during the time between the two loads)
+then one of them must be equal to the value that would
+be obtained for \co{r2}.
+If the compiler is further permitted to make a choice at runtime
+between the two values loaded from \co{x}, it could always choose
+to use for \co{r1} the one that would be equal to \co{r2} (see line~16).
+Then the value stored to \co{z} would always be one,
+as shown on line~14, where the store has been moved before
+the load from \co{y} on line~15 to emphasize the fact that
+it does not depend on that load.
+The dependency from~\co{y} to~\co{z} would not be semantic after all,
+and the outcome \co{r1 == r2 == 1} would indeed be possible
+(although it would not be an example of OOTA because of the lack of a
+semantic dependency).
 
-The compiler might also drop the load from \co{y}, whose value
-is now unused except by the \co{exists} clause.
-However, the \co{exists} clause is considered to be observable behavior,
-which means that the load from \co{y} must remain.
+This is a simple example of a more general phenomenon.
+Suppose $z$ is given by some function $f$ of $x$ and $y$.
+Under what conditions can we say that the value of $z$ doesn't depend
+on $y$?
+The standard answer is that this happens when there are values
+$z_0$ and $x_0$ such that for any $y$, we have $z_0 = f(x_0, y)$.
+But if we are allowed to choose from among multiple values of $x$,
+the situation gets more complicated.
+Then the answer would be that there is a value $z_0$ and
+a set $X$ of values for $x$ such that for any $y$, there is some
+$x \in X$ with $z_0 = f(x, y)$.
+In Listing~\ref{lst:Atomic Loads Invented},
+$f$ is the equality function and $X$ is simply the set $\{0, 1\}$;
+however, the reasoning applies in any situation where $x$ ranges
+over a finite collection of possible values.
+And as the example shows, the more general condition can hold in situations
+where the simpler condition does not, indicating that our intuitive
+notions of semantic dependency are not adequate when there can be
+multiple loads of the same variable.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-unused-load.litmus @@
@@ -3170,17 +3192,23 @@ which means that the load from \co{y} must remain.
 \label{lst:Unused Extra Atomic Load}
 \end{listing}
 
-One possible reaction to this situation is to declare that useful
-C++ compilers should never duplicate nonvolatile
-relaxed atomic loads.
-But suppose that the initial code was as shown in
+Clearly something has gone wrong if a valid (in loose C++) transformation
+like this one is capable of destroying what should be an obvious semantic
+dependency.
+One possible reaction is to declare that useful C++ compilers should never
+invent or duplicate nonvolatile relaxed atomic loads.
+But what if the initial code was as shown in
 Listing~\ref{lst:Unused Extra Atomic Load}?\footnote{
-	Such unused loads can easily be generated by complex macros or
-	template metaprograms.}
+	Unused loads can easily be generated by complex macros or
+	template metaprograms.
+	Typically compilers then remove them, but they are not obliged to.}
 In this case, the transformation to
 Listing~\ref{lst:Atomic Loads Invented}
-would not require inventing a load, but instead merely inventing a use of
+would not require inventing or duplicating a load,
+but instead merely inventing a use for
 the previously discarded value in \co{r0}.
+
+\medskip
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-invent-int-load.litmus @@
@@ -3201,7 +3229,7 @@ If the value loaded in all three cases is something other than 42,
 then line~16 stores the last value loaded, and otherwise, the constant
 42 is stored by either line~18, 20, or~23.
 Despite the fact that the code in both listings can be argued to be
-equivalent, it is difficult to argue that a reasonable compiler
+equivalent, it is difficult to imagine that a reasonable compiler
 would act as if the code in
 Figure~\ref{lst:OOTA Cycle}
 was instead that shown in
@@ -3213,29 +3241,24 @@ Listing~\ref{lst:Unused Inventing Non-Boolean Atomic Loads}.
 \label{lst:Only Atomic Increment}
 \end{listing}
 
-But suppose that we drop the single-thread-analysis constraint for
-the moment, and suppose that the compiler is able to prove
-that the only modification of a given atomic variable is to atomically
-increment it, as is the case for \co{y} in
-Listing~\ref{lst:Only Atomic Increment}.
-
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/inc-range.litmus @@
 \caption{Only Atomic Increment, Optimized}
 \label{lst:Only Atomic Increment, Optimized}
 \end{listing}
 
-Is a C++ compiler within its rights to behave as if the code
-shown in
-Listing~\ref{lst:Only Atomic Increment}
-was instead as shown in
+Let us drop the single-thread-analysis constraint for
+the moment, and suppose that the compiler is able to prove
+that the only modification of a given atomic variable is to atomically
+increment it, as is the case for \co{y} in
+Listing~\ref{lst:Only Atomic Increment}.
+Is it okay for a C++ compiler to transform this program into
 Listing~\ref{lst:Only Atomic Increment, Optimized}?
-One argument in favor is that the value of \co{y} must have
-passed through the value 42 in the case where \co{r0} and \co{r1}
+An argument in favor is that the value of \co{y} must have
+passed through the value 42 if \co{r0} and \co{r1}
 bracket that value.
-Arguments against might cite the added overhead of the invented load
-in Listing~\ref{lst:Only Atomic Increment, Optimized}, or that the
-possibility that the check for the value 42 is intended for statistical
+Arguments against might cite the added overhead of the invented load,
+or the possibility that the check for the value 42 is intended for statistical
 sampling.
 
 There are a number of possible reactions to these situations:
@@ -3255,9 +3278,9 @@ There are a number of possible reactions to these situations:
 	nonvolatile relaxed atomic loads from the same object should
 	be permitted only if the two loads could be reordered to be
 	adjacent to each other.
-\item	Any time a compiler might be tempted to invent uses from
-	values from nonvolatile relaxed atomic loads from the same
-	object, the loads should instead be fused into a single load.
+\item	Any time a compiler might be tempted to invent uses for
+	values of nonvolatile relaxed atomic loads from the same
+	object, the loads should instead be merged into a single load.
 	This reaction might be attractive to those who carefully consider
 	the pointlessness of keeping two loads that return the same value
 	on the one hand or the cache-miss overhead incurred when closely
@@ -3271,19 +3294,16 @@ There are a number of possible reactions to these situations:
 
 There are situations where inventing loads from non-atomic objects
 is customary, for example, when hoisting a load out of a loop.
-In this case, compilers might hoist the load from x out of
+In this case, compilers might hoist the load from \co{x} out of
 the loop:
-
 \begin{quote}
 \begin{verbatim}
 do_something_with(x);
-for (i = 0; i < limit i++)
+for (i = 0; i < limit; i++)
     y[i] += x;
 \end{verbatim}
 \end{quote}
-
 A compiler might act as if the program had instead been this:
-
 \begin{quote}
 \begin{verbatim}
 r1 = x;
@@ -3292,23 +3312,23 @@ for (i = 0; i < limit i++)
     y[i] += r1;
 \end{verbatim}
 \end{quote}
-
-Note that passing \co{x} to the call to \co{do_something_with()} is important
+Note that passing \co{x} to \co{do_something_with()} is important
 because this allows the compiler to assume that inventing additional
 accesses to \co{x} will not result in a data race.
 Without this assumption, the above transformation might introduce a data
 race when \co{limit} is less than or equal to zero.
 
-But if \co{x} is a nonvolatile atomic, then there are no worries about
+But if \co{x} is a nonvolatile atomic, there are no worries about
 data races.
-In theory, the compiler could make the above transformation without
+In theory, if the \co{do_something_with()} call was not present
+the compiler could still make the above transformation without
 worry, especially given that the value loaded from \co{x} is discarded in
 the case where \co{limit} is less than or equal to zero.
 Except that the data-race worry is replaced by a cache-miss worry.
 After all, optimizations are supposed to speed things up.
-This means that a compiler might be wise to adhere to the
+A compiler might be wise to adhere to the
 same restriction that avoids data races for loads from non-atomic
-variables in order to avoid expensive cache misses.
+variables in order to avoid potentially expensive cache misses.
 
 \subsection{OOTA From Undefined-Behavior Optimizations}
 \label{app:OOTA From Undefined-Behavior Optimizations}
