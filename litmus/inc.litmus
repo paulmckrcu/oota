@@ -13,8 +13,6 @@ P0(atomic_int *x, atomic_int *y) {
 	int r0 = atomic_load_explicit(y, memory_order_relaxed);
 	if (r0 == 42)
 		atomic_store_explicit(x, 42, memory_order_relaxed);
-	else
-		atomic_store_explicit(x, r0, memory_order_relaxed);
 }
 
 P1(atomic_int *x, atomic_int *y) {

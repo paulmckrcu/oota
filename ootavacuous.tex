@@ -3243,8 +3243,8 @@ Listing~\ref{lst:Unused Inventing Non-Boolean Atomic Loads}.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/inc-range.litmus @@
-\caption{Only Atomic Increment, Optimized}
-\label{lst:Only Atomic Increment, Optimized}
+\caption{Only Atomic Increment, Extended}
+\label{lst:Only Atomic Increment, Extended}
 \end{listing}
 
 Let us drop the single-thread-analysis constraint for
@@ -3253,7 +3253,7 @@ that the only modification of a given atomic variable is to atomically
 increment it, as is the case for \co{y} in
 Listing~\ref{lst:Only Atomic Increment}.
 Is it okay for a C++ compiler to transform this program into
-Listing~\ref{lst:Only Atomic Increment, Optimized}?
+Listing~\ref{lst:Only Atomic Increment, Extended}?
 An argument in favor is that the value of \co{y} must have
 passed through the value 42 if \co{r0} and \co{r1}
 bracket that value.
