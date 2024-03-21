@@ -3399,53 +3399,20 @@ that prevent back-propagation of UB, but these are ineffective in this
 case because the compiler can detect and exploit UB when
 considering line~14 in isolation.
 
-\subsection{Multi-Cycle Litmus Test}
-\label{app:Multi-Cycle Litmus Test}
+\subsection{Additional Litmus Tests}
+\label{app:Additional Litmus Tests}
 
-Listing~\ref{lst:Multi-Cycle Litmus Test}
-expands
-Listing~\ref{lst:Causality Test Case 4}
-in a different way, moving to four threads but having only the
-original two variables \co{x} and \co{y}.
-The \co{herd7} tool shows multiple different possible OOTA cycles,
-as expected.
-However, the value returned by each thread's load directly affects the
-value stored, so there is a semantic dependency in each thread.
-Therefore, none of these OOTA cycles can arise in a compiler-based
-C++ implementation.
+This section lists a couple of other litmus tests of interest:
 
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-two-source.litmus @@
-\caption{Multi-Cycle Litmus Test}
-\label{lst:Multi-Cycle Litmus Test}
-\end{listing}
-
-\subsection{Non-LB Litmus Test}
-\label{app:Non-LB Litmus Test}
-
-Listing~\ref{lst:Non-LB Litmus Test}
-shows a litmus test that can produce an OOTA cycle, but that is not
-a member of the load-buffering (LB) class of litmus tests.
-Suppose that lines~9 and~10 both somehow return the value 21.
-Then line~12 will store the value 42 to \co{x}, which will cause
-line~17 to store 21 to \co{y} and line~22 to store 21 to \co{z},
-thus justifying the values initially loaded by lines~9 and~10.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-non-lb.litmus @@
-\caption{Non-LB Litmus Test}
-\label{lst:Non-LB Litmus Test}
-\end{listing}
-
-All thread's loads' return values affect the value stored, so all
-threads have semantic dependencies between their respective relaxed
-atomic loads and relaxed atomic stores.
-Therefore, an OOTA cycle cannot form in a compiler-based C++
-implementation.
-
-Note that in a C++ implementation that (erroneously) permitted an OOTA
-cycle to form, that cycle would involve both of \co{P0()}'s \co{r0}
-and \co{r1} local variables.
+\begin{itemize}
+\item	The litmus test at
+	\url{https://github.com/paulmckrcu/oota/blob/master/litmus/oota-two-source.litmus}
+	shows multiple overlapping OOTA cycles.
+\item	The litmus test at
+	\url{https://github.com/paulmckrcu/oota/blob/master/litmus/oota-non-lb.litmus}
+	shows that OOTA cycles are not confined to the load-buffering (LB)
+	pattern.
+\end{itemize}
 
 % \section{History}
 % \label{sec:History}
