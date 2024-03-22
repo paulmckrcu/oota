@@ -2840,7 +2840,7 @@ Section~\ref{sec:Global Analysis and Volatile versus Quasi Volatile}.
 Most of the examples in this paper involve simple semantic dependencies
 connecting a single load to a single store.
 One exception appears in
-Appendix~\ref{app:Non-LB Litmus Test},
+Appendix~\ref{app:Additional Litmus Tests},
 but this section will present a more difficult example.
 
 \begin{listing}[tbp]
@@ -3210,33 +3210,6 @@ would not require inventing or duplicating a load,
 but instead merely inventing a use for
 the previously discarded value in \co{r0}.
 
-\medskip
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-invent-int-load.litmus @@
-\caption{Inventing Non-Boolean Atomic Loads}
-\label{lst:Unused Inventing Non-Boolean Atomic Loads}
-\end{listing}
-
-This issue is not restricted to booleans.
-For example, if given the code fragment shown in
-Figure~\ref{lst:OOTA Cycle}
-on
-page~\pageref{lst:OOTA Cycle},
-is the compiler permitted to act as if the code was instead as shown in
-Listing~\ref{lst:Unused Inventing Non-Boolean Atomic Loads}?
-Here, if the value loaded by line~9 is something other than 42,
-the load is retried on line~11, and perhaps a third time on line~14.
-If the value loaded in all three cases is something other than 42,
-then line~16 stores the last value loaded, and otherwise, the constant
-42 is stored by either line~18, 20, or~23.
-Despite the fact that the code in both listings can be argued to be
-equivalent, it is difficult to imagine that a reasonable compiler
-would act as if the code in
-Figure~\ref{lst:OOTA Cycle}
-was instead that shown in
-Listing~\ref{lst:Unused Inventing Non-Boolean Atomic Loads}.
-
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/inc.litmus @@
 \caption{Only Atomic Increment}
@@ -3404,7 +3377,7 @@ considering line~14 in isolation.
 \subsection{Additional Litmus Tests}
 \label{app:Additional Litmus Tests}
 
-This section lists a couple of other litmus tests of interest:
+This section lists a few other litmus tests of interest:
 
 \begin{itemize}
 \item	The litmus test at
@@ -3414,6 +3387,14 @@ This section lists a couple of other litmus tests of interest:
 	\url{https://github.com/paulmckrcu/oota/blob/master/litmus/oota-non-lb.litmus}
 	shows that OOTA cycles are not confined to the load-buffering (LB)
 	pattern.
+\item	The litmus test at
+	\url{https://github.com/paulmckrcu/oota/blob/master/litmus/oota-invent-int-load.litmus}
+	shows another invented-load scenario loosely based on
+	Figure~\ref{lst:OOTA Cycle}
+	on
+	page~\pageref{lst:OOTA Cycle}.
+	See Appendix~\ref{app:Inventing Atomic Loads}
+	for more discussion on this topic.
 \end{itemize}
 
 % \section{History}
