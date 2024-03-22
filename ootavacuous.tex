@@ -118,7 +118,7 @@ and each thread's store depends on the value returned by that thread's load.
 The collection of loads and stores forms an \emph{OOTA cycle}.
 In the most extreme cases a nonsensical value can pop up ``out of thin air'';
 however, as shown by
-Listing~\ref{lst:OOTA Cycle},
+Listing~\ref{lst:OOTA Cycle} below,
 OOTA cycles need not involve nonsensical values.
 
 \subsubsection{Simple OOTA Cycle}
@@ -184,7 +184,7 @@ another from line~12 to line~13.
 to a given store when \emph{all other things being equal, a change in the
 value loaded can change the value stored or prevent the store from
 occurring at all.}
-Here the dependencies are trivial, because the values stored simply
+Here the dependencies are trivial because the values stored simply
 \emph{are} the values that were loaded.)
 Since real-world CPUs cannot store something
 until they have determined its value,\footnote{
@@ -339,8 +339,8 @@ the \path{litmus} directory in the \url{https://github.com/paulmckrcu/oota}
 repository.
 Lines~2--5 initialize variables, in this case setting the initial
 values of the global shared variables \co{x} and \co{y} to zero.
-Variables that are not explicitly initialized are initialized
-to zero by default.
+(Variables that are not explicitly initialized are initialized
+to zero by default.)
 Lines~7--13 define the first thread, \co{P0()}, and lines~15--21
 define the second thread, \co{P1()}.\footnote{
 	The ``P'' stands for ``process'', which is \co{herd7}'s name
@@ -350,7 +350,7 @@ the global shared variables each thread may access, in this case, \co{x}
 and \co{y}.
 The body of each thread contains a limited subset of C++ code
 (written in a slightly stilted manner to keep the load operations separate
-from the rest).
+from the rest and because \co{herd7}'s knowledge of C++ is limited).
 
 Line~23 has a \co{locations} clause, which causes
 \co{herd7} to dump out the final values of \co{x} and \co{y}.
@@ -396,7 +396,7 @@ which recasts
 Listing~\ref{lst:Simple Reordering}
 into litmus-test form.
 Listing~\ref{lst:Simple OOTA}
-can be also recast as a \co{herd7} litmus test, as shown in
+can also be recast as a \co{herd7} litmus test, as shown in
 Listing~\ref{lst:Causality Test Case 4}
 on page~\pageref{lst:Causality Test Case 4}.
 Other OOTA-related litmus tests may be found in
@@ -412,16 +412,17 @@ demonstrates advantages of formulating an OOTA cycle as a cycle in
 sdep $\cup$ rfe instead of the traditional sdep $\cup$ rf.
 Section~\ref{sec:Properties of Semantic Dependencies}
 then discusses properties of semantic dependences, showing that they
-are functions of executions rather than strictly of source code.
+are functions of executions rather than strictly of source code,
+among other things.
 
-\subsection{OOTA: rf vs. rfe}
+\subsection{OOTA: rf vs.\ rfe}
 \label{sec:OOTA: rf vs. rfe}
 
-Semantic dependencies are only one type of link in an OOTA cycle.
+Semantic dependencies form only one type of link in an OOTA cycle.
 The other type extends from a given store to a load that returns the
 value stored.
-It is tempting to make the intuitive argument that the store must precede
-the load in global time, and then to combine this with the notion that
+It is tempting to argue that the store must precede
+the load in global time and combine this with the intuitive notion that
 any real C++ implementation must consume global time when computing a
 semantic dependency.
 This combination suggests that OOTA cycles cannot occur.
@@ -431,14 +432,14 @@ in sdep $\cup$ rf~\cite{PaulEMcKenney2014OOTA},
 % of N4323 ("Out-of-Thin-Air Execution is Vacuous").
 where sdep is the set of semantic dependencies within
 each thread and rf is the set of store-to-load ``reads-from'' links,
-whether intra-thread
+whether within a thread
 (rfi) or between threads (rfe).\footnote{
 	See Appendix~\ref{app:Interthread Communications} for definitions
 	and properties of rf, rfe, and rfi.}
 
 This is a fine definition and is consistent with the words in the C++
-standard, but it has an intra-thread problem exemplified by the following
-code:
+standard, but it has a problem with intrathread rfi links
+exemplified by the following code:
 \begin{quote}
 \scriptsize
 \begin{verbatim}
@@ -451,8 +452,8 @@ code:
 This is an elaboration of \co{thread2()} from
 Listing~\ref{lst:Simple OOTA}
 that adds \co{z} along with lines~3 and~4.
-The problem is that a C++ implementation is within its rights to
-note that line~3 might well execute immediately after line~2, giving
+The problem is that a C++ implementation may
+note that line~3 could well execute immediately after line~2, giving
 other threads no chance to modify \co{y} in between.
 Such an implementation might therefore behave as if the source code
 had instead been as follows:
@@ -472,11 +473,11 @@ act as a temporal constraint.
 
 In order to avoid these rfi links we will substitute rfe
 for rf, defining an OOTA cycle---for now---as a cycle in sdep $\cup$ rfe,
-where rfe is the set of store-to-load links excluding intra-thread rfi links.
+where rfe is the set of store-to-load links between different threads.
 Any rfi links in a cycle can instead be interpreted as part of sdep.
 Although this does shunt additional complexity onto the term
 ``semantic dependency'', it also enables us to separate cleanly
-the inter-thread and intra-thread portions of any given OOTA cycle.
+the interthread and intrathread portions of any given OOTA cycle.
 % \footnote{
 %	Thanks to Alan Stern for providing a litmus test that demonstrated
 %	that we had unwittingly (but productively!) shifted our definition
@@ -495,7 +496,7 @@ OOTA cycles.
 The primary difficulty lies in the fact that the code transformations
 performed by optimizing compilers can destroy dependencies, including
 semantic ones (depending on one's definition).
-That is, even though the potential for a dependency exists in the
+That is, even when the potential for a dependency exists in the
 source code for a thread, there may be no dependency in the machine
 code produced by a compiler.
 There would then be no constraint forcing the implementation to execute
@@ -521,7 +522,7 @@ shows that semantic dependencies can be affected by cross-thread
 optimizations.
 Sections~\ref{sec:Semantic Dependencies Affected by if Statements}
 and~\ref{sec:Semantic Dependencies Not Affected by if Statements}
-shows that \co{if} statements can have surprising effects on semantic
+show that \co{if} statements can have surprising effects on semantic
 dependencies, up to and including eliminating them completely.
 Finally,
 Section~\ref{sec:Semantic Dependencies and Matching Up Stores}
@@ -582,7 +583,7 @@ we will say that an execution is an instance of OOTA if in that execution:
 	stores in a different thread.
 \end{quote}
 This makes OOTA more complicated than a simple cycle but
-we will continue to refer to OOTA cycles out of habit.
+we will continue to refer to ``OOTA cycles'' out of habit.
 Note that this new definition includes and generalizes the earlier
 ``cycle in sdep $\cup$ rfe'' definition.
 
@@ -641,7 +642,7 @@ else
 Because the stores executed on each arm of the \co{if} statement write
 identical values to identical addresses, one could equally well regard
 the two statements as performing two different stores or as performing
-for all intents and purposes a single store, independent of x.
+for all intents and purposes a single store, independent of \co{x}.
 Reasonable C++ implementations might disagree on this matter and
 therefore on whether or not the example has a semantic dependency.
 It is the implementation's choice.
@@ -735,8 +736,8 @@ operations of a source program in great, but not complete, detail:
 In addition to these points, the standard does not specify which store
 an atomic load must read from, beyond requiring that the overall
 pattern of loads and stores be consistent with the C++ memory model.
-We assume that programs will not indulge in any other computations that
-could be expected to vary spontaneously from one execution to another,
+We assume that programs will not indulge in any computations that
+could vary spontaneously from one execution to another,
 such as basing a dependency on the time of day or a process ID.
 
 The implementation-defined aspects can affect whether or not an
@@ -798,8 +799,8 @@ code, of course---determines within each thread a unique, linearly
 ordered series of steps to be carried out by the abstract machine.
 However, there is no ordering relation between steps carried out
 in different threads.  Even if a load in one thread reads from a
-store in another thread, the standard does not require the store to come
-before the load.
+store in another thread, the standard generally does not require
+the store to come before the load in any meaningful way.
 
 With the compiler-based implementations we are considering,
 the choices for the nondeterministic pathways are ``frozen'' into the
@@ -827,7 +828,7 @@ memory-load instructions.
 memory stores.)
 
 For this reason, the hardware executions we use will comprise (along
-with machine code being run) the computer architecture and for each
+with the machine code being run) the computer architecture and for each
 load instruction, the store instruction from which it reads and the
 value obtained.
 At this level, the fact that the original program was in C++ is
@@ -860,7 +861,7 @@ This means:
 	execution.
 \item	Volatile accesses ``are evaluated strictly according to the
 	rules of the abstract machine'' (4.1.2p6.1 \co{[intro.abstract]}).
-\item	(There is a condition on the interleaving of input and output,
+\item	(There is a condition on the timing and interleaving of input and output,
 	which does not matter for our purposes.)
 \end{itemize}
 We will say that the abstract execution is \emph{realized by} the
@@ -899,7 +900,7 @@ of environment: a benign one in which accesses to these objects work
 the same as nonvolatile memory accesses, and a nonbenign one in which
 accesses to volatile objects are subject to outside interference and
 act more like I/O.
-In particular, when running in a nonbenign environment a program's
+In particular, when it runs in a nonbenign environment, a program's
 volatile loads can return unpredictable values.
 They don't necessarily read from stores (in contrast to nonvolatile loads,
 which always must return the value of the store they read from).
@@ -907,9 +908,9 @@ This implies that volatile load-acquires do not synchronize with
 volatile store-releases in the sense of the C++ memory model,\footnote{
 	However, they might instead synchronize with store-releases in
 	device firmware (or vice versa), roughly speaking.}
-so they do not contribute in the same way to the happens-before relation.
+so they do not contribute to the happens-before relation.
 Also, in these environments the rfe relation does not apply to volatile
-loads and hence the accesses in an OOTA cycle must be nonvolatile.
+loads and stores, and hence the accesses in an OOTA cycle must be nonvolatile.
 
 Of course, the machine-code file produced by a compiler must work
 properly in either kind of environment.
@@ -919,8 +920,8 @@ invent, omit, merge, or reorder these accesses, as we will discuss in
 Section~\ref{sec:Volatile and Quasi Volatile Accesses} below.
 
 Given this relation between abstract and hardware executions, it is time
-to turn our attention to the tool that selects hardware execution so as
-to preserve that relation, namely, compilers.
+to turn our attention to the tools that manage hardware executions so as
+to enforce that relation, namely, compilers.
 
 \section{C++ Compilers}
 \label{sec:C++ Compilers}
@@ -1027,8 +1028,8 @@ we will for now confine our attention to compilers that analyze only
 one thread of source code at a time.
 In more precise terms, we want the compilers under consideration
 always to generate the same machine-code output for threads having
-the same source code, regardless of the rest of the programs
-those threads are contained in.
+the same source code, regardless of the rest of the code in the programs
+containing those threads.
 Later on we will return to globally optimizing compilers.
 
 \subsection{Inventing Atomic Loads Can Destroy Semantic Dependencies}
@@ -1085,7 +1086,7 @@ merge, or reorder them but not invent them.
 
 Just what does this mean?
 
-\subsection{Volatile and ``Quasi Volatile'' Accesses}
+\subsection{Volatile and Quasi Volatile Accesses}
 \label{sec:Volatile and Quasi Volatile Accesses}
 
 Declaring objects to be volatile is a way for the programmer to
@@ -1123,7 +1124,7 @@ these objects, having the following properties:
 	there must be an access in $A$ that maps to it.
 	(In other words, the compiler may not invent accesses to
 	volatile objects.)
-\item	The map is one-to-one: Different accesses in $A$ map to
+\item	The map is one to one: Different accesses in $A$ map to
 	different accesses in $H$.
 	(In other words, the compiler may not merge accesses to
 	volatile objects.)
@@ -1275,7 +1276,7 @@ Since the load instruction cannot commit until its output (the value it
 reads) is fully determined, it must commit after the store it reads
 from.
 (To be fair, this should be considered more as a \emph{result} of
-ordering rather than a \emph{cause} of ordering, in that
+ordering than as a \emph{cause} of ordering, in that
 if a load commits before a store on another thread then it
 cannot possibly read from that store.)
 
@@ -1288,7 +1289,7 @@ send to the instruction-pointer register);
 until then the CPU cannot know whether the later instruction should
 be executed at all.
 Therefore instructions following a conditional- or computed-branch
-instruction in an execution must commit after the branch, and hence
+instruction in a hardware execution must commit after the branch, and hence
 after the source for the branch's condition or destination input.
 (There could theoretically be an exception for a branch that
 conditionally jumps to the immediately following instruction.
@@ -1307,7 +1308,7 @@ Let $W$ be a store which semantically depends on loads
 $\{R_0$, \ldots,~$R_n\}$ in some abstract execution $A$,
 and suppose that $W$ is not
 omitted in some hardware execution $H$ realizing $A$.
-Then for some $i$, load $R_i$ is not omitted and the hardware
+Then for some $i$, load $R_i$ is not omitted in $H$ and the
 instruction it maps to is ordered before the instruction $W$ maps to.
 \end{quote}
 It's quite straightforward to show that for any implementation in which
@@ -1342,7 +1343,7 @@ situation there must be another abstract execution which has the
 same observable effects as $A$ and is also realized by $H$, but in
 which the OOTA cycle does not occur.
 Thus there would be no way to tell, merely by observing the effects of
-$A$, whether there was an OOTA cycle or not.
+$H$, whether there was an OOTA cycle or not.
 For this reason we declare realizations of OOTA cycles in which
 all the accesses are omitted to be trivial.
 
@@ -1362,8 +1363,8 @@ nevertheless hope it will help move the discussion forward.
 The definition given below is applicable only to C++ implementations
 that treat all atomic objects as though they are volatile or
 quasi volatile.
-For compilers that perform only single-thread analysis, not global
-analysis, quasi volatile is sufficient.
+(For compilers that perform only single-thread analysis, not global
+analysis, quasi volatile is sufficient.)
 In this setting we can relate abstract and hardware executions by
 means of the map of accesses described in
 Section~\ref{sec:Volatile and Quasi Volatile Accesses}.
@@ -1380,13 +1381,13 @@ Section~\ref{sec:Verifying the Fundamental Property}
 verifies the fundamental property of semantic dependencies,
 and
 Section~\ref{sec:Outstanding Issues}
-discusses a general questions regarding our definitions.
+discusses general questions regarding our definitions.
 
 \subsection{For Compilers Using Single-Thread Analysis}
 \label{sec:For Compilers Using Single-Thread Analysis}
 
 In this section we consider implementations whose compilers perform
-only single-thread analysis and treat all atomic objects as
+only single-thread analysis and treat atomic objects as
 quasi volatile.
 This implies that if two different programs contain the same thread
 (i.e., the same source code for the functions in the thread), the
@@ -1402,8 +1403,7 @@ machine code produced by the compiler.
 For this reason we will characterize semantic dependencies in a given
 abstract execution realized by a given hardware execution.
 (While it possible to argue about semantic dependencies in abstract
-executions that have no hardware realizations, doing so seems like a
-pointless activity.)
+executions that have no hardware realizations, doing so seems pointless.)
 
 Let $A$ be an abstract execution of some program $P$ containing a
 thread $T$, and let $H$ be a hardware execution realizing $A$.
@@ -1452,7 +1452,7 @@ interpretation of ``all else being equal''.)
 
 Finally, we need to determine an instruction $X'$ in $G$ that
 corresponds to $W'$.
-If $W'$ is part of the initial or common portion of $H$ this is no
+If $W'$ is in the initial or common portion of $H$ this is no
 problem; we can take $X'$ to be $W'$ itself.
 But if $W'$ is in the divergent portion of $H$ then things aren't so
 simple.
@@ -1560,7 +1560,7 @@ semantic dependency.
 
 A drawback of the definition is that it is only relative to a specific
 compiler or implementation.
-This may strike some people as wishy-washy and as avoiding the real
+This may strike some people as wishy-washy and avoiding the real
 problem, in that a given piece of code should either contain or not
 contain a semantic dependency, independent of the implementation used to
 run it.
@@ -1617,9 +1617,9 @@ This would be a valid transformation, and the resulting behavior would
 not count as OOTA according to our definition because the
 dependencies in \co{thread1} and \co{thread2} would not be semantic.
 
-To see why, recall that a semantic dependency must have a witness,
+To see why not, recall that a semantic dependency must have a witness,
 another execution in which the store acts differently.
-But this transformed program has no other executions; every time it
+But this transformed program has no other hardware executions; every time it
 runs it will store 42 to both \co{x} and \co{y}.
 (Keep in mind also that since the atomic objects are not treated as
 volatile, they are not subject to unspecified interference when the
@@ -1682,7 +1682,7 @@ Section~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}:
 int r1 = (x != 0);
 int r2 = (x != 0);
 int r3 = (x != 0);
-int r4 = y;
+int r4 = (y != 0);
 z = (r2 == r4);
 \end{verbatim}
 \end{quote}
@@ -1699,7 +1699,7 @@ machine-code equivalent of:
 int r1 = (x != 0);
 int r2;
 int r3 = (x != 0);
-int r4 = y;
+int r4 = (y != 0);
 if (r1 != r3) {
    r2 = r4;
    z = 1;
@@ -1713,7 +1713,8 @@ In effect, the \co{r2} load is merged with the \co{r1} load in
 executions where \co{r1} is equal to \co{r3} or to \co{r4}, and it is
 merged with the \co{r3} load in other executions.
 
-To demonstrate the semantic dependency, a suitable witness would have
+To demonstrate the semantic dependency in the original code,
+a suitable witness would have
 to include a hardware realization of the abstract execution in which
 \co{r1} and \co{r2} are zero and \co{r3} and \co{r4} are one.
 But there are no hardware realizations of this execution with the
@@ -1749,7 +1750,7 @@ models did not appear until after the standard was
 released~\cite{JadeAlglave2011ppcmem,Maranget2012TutorialARMPower}.
 But they do exist now.
 
-The following sections discuss these constraints, starting with with
+The following sections discuss these constraints, starting with
 hardware constraints and continuing with additional constraints imposed
 by the standard.
 An additional section discusses the OOTA-cycle implications for C++
@@ -1802,7 +1803,8 @@ by the rules of the C++ abstract machine the value must instead be zero.
 \label{lst:Speculated Store and Non-Speculated Load}
 \end{listing}
 
-Applied to Listing~\ref{lst:OOTA Cycle}, for another example,
+Applied to Listing~\ref{lst:OOTA Cycle} on
+page~\pageref{lst:OOTA Cycle}, for another example,
 the principles dictate that if the load on line~8 reads from the store
 on line~18 and the load on line~16 reads from the store on line~10
 (as they do in the execution described by the listing's \co{exists} clause),
@@ -1831,8 +1833,8 @@ then the load must be restarted before it commits even if the load and
 the store are executed by different CPUs.
 
 The requirement applies within a single
-multi-threaded core as well as between cores.
-The fact that intra-core communication is faster than inter-core
+multithreaded core as well as between cores.
+The fact that intracore communication is faster than intercore
 communication does not magically give loads the ability to commit
 before the stores they read from, no matter what cores they execute on.
 
@@ -1975,7 +1977,7 @@ are no other accesses to \co{x} at the time of the duplicated store.
 Although one can argue that it is functionally correct to invent atomic
 loads as long as the loaded value is not used, doing so can result in
 extra cache misses for no good purpose.
-And duplicating an atomic load can even lead to incorrect results if done
+And duplicating an atomic load can also lead to incorrect results if done
 carelessly.
 To see this, consider
 Listing~\ref{lst:Example Duplicated Load}.
@@ -2322,7 +2324,7 @@ physics would expect.\footnote{
 	Our apologies to those who might feel that this is belaboring
 	the obvious.
 	And please understand that these points have proven helpful to
-	some of those whose whose work has never strayed too close to
+	some of those whose work has never strayed too close to
 	hardware.}
 
 \begin{figure}[tb]
@@ -2377,7 +2379,7 @@ to some debate, with standards, implementations, and users all having
 some degree of
 influence~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2}.
 It is natural to dismiss user influence when compared to the text of
-standards or the code in implementations, but both are subject to
+standards or the code in implementations, but both of these are subject to
 change and do change over time.
 An especially easy way for users to influence the implementation is by
 means of command-line flags and switch settings.
@@ -2608,17 +2610,17 @@ In both cases, it is only reasonable to react to an uncorrectable ECC
 error in a load from a read-only mapped file by re-reading that data
 from that file, then restarting that load instruction.
 In all cases, the kernel and the user application would need to continue
-execution, and would thus require an exact exception.
+execution, and would thus require a precise exception.
 
 Systems that offload processing of correctable ECC errors to software
-also require exact exceptions.
+also require precise exceptions.
 After all, the software is going to need to be able to correct the error
 and then fix up the state to make it appear that the load had returned
 the fixed-up value.
 
 ECC errors are detected near the end of their corresponding load
-instructions' execution, so that any need for exact exceptions rules out
-the commiting of any subsequent stores until after the load has fetched
+instructions' execution, and so any need for precise exceptions rules out
+committing any subsequent stores until after the load has fetched
 (and possibly corrected) its value.
 
 So why are hardware architects reluctant to tighten their memory models
@@ -2640,7 +2642,7 @@ In the meantime, here is some semi-informed speculation on this topic:
 	ECC-related exceptions.\footnote{
 		One motivation for immediate shutdown is that if there
 		are uncorrectable errors, there might soon be errors
-		that translate one valid bit pattern to another valid
+		that change one valid bit pattern to another valid
 		bit pattern, which could result in a lack of safety.}
 \item	Someone might come up with a clever way of correcting ECC errors
 	in firmware, avoiding the need for precise software-visible
@@ -2677,7 +2679,7 @@ Another approach would be to add flags to C++ implementations
 to cause \co{memory_order_relaxed} to be interpreted as either
 \co{memory_order_acquire} (for loads), \co{memory_order_release} (for
 stores), or \co{memory_order_acq_rel} (for read-modify-write operations).
-On TSO systems and on systems featuring exact ECC exceptions, this
+On TSO systems and on systems featuring precise ECC exceptions, this
 would allow tooling to be brought to bear without performance or
 energy-efficiency consequences beyond forgone optimizations involving
 memory reference reordering.
@@ -2988,30 +2990,30 @@ from groups of loads to a single store.
 \subsection{Why rfe Instead of Tried-And-True rf?}
 \label{app:Why rfe Instead of Tried-And-True rf?}
 
-Listings~\ref{lst:OOTA With an Intra-Process Store-Load Link}
-and~\ref{lst:OOTA With an Intra-Process Store-Load Link, Optimized}
+Listings~\ref{lst:OOTA With an Intrathread Store-Load Link}
+and~\ref{lst:OOTA With an Intrathread Store-Load Link, Optimized}
 show the examples from
 Section~\ref{sec:OOTA: rf vs. rfe}
 in the form of litmus tests.
 A compiler is allowed to transform the program in
-Listing~\ref{lst:OOTA With an Intra-Process Store-Load Link}
+Listing~\ref{lst:OOTA With an Intrathread Store-Load Link}
 to the form of
-Listing~\ref{lst:OOTA With an Intra-Process Store-Load Link, Optimized},
-which demonstrates that intra-thread reads-from (rfi) links may be
+Listing~\ref{lst:OOTA With an Intrathread Store-Load Link, Optimized},
+which demonstrates that intrathread reads-from (rfi) links may be
 eliminated by the compiler and therefore should not be used in a
 definition of OOTA.
 This section provides a more involved example to drive the point home.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-3-2-proc.litmus @@
-\caption{OOTA With an Intra-Process Store-Load Link}
-\label{lst:OOTA With an Intra-Process Store-Load Link}
+\caption{OOTA With an Intrathread Store-Load Link}
+\label{lst:OOTA With an Intrathread Store-Load Link}
 \end{listing}
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-3-2-proc-opt.litmus @@
-\caption{OOTA With an Intra-Process Store-Load Link, Optimized}
-\label{lst:OOTA With an Intra-Process Store-Load Link, Optimized}
+\caption{OOTA With an Intrathread Store-Load Link, Optimized}
+\label{lst:OOTA With an Intrathread Store-Load Link, Optimized}
 \end{listing}
 
 The first step in this direction is
@@ -4016,7 +4018,7 @@ not in any way constitute agreement with anything in this paper.
 %	is an expensive no-op."
 % "So you don't want to learn concurrency?  Then I can only suggest
 %	that you either move further up the stack or take early
-%	retirement."  Note that that C++ committee's concurrency
+%	retirement."  Note that the C++ committee's concurrency
 %	expertise has grown beyond recognition over the past 15 years.
 
 % One-pager:
