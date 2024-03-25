@@ -245,7 +245,7 @@ prohibition of OOTA mentioned above.
 {\it Contra\/} that article, we will use the term \emph{loose C++}
 (rather than \emph{strict C++}, which seems too similar to
 \emph{full C++} for comfort)
-to denote a hypothetical standard that excludes this prohibition, but
+to denote a hypothetical standard that excludes this prohibition but
 is otherwise identical to full C++.
 Unqualified \emph{C++} means full C++.
 
@@ -257,7 +257,7 @@ The next section looks at how prior work has refined these issues.
 All OOTA workers owe a debt to the foundational work in the infamous
 ``Causality Test Cases'',\footnote{
 	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
-which also may be found in
+a version of which may be found in
 Appendix~\ref{app:Litmus Tests from “Causality Test Cases"}.
 
 Some executable C++ memory models correctly flag at least some executions
@@ -439,7 +439,7 @@ whether within a thread
 
 This is a fine definition and is consistent with the words in the C++
 standard, but it has a problem with intrathread rfi links
-exemplified by the following code:
+as exemplified by the following code:
 \begin{quote}
 \scriptsize
 \begin{verbatim}
@@ -797,10 +797,13 @@ Section~\ref{sec:Relation Between Abstract and Hardware Executions} below).
 The totality of this information---along with the program's source
 code, of course---determines within each thread a unique, linearly
 ordered series of steps to be carried out by the abstract machine.
-However, there is no ordering relation between steps carried out
-in different threads.  Even if a load in one thread reads from a
-store in another thread, the standard generally does not require
-the store to come before the load in any meaningful way.
+However, with a few exceptions\footnote{
+	Such as a load-acquire synchronizing with a store-release.}
+there is no ordering relation between steps carried out
+in different threads.
+Even if a relaxed atomic load in one thread reads from a relaxed
+atomic store in another thread, the standard does not require the
+store to come before the load in any meaningful way.
 
 With the compiler-based implementations we are considering,
 the choices for the nondeterministic pathways are ``frozen'' into the
@@ -1124,7 +1127,7 @@ these objects, having the following properties:
 	there must be an access in $A$ that maps to it.
 	(In other words, the compiler may not invent accesses to
 	volatile objects.)
-\item	The map is one to one: Different accesses in $A$ map to
+\item	The map is one-to-one: Different accesses in $A$ map to
 	different accesses in $H$.
 	(In other words, the compiler may not merge accesses to
 	volatile objects.)
@@ -1143,9 +1146,9 @@ accesses, not subject to unpredictable interference in nonbenign
 environments (otherwise the program's behavior would be undefined).
 However, we do impose most of the requirements above on quasi-volatile
 object accesses.
-The last two items are left out: Compilers are allowed to merge or
+The last two bullet points are left out: Compilers are allowed to merge or
 omit accesses to these objects.
-Because of this, the item about preserving the rf relation
+Because of this, the bullet point about preserving the rf relation
 applies only when $R$ is not omitted, in which case $W$ must not
 be omitted either, but now it applies in all environments.
 Lastly, the requirement for order preservation is weakened; it applies
@@ -1376,7 +1379,7 @@ Section~\ref{sec:For Compilers Using Single-Thread Analysis}
 focuses on compilers that restrict their analysis to a single
 thread,
 Section~\ref{sec:For Compilers Using Global Analysis}
-slightly relaxes this single-thread restriction,
+relaxes this single-thread restriction,
 Section~\ref{sec:Verifying the Fundamental Property}
 verifies the fundamental property of semantic dependencies,
 and
@@ -1412,7 +1415,7 @@ Let $W$ in $T$ be a store to an atomic object, and let $\{R_0,$
 $W$ might or might not depend.
 We can dispose of one case immediately: If $W$ is omitted in $H$ then
 the issue of semantic dependency is moot.
-You can give either answer since the question is basically meaningless.
+You can give either answer since it will have no effect.
 Therefore we'll assume that $W$ is not omitted.
 Then:
 \begin{quote}
@@ -1730,6 +1733,8 @@ definitely wrong, because our intuitive notions of semantic
 dependency are not clear in cases where multiple loads of the same
 variable are present.
 
+\medskip
+
 Despite these outstanding issues, our definition of semantic dependency
 allows us to bring to bear the real-world constraints outlined in the
 next section.
@@ -1739,8 +1744,8 @@ next section.
 
 The C++ standard imposes many constraints, and these have been considered
 in prior work.
-In real-world C++ implementations, the standard's abstract machine
-must be mapped onto real hardware, however, and this imposes additional
+In real-world C++ implementations, however, the standard's abstract machine
+must be mapped onto real hardware, and this imposes additional
 constraints stemming from hardware architecture and design.
 This mapping and these constraints have been only partially accounted
 for in the standard and other work.
@@ -1889,20 +1894,20 @@ stores.
 
 For example, nonvolatile relaxed atomic accesses are subject to the
 C++ memory model.
-The ``order-preserving'' bullet from
+The ``order-preserving'' bullet point from
 Section~\ref{sec:Volatile and Quasi Volatile Accesses}
 prohibits reordering of quasi-volatile accesses when they are
 to the same object,
 but such reordering is in any case directly forbidden by the memory model
 (the four coherence rules in 6.9.2.2p14--19 \co{[intro.races]}).
-The ``onto'' bullet also largely reiterates restrictions that follow
+The ``onto'' bullet point also largely reiterates restrictions that follow
 from the standard, in particular,
 that compilers should not invent atomic stores,
 duplicate atomic stores, or invent atomic loads.
 On the other hand, it is permissible for compilers to omit redundant
 atomic stores or fuse nonvolatile atomic accesses of adjacent objects
 under appropriate circumstances;
-these topics correspond to the ``total'' and ``one-to-one'' bullets of
+these topics correspond to the ``total'' and ``one-to-one'' bullet points of
 Section~\ref{sec:Volatile and Quasi Volatile Accesses}.
 
 \paragraph{Invented Atomic Stores}
@@ -2025,7 +2030,7 @@ with the memory-ordering semantics of the first load.
 A similar fact applies to pairs of stores.
 
 This holds even when the atomic objects are treated as quasi volatile,
-providing an example of how the ``one-to-one'' bullet of
+providing an example of how the ``one-to-one'' bullet point of
 Section~\ref{sec:Volatile and Quasi Volatile Accesses} does not apply
 to them.
 
