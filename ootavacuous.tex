@@ -2474,9 +2474,8 @@ It also affects the definition of ``semantic dependency'' by changing
 the arithmetic proporties of this type.
 In theory, the standard could have specified the signedness of \co{char}
 but the variety of existing practice in the 1980s prevented this.
-Plus machine instructions were much more expensive back then, so the
-signedness of \co{char} was much more of a performance concern than
-it is today.
+Plus, optimizers were much less capable back then, so the signedness of
+\co{char} was much more of a performance concern than it is today.
 
 The \co{-mno-sse} prevents GCC from making use of the processor's SSE hardware.
 This is done for performance reasons, as it avoids the overhead of
