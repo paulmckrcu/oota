@@ -2190,15 +2190,18 @@ Next, definitions:
 \begin{description}
 \item[coe]
 	Coherence-order (external), which connects a store to any other store
+	(in a different thread)
 	to the same object that comes later in the object's
 	modification order, i.e., that overwrites either the first store's
 	value or some later value.
 \item[fre]
-	From-read (external), which connects a load to any store to
+	From-read (external), which connects a load to any store
+	(in a different thread) to
 	the same object that overwrites either the value that the load
 	returned or some later value.
 \item[rfe]
-	Reads-from (external), which connects a store to any load from
+	Reads-from (external), which connects a store to any load
+	(in a different thread) from
 	the same object that returns the value stored.
 	(Note: This means that the load retrieves the information
 	written by the store, as opposed to retrieving the information
@@ -2352,7 +2355,7 @@ In this case, the value of 2 from CPU~3's store overwrites the value
 of 1 from CPU~0's store, despite the fact that CPU~0's store
 happened later in global time.
 One way this could happen is if the cache line containing
-\co{x} arrived at CPU~3 before arriving at CPU~0.
+\co{x} arrived at CPU~0 before arriving at CPU~3.
 A more fanciful explanation is that both values arrived at an
 interconnect at the same time, and the interconnect made an
 arbitrary choice between the two.
@@ -2693,8 +2696,8 @@ be guaranteed to run correctly on weakly ordered systems that lack
 ECC (or that lack precise exceptions).
 In addition, this change is more strict than necessary, forbidding
 optimizations that tooling could in fact analyze.
-Therefore, the next section looks at standardizing a less severe
-restriction.
+Therefore, the next two sections look at standardizing less severe
+restrictions.
 
 \subsection{Change Relaxed to Forbid Load Buffering}
 \label{sec:Change Relaxed to Forbid Load Buffering}
@@ -2710,9 +2713,6 @@ of the \co{memory_order} enumeration, but inflicts some performance and
 energy-efficiency penalties~\cite{LukeGeeson2023TightenRelaxed} in
 code not requiring these ordering
 restrictions~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
-
-This suggests the addition of a \co{memory_order_load_store} member to
-the \co{memory_order} enumeration, a topic taken up by the next section.
 
 \subsection{Add Load-Store Memory Order that Forbids Load Buffering}
 \label{sec:Add Load-Store Memory Order that Forbids Load Buffering}
@@ -3303,8 +3303,9 @@ In theory, if the \co{do_something_with()} call was not present
 the compiler could still make the above transformation without
 worry, especially given that the value loaded from \co{x} is discarded in
 the case where \co{limit} is less than or equal to zero.
-Except that the data-race worry is replaced by a cache-miss worry.
-After all, optimizations are supposed to speed things up.
+Except that the data-race worry is replaced by a cache-miss worry;
+after all, optimizations are supposed to speed things up,
+not slow them down.
 A compiler might be wise to adhere to the
 same restriction that avoids data races for loads from non-atomic
 variables in order to avoid potentially expensive cache misses.
@@ -3336,7 +3337,7 @@ it certainly would not store a positive value.
 This means that the value loaded on line~8 would have to be \co{y}'s
 initial value of zero, and so would the value stored to \co{x} on
 line~9, and hence it would not be possible for the load on line~13
-to get a positive value for \co{r2} after all.
+to get a positive value for \co{r2} in the first place.
 
 Even for a compiler analyzing \co{P1()} in isolation,
 it is clear that either line~14 will store one to \co{y} or
@@ -3370,7 +3371,7 @@ extra step to force the optimized store on line~14 to be ordered after
 the load on line~13, possibly by changing the load to a load-acquire
 or changing the store to a store-release.
 
-In other words, the compiler would have to preserve the dependency
+In other words, the compiler would have to preserve the dependency-induced
 ordering that the UB-based optimization would otherwise destroy.
 It is tempting to consider using techniques
 % Appendix~\ref{app:Aside on Undefined Behavior}
