@@ -513,7 +513,7 @@ This section uncovers some semantic-dependency complexities.
 Section~\ref{sec:Semantic Dependencies and Source Code}
 shows that semantic dependencies are functions of executions,
 rather than being strict functions of the source code.
-Section~\ref{sec:Semantic Dependencies Can Be Many To One}
+Section~\ref{sec:Semantic Dependencies Can Be Many-To-One}
 shows that semantic dependencies do not necessarily extend
 from a single load to a single store, but can instead involve
 multiple loads.
@@ -551,8 +551,8 @@ As a result, the semantic dependency from \co{y} to \co{x} exists only
 in executions where \co{z} is nonzero,
 which shows it is a property of the execution, not just of the source code.
 
-\subsubsection{Semantic Dependencies Can Be Many To One}
-\label{sec:Semantic Dependencies Can Be Many To One}
+\subsubsection{Semantic Dependencies Can Be Many-To-One}
+\label{sec:Semantic Dependencies Can Be Many-To-One}
 
 Suppose that in some execution of the previous example,
 both \co{y} and \co{z} are zero.
@@ -954,10 +954,10 @@ also defines properties of quasi-volatile atomic operations.
 \subsection{Users Influence the Behavior of Compilers}
 \label{sec:Users Influence the Behavior of Compilers}
 
-The exact definition of a computer language is subject to some debate,
+The exact definition of a computer language is a subject of some debate,
 with standards, implementations, and users all having some degree of
 influence~\cite{KayvanMemarian2016DepthOfC-1,KayvanMemarian2016DepthOfC-2},
-each of which is subject to change over time.
+and each being prone to change over time.
 In areas that are not well settled or where users might reasonably
 want to resist the dictates of the standard,
 compilers often provide switches to override their default behaviors.
@@ -1082,7 +1082,7 @@ A noteworthy aspect of this transformation is that it invents an atomic load:
 The original form of the code reads \co{x} only once,
 whereas the transformed code reads it twice.
 Therefore we can rule out transformations like this one by insisting
-the compiler not invent atomic loads.
+the compiler not invent (or duplicate) atomic loads.
 In fact, we will require that atomic accesses be treated as
 ``quasi volatile'', in that the compiler is allowed to omit,
 merge, or reorder them but not invent them.
@@ -1257,7 +1257,7 @@ committing $J$'s action and outputs.
 Thus dependencies force instructions to commit in order, even on
 weakly ordered architectures.
 
-We will say that one instruction is ordered after another to mean that
+We will say that one instruction is \emph{ordered after} another to mean that
 the CPU forces it to commit after the other one commits.
 Hence instructions are ordered after the instructions they depend on.
 (Note that this implies nothing about when a load instruction retrieves
@@ -1314,7 +1314,7 @@ omitted in some hardware execution $H$ realizing $A$.
 Then for some $i$, load $R_i$ is not omitted in $H$ and the
 instruction it maps to is ordered before the instruction $W$ maps to.
 \end{quote}
-It's quite straightforward to show that for any implementation in which
+It's quite straightforward to show that under any implementation in which
 semantic dependencies satisfy the Fundamental Property, no OOTA cycle
 has a nontrivial realization.
 
@@ -1348,7 +1348,7 @@ which the OOTA cycle does not occur.
 Thus there would be no way to tell, merely by observing the effects of
 $H$, whether there was an OOTA cycle or not.
 For this reason we declare realizations of OOTA cycles in which
-all the accesses are omitted to be trivial.
+all the accesses are omitted to be \emph{trivial}.
 
 \section{A Definition of Semantic Dependency}
 \label{sec:A Definition of Semantic Dependency}
@@ -1780,7 +1780,7 @@ commit until it is no longer speculative, we can draw two conclusions:
 	earlier store in the same thread to commit before the store.
 	This apparent exception merely reflects a difference in
 	nomenclature; in the memory model a store was said to commit at
-	the time when it makes its new value available to other
+	the time when it made its new value available to other
 	threads, whereas we say that a store commits at the time when
 	the CPU has irrevocably decided that it will take place with a
 	particular fully determined value and address.}
@@ -2144,7 +2144,7 @@ where a single semantic dependency extends from multiple loads
 to a store but not from any one of those loads.
 These complex dependencies motivated a generalization of the definition
 of ``OOTA cycle'', which is shown in
-Section~\ref{sec:Semantic Dependencies Can Be Many To One}.
+Section~\ref{sec:Semantic Dependencies Can Be Many-To-One}.
 
 This generalization, combined with a focus on compiler-based loose C++
 implementations using single-thread analysis, and a consideration of
