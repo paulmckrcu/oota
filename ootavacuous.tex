@@ -242,7 +242,7 @@ Current C++ implementations can and do exhibit this reordering behavior.
 This paper will follow P2055R0~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
 in using the term \emph{full C++} to denote the standard including the
 prohibition of OOTA mentioned above.
-{\it Contra\/} that article, we will use the term \emph{loose C++}
+Unlike that article, we will use the term \emph{loose C++}
 (rather than \emph{strict C++}, which seems too similar to
 \emph{full C++} for comfort)
 to denote a hypothetical standard that excludes this prohibition but
@@ -1903,7 +1903,7 @@ Section~\ref{sec:Volatile and Quasi Volatile Accesses}
 prohibits reordering of quasi-volatile accesses when they are
 to the same object,
 but such reordering is in any case directly forbidden by the memory model
-(the four coherence rules in 6.9.2.2p14--18 \co{[intro.races]}).
+(the four coherence rules discussed in 6.9.2.2p14--19 \co{[intro.races]}).
 The ``onto'' bullet point also largely reiterates restrictions that follow
 from the standard, in particular,
 that compilers should not invent atomic stores,
@@ -2016,8 +2016,8 @@ volatile atomic stores or to inline assembly\footnote{
 	clobber.}
 to prevent them.
 
-Acting as if a redundant store was omitted from the source
-code cannot create an OOTA cycle, because any valid execution (OOTA or not)
+Omitting a redundant store cannot create an OOTA cycle,
+because any valid execution (OOTA or not)
 of the program with the first of a back-to-back pair of nonvolatile
 relaxed atomic stores omitted is a valid execution of the
 program with the store present.
@@ -2118,9 +2118,8 @@ provides an example of such a global analysis.
 This paper assumes that the user defines threads, and that the
 C++ implementation executes those threads unchanged.
 Future analyses might examine the possibility of ``flattening''
-optimizations that combine multiple threads into one, but note
-that such optimizations are more difficult than they first might
-appear.
+optimizations that combine multiple threads into one.
+(Note that such optimizations are more difficult than they first might appear).
 
 This paper shows that semantic dependencies are relative to specific
 executions of a program and the specific compiler in use rather than
@@ -2576,7 +2575,7 @@ against subsequent stores, but actual tests on recent hardware fail to
 produce any evidence of such reordering.
 Nevertheless, thus far neither ARM nor PowerPC hardware architects
 have been willing to strengthen their memory models so as to forbid
-such reordering, despite a number requests to do
+such reordering, despite a number of requests to do
 so~\cite{RichardGrisenthwaite2023TightenRelaxedJustSayNo}.
 
 This appendix offers some possible reasons for this odd juxtaposition
