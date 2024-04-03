@@ -98,11 +98,11 @@ Audience: SG1
 This paper shows that compiler-based C++ implementations subject to
 reasonable constraints on how they treat accesses to atomic objects
 cannot exhibit out-of-thin-air (OOTA) cycles.
-It follows that these implementations hardly need to take any special
-action to avoid OOTA.
+It follows that these implementations need to take almost no special
+actions to avoid OOTA.
 In fact, for many compilers the constraints boil down to a simple
-``Don't invent or duplicate atomic accesses'', which is probably
-something the compiler wouldn't do anyway.
+``Don't invent or duplicate atomic accesses'', which the compiler
+probably wouldn't do anyway.
 
 We begin with a brief overview of the OOTA problem, followed
 by an equally brief summary of prior work in this area, and ending
@@ -170,7 +170,7 @@ the C++ standard explicitly prohibits them in 33.5.4p8
 The standard's prohibition of OOTA is of course important, but those of us
 writing code in the real world must rely on actual C++ implementations.
 And in these implementations, this prohibition is in fact enforced by TSO
-ordering in strongly ordered systems and by data dependency ordering in
+ordering in strongly ordered systems and by data-dependency ordering in
 weakly ordered systems.\footnote{
 	The need to prohibit simple OOTA is one reason why compiler-based
 	value speculation optimizations require checks on such
@@ -296,7 +296,7 @@ undefined behavior (UB)~\cite{DavidGoldblatt2019NoElegantOOTAfix}.
 % Appendix~\ref{app:Aside on Undefined Behavior}
 % analyzes his examples and notes ways to separate UB and OOTA-cycle
 % concerns.
-The remainder of this document will concentrate on examples lacking UB.
+This document will concentrate on examples lacking UB.
 
 All this work focused on either identifying OOTA or seeing how C++
 implementations could avoid it.
@@ -305,7 +305,7 @@ of avoiding OOTA cycles,
 yet doing so might help explain why no known real-world C++ implementation
 results in OOTA behavior.
 We therefore dig more deeply into OOTA cycles in the light
-of these real-world constraints.
+of these constraints.
 
 \subsection{Code-Analysis Tool}
 \label{sec:Code-Analysis Tool}
@@ -348,9 +348,9 @@ define the second thread, \co{P1()}.\footnote{
 The arguments to both \co{P0()} and \co{P1()} specify which of
 the global shared variables each thread may access, in this case, \co{x}
 and \co{y}.
-The body of each thread contains a limited subset of C++ code
-(written in a slightly stilted manner to keep the load operations separate
-from the rest and because \co{herd7}'s knowledge of C++ is limited).
+The body of each thread contains C++ code,
+written in a slightly stilted manner to keep the load operations separate
+from the rest and because \co{herd7}'s knowledge of C++ is limited.
 
 Line~23 has a \co{locations} clause, which causes
 \co{herd7} to dump out the final values of \co{x} and \co{y}.
@@ -472,8 +472,7 @@ And given that the load from \co{y} no longer exists, it cannot possibly
 act as a temporal constraint.
 
 In order to avoid these rfi links we will substitute rfe
-for rf, defining an OOTA cycle---for now---as a cycle in sdep $\cup$ rfe,
-where rfe is the set of store-to-load links between different threads.
+for rf, defining an OOTA cycle---for now---as a cycle in sdep $\cup$ rfe.
 Any rfi links in a cycle can instead be interpreted as part of sdep.
 Although this does shunt additional complexity onto the term
 ``semantic dependency'', it also enables us to cleanly separate
@@ -758,8 +757,7 @@ The same is true for the nondeterministic aspects of an execution.
 Consider this example, with \co{i} initially zero:
 \begin{quote}
 \begin{verbatim}
-int foo(int a, int b)
-{
+int foo(int a, int b) {
    return a / b;
 }
 
@@ -827,9 +825,9 @@ describing exactly what patterns of loads and stores can occur.
 Thus, leaving aside questions of asynchronous interrupts and system
 calls, the behavior of a CPU executing a particular thread within a
 program is entirely determined by the values obtained by the various
-memory-load instructions.
-(We count read-modify-write instructions as comprising both memory loads and
-memory stores.)
+memory-load instructions.\footnote{
+	We regard read-modify-write instructions as consisting of both a
+	memory load and a memory store.}
 
 For this reason, the hardware executions we use will comprise (along
 with the machine code being run) the computer architecture and for each
@@ -1180,7 +1178,7 @@ and related complications.
 Dependencies between machine instructions can be understood in terms
 of the flow of information within a CPU.
 Each instruction has a set of inputs and is the source of a set of outputs,
-some of which flow to the inputs for later instructions.
+some of which flow to the inputs of later instructions.
 The inputs determine what an instruction will do.
 A few examples:
 \begin{itemize}
@@ -1240,11 +1238,10 @@ the instruction's results.
 For instance, a conditional-move instruction wouldn't need to wait for
 the source register input to be determined once it knew that the
 condition was definitely false.
-And, although no existing architectures do this, there is nothing
+And, although no architectures we are aware of do this, there is nothing
 in principle to prevent a CPU from committing a \co{multiply}
 instruction as soon as either one of its inputs' sources has committed to the
 value zero.)
-% Are we sure that no CPUs do this?
 
 Of course, an instruction's inputs don't all have to be outputs from
 earlier instructions; some of them may be immediate constants present
@@ -1270,7 +1267,7 @@ Dependencies aren't the only mechanism that can lead to
 ordering in hardware executions.
 The simplest alternative is a load reading from a store in another
 thread, i.e., the rfe relation.
-As mentioned in Section~\ref{sec:Simple OOTA Cycle} above, a CPU does
+As mentioned in Section~\ref{sec:Simple OOTA Cycle}, a CPU does
 not make the value of a store instruction available for other CPUs to
 load until the store commits or some time later.
 And after this happens, it takes some time for the information about
@@ -1395,7 +1392,7 @@ In this section we consider implementations whose compilers perform
 only single-thread analysis and treat atomic objects as
 quasi volatile.
 This implies that if two different programs contain the same thread
-(i.e., the same source code for the functions in the thread), the
+(i.e., the same source code for the functions and objects in the thread), the
 machine code generated by the compiler for the thread will be the
 same in the two programs.
 
@@ -1450,22 +1447,22 @@ ends, whichever comes first.
 Past this point $H$ and $G$ diverge and are no longer directly
 comparable, as they execute different instructions.
 Our third requirement for being a witness is that each load in the
-common portion either must obtain the same value in $H$ and $G$, or
+common period either must obtain the same value in $H$ and $G$, or
 must itself be one of the $R'_i$ loads, or must be ordered in $H$
 after one of the $R'_i$ loads (this is the remaining part of our
 interpretation of ``all else being equal''.)
 
 Finally, we need to determine an instruction $X'$ in $G$ that
 corresponds to $W'$.
-If $W'$ is in the initial or common portion of $H$ this is no
+If $W'$ is in the initial or common period of $H$ this is no
 problem; we can take $X'$ to be $W'$ itself.
-But if $W'$ is in the divergent portion of $H$ then things aren't so
+But if $W'$ is in the divergent part of $H$ then things aren't so
 simple.
 The choice is somewhat arbitrary, and so we will fall back on the
 earlier proposal of matching up stores by the order they occur.
 Let $y$ be the atomic object that $W'$ stores to, and suppose $W'$
-is the $N$th store to $y$ within the divergent portion of $H$.
-Then $X'$ will be the $N$th store to $y$ in the divergent portion
+is the $N$th store to $y$ within the divergent part of $H$.
+Then $X'$ will be the $N$th store to $y$ in the divergent part
 of $G$, if such a store exists.
 Our last requirement for being a witness to a semantic dependency
 is that $X'$ act differently from $W'$: it doesn't exist, it stores
@@ -1510,14 +1507,14 @@ We must show that some $R_i$ is not omitted and $R'_i$ is ordered
 before $W'$ in $H$.
 The proof splits into three cases.
 
-First case: $W'$ lies in the initial portion of $H$.
-During the initial portion of the hardware executions, $H$ and $G$
+First case: $W'$ lies in the initial period of $H$.
+During the initial period of the hardware executions, $H$ and $G$
 behave identically and therefore $W'$ performs the same write in
 both.
 This contradicts the fact that $B$ and $G$ witness the semantic
 dependency.
 
-Second case: $W'$ lies in the common portion of $H$.
+Second case: $W'$ lies in the common period of $H$.
 Since the action of $W'$ in $H$ is different from its action in $G$,
 at least one of its inputs must differ between the two hardware
 executions.
@@ -1525,13 +1522,13 @@ Therefore the source instruction for that input must behave
 differently, and so must one of its sources, going back until we reach
 a load instruction that obtains differing values in $H$ and $G$.
 Then $W'$ depends on this load and so is ordered after it.
-And since the load must lie in the common portion of $H$, by the
+And since the load must lie in the common period of $H$, by the
 definition of semantic dependency it must either be one of the
 $R'_i$ or be ordered after one of them.
 Therefore $W'$ is ordered after one of the $R'_i$ in $H$,
 which certainly means that $R_i$ is not omitted.
 
-Third case: $W'$ lies in the divergent portion of $H$.
+Third case: $W'$ lies in the divergent part of $H$.
 This happens when $W'$ comes after the conditional or computed branch
 which marks the end of the common period by going different ways in
 $H$ and $G$.
@@ -2119,7 +2116,7 @@ This paper assumes that the user defines threads, and that the
 C++ implementation executes those threads unchanged.
 Future analyses might examine the possibility of ``flattening''
 optimizations that combine multiple threads into one.
-(Note that such optimizations are more difficult than they first might appear).
+(Note that such optimizations are more difficult than they might first appear.)
 
 This paper shows that semantic dependencies are relative to specific
 executions of a program and the specific compiler in use rather than
@@ -2480,7 +2477,7 @@ We instead look at representative members of several categories.
 
 The \co{-funsigned-char} causes the \co{char} type to be unsigned, which
 overrides per-architecture defaults, some of which treat \co{char}
-as signed and others as \co{unsigned}.
+as signed and others as unsigned.
 This choice prevents a class of bugs, and also allows the kernel to make
 reliable use of the uppermost bit of variables of type \co{char}.
 It also affects the definition of ``semantic dependency'' by changing
@@ -3118,8 +3115,9 @@ in Listing~\ref{lst:Why rfe Instead of Tried-And-True rf?}
 connecting \co{P0()}'s load from \co{x} to its store to \co{y},
 and that connecting its load from \co{y} to its store to \co{z}.
 The first is a genuine semantic dependency; the second might or might
-not be, depending on one's definition.
-A single-thread analysis would conclude that it is, because of the
+not be, depending on the implementation.
+A compiler that uses single-thread analysis and does not omit the load
+from \co{y} would conclude that it is, because of the
 possibility that the value loaded from \co{y} might be larger than 17.
 From this point of view, the all-17's result \emph{would} be
 considered an OOTA cycle.
@@ -3299,23 +3297,24 @@ A compiler might act as if the program had instead been this:
 \begin{verbatim}
 r1 = x;
 do_something_with(r1);
-for (i = 0; i < limit i++)
+for (i = 0; i < limit; i++)
     y[i] += r1;
 \end{verbatim}
 \end{quote}
 Note that passing \co{x} to \co{do_something_with()} is important
+when \co{x} is not atomic,
 because this allows the compiler to assume that inventing additional
 accesses to \co{x} will not result in a data race.
 Without this assumption, the above transformation might introduce a data
 race when \co{limit} is less than or equal to zero.
 
-But if \co{x} is a nonvolatile atomic, there are no worries about
+But when \co{x} is a nonvolatile atomic, there are no worries about
 data races.
 In theory, if the \co{do_something_with()} call was not present
-the compiler could still make the above transformation without
-worry, especially given that the value loaded from \co{x} is discarded in
+the compiler could still make the transformation above with no
+qualms, especially given that the value loaded from \co{x} is discarded in
 the case where \co{limit} is less than or equal to zero.
-Except that the data-race worry is replaced by a cache-miss worry;
+Except that now the data-race worry is replaced by a cache-miss worry;
 after all, optimizations are supposed to speed things up,
 not slow them down.
 A compiler might be wise to adhere to the
@@ -3427,7 +3426,7 @@ relevant.\footnote{
 	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
 We have translated them from Java to C++, and we evaluate them using
 the \co{herd7} tool and also using manual analysis.
-Please note that differences in the semantics of these two languages
+Please note that differences in the semantics of the two languages
 result in changes in verdict for some litmus tests.
 
 \subsection{Causality Test Case 1}
