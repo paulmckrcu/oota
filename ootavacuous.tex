@@ -2823,7 +2823,7 @@ program, for example, due to \co{x} being:
 	or signal handler.
 \item	Subject to I/O-device DMA operations.
 \item	Modified by debugger commands.
-\item	Modified by accesses to facilities such as \path{/dev/mem}.
+\item	Modified using facilities such as \path{/dev/mem}.
 \item	Modified by as-yet-unwritten dynamically linked libraries.
 \item	Modified by some other mechanism of the reader's choosing.
 \end{itemize}
@@ -2868,7 +2868,9 @@ but this section will present a more difficult example.
 Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
 shows an example that builds on the multiplication-by-zero
 discussion in
-Section~\ref{sec:Semantic Dependencies and Source Code}.
+Section~\ref{sec:Semantic Dependencies and Source Code}
+on
+page~\pageref{sec:Semantic Dependencies and Source Code}.
 Line~11 of \co{P0()} stores to \co{z} the product of the values loaded from
 \co{x} and \co{y} on lines~9 and~10, respectively.
 Similarly, lines~16 and~17 store to \co{x} and \co{y}, respectively,
@@ -2935,7 +2937,7 @@ which differs from
 Listing~\ref{lst:OOTA Multiplication Example, Initial Value Zero}
 only in the initial values (1 instead of 0) and the \co{exists}
 clause (0 instead of 1).
-Note that an execution satisfying the \co{exists} clause is again
+Note that an execution satisfying the updated \co{exists} clause is again
 a OOTA cycle.
 
 Starting with the intuitive execution where the values loaded from \co{x}
@@ -3010,6 +3012,8 @@ Listings~\ref{lst:OOTA With an Intrathread Store-Load Link}
 and~\ref{lst:OOTA With an Intrathread Store-Load Link, Optimized}
 show the examples from
 Section~\ref{sec:OOTA: rf versus rfe}
+on
+page~\pageref{sec:OOTA: rf versus rfe}
 in the form of litmus tests.
 A compiler is allowed to transform the program in
 Listing~\ref{lst:OOTA With an Intrathread Store-Load Link}
@@ -3135,6 +3139,8 @@ is no genuine semantic dependency in one of the participating threads.
 This section contains several example litmus tests
 expanding on the material presented in
 Section~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}.
+on
+page~\pageref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-no-invented-load.litmus @@
@@ -3382,6 +3388,10 @@ To prevent the unwanted behavior, the compiler would have to take an
 extra step to force the optimized store on line~14 to be ordered after
 the load on line~13, possibly by changing the load to a load-acquire
 or changing the store to a store-release.
+Hans Boehm has proposed this store-release alternative as his
+Interpretation~B'~\cite{HansBoehm2020UBalternatives}.
+% @@@ Do we want to add a disclaimer about completeness or lack thereof
+% @@@ of this solution?
 
 In other words, the compiler would have to preserve the dependency-induced
 ordering that the UB-based optimization would otherwise destroy.
