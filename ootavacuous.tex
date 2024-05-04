@@ -3142,17 +3142,20 @@ Section~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}.
 on
 page~\pageref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}.
 
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-no-invented-load.litmus @@
-\caption{No Invented Atomic Loads}
-\label{lst:No Invented Atomic Loads}
-\end{listing}
+\subsubsection{Illustrative Atomic-Load Invention}
+\label{app:Illustrative Atomic-Load Invention}
 
 Consider Listing~\ref{lst:No Invented Atomic Loads}.
 At first glance, it might appear straightforward.
 \co{P0()}'s store to \co{z} clearly depends on its load from \co{y},
 and \co{P1()}'s store to \co{y} clearly depends on its load from \co{z}.
 If both dependencies are semantic, the OOTA cycle cannot be realized.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-no-invented-load.litmus @@
+\caption{No Invented Atomic Loads}
+\label{lst:No Invented Atomic Loads}
+\end{listing}
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-load-invented.litmus @@
@@ -3215,6 +3218,9 @@ multiple loads of the same variable.
 \caption{Unused Extra Atomic Load}
 \label{lst:Unused Extra Atomic Load}
 \end{listing}
+
+\subsubsection{Illustrative Atomic-Load Use Invention}
+\label{app:Illustrative Atomic-Load Use Invention}
 
 Clearly something has gone wrong if a valid (in loose C++) transformation
 like this one is capable of destroying what should be an obvious semantic
@@ -3289,6 +3295,11 @@ There are a number of possible reactions to these situations:
 \item	What other interesting situations might come to light?
 \end{enumerate}
 
+However, before making such a choice, we should look at other situations.
+
+\subsubsection{Customary Non-Atomic-Load ``Invention''}
+\label{app:Customary Non-Atomic-Load Invention}
+
 There are situations where inventing loads from non-atomic objects
 is customary, for example, when hoisting a load out of a loop.
 In this case, compilers might hoist the load from \co{x} out of
@@ -3315,6 +3326,9 @@ because this allows the compiler to assume that inventing additional
 accesses to \co{x} will not result in a data race.
 Without this assumption, the above transformation might introduce a data
 race when \co{limit} is less than or equal to zero.
+Hence the use of quotation marks in the section heading:
+Here the load is not actually invented, but instead fused with an
+earlier load with no synchronization between the two loads.
 
 But when \co{x} is a nonvolatile atomic, there are no worries about
 data races.
@@ -3328,6 +3342,101 @@ not slow them down.
 A compiler might be wise to adhere to the
 same restriction that avoids data races for loads from non-atomic
 variables in order to avoid potentially expensive cache misses.
+
+In addition, compiler writers should carefully consider the issues
+raised by the following section:
+
+\subsubsection{Other Cautions for Atomic-Load Invention}
+\label{app:Other Cautions for Atomic-Load Invention}
+
+Consider the code below:
+\begin{quote}
+\begin{verbatim}
+int r0 = x.load(memory_order_relaxed);
+int r1 = r0 * r0 + 2 * r0 + 1;
+\end{verbatim}
+\end{quote}
+A developer might be forgiven for assuming that the value of \co{r1}
+is guaranteed to be a perfect square, at least for sufficiently small
+values of \co{x}.
+
+But if the compiler is permitted to invent atomic loads, there is no such
+guarantee, as can be seen from this transformed version of the above code:
+\begin{quote}
+\begin{verbatim}
+int r0 = x.load(memory_order_relaxed);
+int invented = x.load(memory_order_relaxed);
+int r1 = r0 * r0 + 2 * invented + 1;
+\end{verbatim}
+\end{quote}
+For example, if the load into \co{r0} happened when the value of \co{x}
+was zero and the load into \co{invented} happened when the value of \co{x}
+was ten, then the value of \co{r1} will be twenty, which is a perfectly
+legitimate integer, but not a perfect square.
+
+Similar issues can arise even when the compiler merely repurposes a
+value from an atomic load, as can be seen from this example:
+\begin{quote}
+\begin{verbatim}
+do_something(x.load(memory_order_relaxed));
+int r0 = x.load(memory_order_relaxed);
+int r1 = r0 * r0 + 2 * r0 + 1;
+\end{verbatim}
+\end{quote}
+This again ensures that \co{r1} will be a perfect square given sufficiently
+small values of \co{x}.
+But is the compiler allowed to transform this example into the following?
+\begin{quote}
+\begin{verbatim}
+repurposed = x.load(memory_order_relaxed);
+do_something(repurposed);
+int r0 = x.load(memory_order_relaxed);
+int r1 = r0 * r0 + 2 * repurposed + 1;
+\end{verbatim}
+\end{quote}
+Again, this can result in the value of \co{r1} being something other than
+a perfect square.
+%
+But it would be just fine if the compiler fully fused the two loads from
+\co{x}, for example, as follows:
+\begin{quote}
+\begin{verbatim}
+r0 = x.load(memory_order_relaxed);
+do_something(r0);
+int r0 = x.load(memory_order_relaxed);
+int r1 = r0 * r0 + 2 * r0 + 1;
+\end{verbatim}
+\end{quote}
+
+Similar observations apply to atomic loads from pointers.
+For example, consider a load from an atomic pointer and subsequent uses
+of the pointed-to fields:
+\begin{quote}
+\begin{verbatim}
+do_something(gp.load(memory_order_relaxed));
+p = gp.load(memory_order_relaxed);
+do_something_else(p->a, p->b,p->c);
+\end{verbatim}
+\end{quote}
+Users are within their rights to assume that the three arguments to
+\co{do_something_else()} will be taken from the same instance of the pointed-to
+structure, at least assuming that the lifetime of that structure extends
+across all of the above statements.
+However, further assuming that \co{do_something()} is free of
+synchronization, a compiler would be within its rights to fuse the two
+loads from \co{gp}, for example, as follows:
+\begin{quote}
+\begin{verbatim}
+p = gp.load(memory_order_relaxed);
+do_something(p);
+do_something_else(p->a, p->b,p->c);
+\end{verbatim}
+\end{quote}
+
+It is imperative that users be able to rely on arithmetic and pointer accesses.
+Therefore, compilers must refrain from inventing atomic loads and from repurposing
+their values, but compilers are permitted to fuse adjacent atomic loads from the
+same variable.
 
 \subsection{Undefined Behavior and Unwise Optimization}
 \label{app:Undefined Behavior and Unwise Optimization}
