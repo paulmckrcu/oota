@@ -3327,7 +3327,7 @@ accesses to \co{x} will not result in a data race.
 Without this assumption, the above transformation might introduce a data
 race when \co{limit} is less than or equal to zero.
 Hence the use of quotation marks in the section heading:
-Here the load is not actually invented, but instead fused with an
+Here the load is not actually invented, but instead merged with an
 earlier load with no synchronization between the two loads.
 
 But when \co{x} is a nonvolatile atomic, there are no worries about
@@ -3352,7 +3352,7 @@ raised by the following section:
 Consider the code below:
 \begin{quote}
 \begin{verbatim}
-int r0 = x.load(memory_order_relaxed);
+int r0 = x;
 int r1 = r0 * r0 + 2 * r0 + 1;
 \end{verbatim}
 \end{quote}
@@ -3364,79 +3364,99 @@ But if the compiler is permitted to invent atomic loads, there is no such
 guarantee, as can be seen from this transformed version of the above code:
 \begin{quote}
 \begin{verbatim}
-int r0 = x.load(memory_order_relaxed);
-int invented = x.load(memory_order_relaxed);
+int r0 = x;
+int invented = x;
 int r1 = r0 * r0 + 2 * invented + 1;
 \end{verbatim}
 \end{quote}
 For example, if the load into \co{r0} happened when the value of \co{x}
-was zero and the load into \co{invented} happened when the value of \co{x}
-was ten, then the value of \co{r1} will be twenty, which is a perfectly
-legitimate integer, but not a perfect square.
+was zero and the load into \co{invented} happened when the value of
+\co{x} was ten, then the value of \co{r1} will be twenty, which is not
+a perfect square.
 
 Similar issues can arise even when the compiler merely repurposes a
 value from an atomic load, as can be seen from this example:
 \begin{quote}
 \begin{verbatim}
-do_something(x.load(memory_order_relaxed));
-int r0 = x.load(memory_order_relaxed);
+do_something(x);
+int r0 = x;
 int r1 = r0 * r0 + 2 * r0 + 1;
 \end{verbatim}
 \end{quote}
-This again ensures that \co{r1} will be a perfect square given sufficiently
+Again, a developer might be forgiven for assuming that the value of
+\co{r1} is guaranteed to be a perfect square, at least for sufficiently
 small values of \co{x}.
 But is the compiler allowed to transform this example into the following?
 \begin{quote}
 \begin{verbatim}
-repurposed = x.load(memory_order_relaxed);
+repurposed = x;
 do_something(repurposed);
-int r0 = x.load(memory_order_relaxed);
+int r0 = x;
 int r1 = r0 * r0 + 2 * repurposed + 1;
 \end{verbatim}
 \end{quote}
 Again, this can result in the value of \co{r1} being something other than
 a perfect square.
 %
-But it would be just fine if the compiler fully fused the two loads from
+But it would be just fine if the compiler fully merged the two loads from
 \co{x}, for example, as follows:
 \begin{quote}
 \begin{verbatim}
-r0 = x.load(memory_order_relaxed);
+int r0 = x;
 do_something(r0);
-int r0 = x.load(memory_order_relaxed);
 int r1 = r0 * r0 + 2 * r0 + 1;
 \end{verbatim}
 \end{quote}
 
 Similar observations apply to atomic loads from pointers.
-For example, consider a load from an atomic pointer and subsequent uses
-of the pointed-to fields:
-\begin{quote}
+For example, consider
+Listing~\ref{lst:Example Duplicated Load} on
+page~\pageref{lst:Example Duplicated Load},
+in which the developer expected line~19 to pass two fields from the
+same structure to \co{do_something_with()}, which is an entirely
+reasonable expectation.
+This expectation will not always be met if the compiler is permitted
+to invent atomic loads as shown by the commented-out line~15.
+\begin{listing}[tbp]
+\scriptsize
 \begin{verbatim}
-do_something(gp.load(memory_order_relaxed));
-p = gp.load(memory_order_relaxed);
-do_something_else(p->a, p->b,p->c);
+ 1 struct foo {
+ 2   int a;
+ 3   int b;
+ 4 };
+ 5 _Atomic struct foo *globalfoop;
+ 6
+ 7 void bar()
+ 8 {
+ 9   int a;
+10   int b;
+11   struct foo *fp;
+12
+13   fp = atomic_load_explicit(&globalfoop, memory_order_acquire);
+14   do_something(fp);
+15   fp = atomic_load_explicit(&globalfoop, memory_order_acquire);
+16   a = fp->a;
+17   // fp = atomic_load_explicit(&globalfoop, memory_order_acquire);
+18   b = fp->b;
+19   do_something_with(a, b);
+20 }
 \end{verbatim}
-\end{quote}
-Users are within their rights to assume that the three arguments to
-\co{do_something_else()} will be taken from the same instance of the pointed-to
-structure, at least assuming that the lifetime of that structure extends
-across all of the above statements.
-However, further assuming that \co{do_something()} is free of
-synchronization, a compiler would be within its rights to fuse the two
-loads from \co{gp}, for example, as follows:
-\begin{quote}
-\begin{verbatim}
-p = gp.load(memory_order_relaxed);
-do_something(p);
-do_something_else(p->a, p->b,p->c);
-\end{verbatim}
-\end{quote}
+\caption{Example Merging of Duplicated Loads}
+\label{lst:Example Merging of Duplicated Loads}
+\end{listing}
+But suppose that there was an earlier load from \co{globalfoop}, as
+shown on lines~13 and~14 in
+Listing~\ref{lst:Example Merging of Duplicated Loads}.
+Then, assuming that \co{do_something()} is synchronization-free,
+the second load on line~15 could be removed without violating user
+expectations.
 
 It is imperative that users be able to rely on arithmetic and pointer accesses.
 Therefore, compilers must refrain from inventing atomic loads and from repurposing
-their values, but compilers are permitted to fuse adjacent atomic loads from the
+their values, but compilers are permitted to merge adjacent atomic loads from the
 same variable.
+These restrictions correspond to our notion of quasi volatile defined in
+Section~\ref{sec:Volatile and Quasi Volatile Accesses}.
 
 \subsection{Undefined Behavior and Unwise Optimization}
 \label{app:Undefined Behavior and Unwise Optimization}
