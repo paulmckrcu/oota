@@ -1075,7 +1075,12 @@ for \co{r1} whichever value agrees with \co{r2}, as shown on line~6.
 Then the value stored to \co{z} on line~7 will always be one,
 with no dependence on the value loaded from \co{y}.
 This example is discussed more fully in
-Appendix~\ref{app:Inventing Atomic Loads}.
+Appendix~\ref{app:Inventing Atomic Loads},
+which also discusses other examples in which invented atomic loads lead
+to incorrect behavior, that is, behavior that is not exhibited by the
+abstract machine.\footnote{
+	See also the ``Invented Atomic Loads'' paragraph of
+	Section~\ref{sec:Constraints of the Standard}.}
 
 A noteworthy aspect of this transformation is that it invents an atomic load:
 The original form of the code reads \co{x} only once,
@@ -1992,7 +1997,12 @@ uncommenting line~15.
 Then the values of \co{a} and \co{b} passed to line~17's call to
 \co{do_something_with()} might be from different instances of the
 \co{foo} structure, something that \co{do_something_with()} probably
-isn't prepared to deal with.
+isn't prepared to deal with and that represents incorrect behavior,
+that is, behavior that the abstract machine does not exhibit.
+See
+Appendix~\ref{app:Inventing Atomic Loads}
+for more details on this example and other examples of invented
+atomic loads.
 
 For these reasons, C++ compilers should avoid inventing atomic
 loads, and in fact should avoid even duplicating them.
@@ -3328,7 +3338,7 @@ Without this assumption, the above transformation might introduce a data
 race when \co{limit} is less than or equal to zero.
 Hence the use of quotation marks in the section heading:
 Here the load is not actually invented, but instead merged with an
-earlier load with no synchronization between the two loads.
+earlier load such that there is no synchronization between the two loads.
 
 But when \co{x} is a nonvolatile atomic, there are no worries about
 data races.
@@ -3344,7 +3354,7 @@ same restriction that avoids data races for loads from non-atomic
 variables in order to avoid potentially expensive cache misses.
 
 In addition, compiler writers should carefully consider the issues
-raised by the following section:
+raised by the following section.
 
 \subsubsection{Other Cautions for Atomic-Load Invention}
 \label{app:Other Cautions for Atomic-Load Invention}
@@ -3356,12 +3366,12 @@ int r0 = x;
 int r1 = r0 * r0 + 2 * r0 + 1;
 \end{verbatim}
 \end{quote}
-A developer might be forgiven for assuming that the value of \co{r1}
-is guaranteed to be a perfect square, at least for sufficiently small
-values of \co{x}.
+For sufficiently small values of \co{x}, the abstract machine is
+guaranteed to produce a perfect square in \co{r1}.
 
-But if the compiler is permitted to invent atomic loads, there is no such
-guarantee, as can be seen from this transformed version of the above code:
+But if the compiler is permitted to invent atomic loads, then this
+guarantee might not hold, as can be seen from this transformed version of
+the above code:
 \begin{quote}
 \begin{verbatim}
 int r0 = x;
@@ -3371,7 +3381,7 @@ int r1 = r0 * r0 + 2 * invented + 1;
 \end{quote}
 For example, if the load into \co{r0} happened when the value of \co{x}
 was zero and the load into \co{invented} happened when the value of
-\co{x} was ten, then the value of \co{r1} will be twenty, which is not
+\co{x} was 10, then the value of \co{r1} will be 21, which is not
 a perfect square.
 
 Similar issues can arise even when the compiler merely repurposes a
@@ -3383,10 +3393,9 @@ int r0 = x;
 int r1 = r0 * r0 + 2 * r0 + 1;
 \end{verbatim}
 \end{quote}
-Again, a developer might be forgiven for assuming that the value of
-\co{r1} is guaranteed to be a perfect square, at least for sufficiently
-small values of \co{x}.
-But is the compiler allowed to transform this example into the following?
+Again, for sufficiently small values of \co{x}, the abstract machine is
+guaranteed to produce a perfect square in \co{r1}.
+So is the compiler allowed to transform this example into the following?
 \begin{quote}
 \begin{verbatim}
 repurposed = x;
@@ -3395,8 +3404,8 @@ int r0 = x;
 int r1 = r0 * r0 + 2 * repurposed + 1;
 \end{verbatim}
 \end{quote}
-Again, this can result in the value of \co{r1} being something other than
-a perfect square.
+This can result in the value of \co{r1} being something other than
+a perfect square, which is incorrect behavior.
 %
 But it would be just fine if the compiler fully merged the two loads from
 \co{x}, for example, as follows:
@@ -3412,11 +3421,10 @@ Similar observations apply to atomic loads from pointers.
 For example, consider
 Listing~\ref{lst:Example Duplicated Load} on
 page~\pageref{lst:Example Duplicated Load},
-in which the developer expected line~19 to pass two fields from the
-same structure to \co{do_something_with()}, which is an entirely
-reasonable expectation.
-This expectation will not always be met if the compiler is permitted
-to invent atomic loads as shown by the commented-out line~15.
+in which the abstract machine guarantees that line~17 passes two
+fields from the same structure to \co{do_something_with()}.
+This guarantee will not always be met if the compiler is permitted to
+invent atomic loads such as that contained in the commented-out line~15.
 \begin{listing}[tbp]
 \scriptsize
 \begin{verbatim}
@@ -3447,14 +3455,18 @@ to invent atomic loads as shown by the commented-out line~15.
 But suppose that there was an earlier load from \co{globalfoop}, as
 shown on lines~13 and~14 in
 Listing~\ref{lst:Example Merging of Duplicated Loads}.
-Then, assuming that \co{do_something()} is synchronization-free,
-the second load on line~15 could be removed without violating user
-expectations.
+Then, assuming that \co{do_something()} is synchronization-free, the
+second load on line~15 could be removed without resulting in incorrect
+behavior.
 
-It is imperative that users be able to rely on arithmetic and pointer accesses.
+Please note that these examples are not just accidents of the current state
+of the C++ abstract machine.
+After all, it is imperative that users be able to rely on the laws of
+arithmetic and on atomic accesses to pointers.
 Therefore, compilers must refrain from inventing atomic loads and from repurposing
-their values, but compilers are permitted to merge adjacent atomic loads from the
-same variable.
+their values.
+However, compilers are permitted to merge adjacent atomic loads from
+the same variable.
 These restrictions correspond to our notion of quasi volatile defined in
 Section~\ref{sec:Volatile and Quasi Volatile Accesses}.
 
