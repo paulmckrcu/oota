@@ -1082,8 +1082,8 @@ Therefore we can rule out transformations like this one by insisting
 the compiler not invent (or duplicate) atomic loads.\footnote{
 	This issue is discussed more fully in
 	Appendix~\ref{app:Inventing Atomic Loads},
-	which also discusses other examples in which invented atomic
-	loads lead to incorrect behavior, that is, behavior that is not
+	which includes other examples of invented atomic
+	loads leading to incorrect behavior, that is, behavior not
 	exhibited by the abstract machine.
 	See also the ``Invented Atomic Loads'' paragraph of
         Section~\ref{sec:Constraints of the Standard}.}
@@ -1994,7 +1994,6 @@ To see this, consider
 Listing~\ref{lst:Example Duplicated Load}.
 Suppose that the load on line~13 were duplicated, for example, as if the
 compiler had uncommented line~15.
-uncommenting line~15.
 Then the values of \co{a} and \co{b} passed to line~17's call to
 \co{do_something_with()} might be from different instances of the
 \co{foo} structure, something that \co{do_something_with()} probably
@@ -3370,10 +3369,10 @@ int r1 = r0 * r0 + 2 * r0 + 1;
 For sufficiently small values of \co{x}, the abstract machine is
 guaranteed to produce a perfect square in \co{r1}.
 
-But if the compiler is permitted to invent atomic loads, then compiled
-code might not respect this guarantee, thus (incorrectly) deviating
-from the compiled code.
-This issue is evident in this transformed version of the above code:
+But if the compiler is permitted to invent atomic loads then the compiled
+code might not respect this guarantee, thus incorrectly deviating
+from the abstract machine.
+This issue is evident in a transformed version of the above code:
 \begin{quote}
 \begin{verbatim}
 int r0 = x;
@@ -3458,7 +3457,7 @@ But suppose that there was an earlier load from \co{globalfoop}, as
 shown on lines~13 and~14 in
 Listing~\ref{lst:Example Merging of Duplicated Loads}.
 Then, assuming that \co{do_something()} is synchronization-free, the
-second load on line~15 if that listing could be removed without resulting
+second load on line~15 of that listing could be removed without resulting
 in incorrect behavior.
 
 Please note that these examples are not just accidents of the current state
