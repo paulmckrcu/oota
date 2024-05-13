@@ -1074,19 +1074,19 @@ between the two loads---the implementation can choose at runtime to use
 for \co{r1} whichever value agrees with \co{r2}, as shown on line~6.
 Then the value stored to \co{z} on line~7 will always be one,
 with no dependence on the value loaded from \co{y}.
-This example is discussed more fully in
-Appendix~\ref{app:Inventing Atomic Loads},
-which also discusses other examples in which invented atomic loads lead
-to incorrect behavior, that is, behavior that is not exhibited by the
-abstract machine.\footnote{
-	See also the ``Invented Atomic Loads'' paragraph of
-	Section~\ref{sec:Constraints of the Standard}.}
 
 A noteworthy aspect of this transformation is that it invents an atomic load:
 The original form of the code reads \co{x} only once,
 whereas the transformed code reads it twice.
 Therefore we can rule out transformations like this one by insisting
-the compiler not invent (or duplicate) atomic loads.
+the compiler not invent (or duplicate) atomic loads.\footnote{
+	This issue is discussed more fully in
+	Appendix~\ref{app:Inventing Atomic Loads},
+	which also discusses other examples in which invented atomic
+	loads lead to incorrect behavior, that is, behavior that is not
+	exhibited by the abstract machine.
+	See also the ``Invented Atomic Loads'' paragraph of
+        Section~\ref{sec:Constraints of the Standard}.}
 In fact, we will require that atomic accesses be treated as
 ``quasi volatile'', in that the compiler is allowed to omit,
 merge, or reorder them but not invent them.
