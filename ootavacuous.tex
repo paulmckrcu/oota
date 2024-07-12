@@ -103,10 +103,40 @@ In fact, for many compilers the constraints boil down to a simple
 ``Don't invent or duplicate atomic accesses'', which the compiler
 probably wouldn't do anyway.
 
-We begin with a brief overview of the OOTA problem, followed
-by an equally brief summary of prior work in this area, and ending
-with a quick overview of the \co{herd7} tool that will be used to
-evaluate litmus tests.
+We begin with a summary of what needs to change and a brief overview of
+the OOTA problem, followed by an equally brief summary of prior work in
+this area, and ending with a quick overview of the \co{herd7} tool that
+will be used to evaluate litmus tests.
+
+\subsection{What Needs to Change?}
+\label{sec:What Needs to Change?}
+
+What changes are needed to prevent OOTA from C++ implementations using
+traditional compilers and traditional hardware, including CPUs and
+GPGPUs?
+
+\begin{itemize}
+\item	To the standard:
+	No changes.
+	The indefinite prohibition of out-of-thin-air values needs
+	to remain.
+\item	To implementations:
+	No changes.
+	Future implementations must avoid optimizations that invent,
+	duplicate, or repurpose atomic loads.
+	However, such optimizations must be avoided for other reasons,
+	including preserving basic laws of arithmetic
+	(see Appendix~\ref{app:Inventing Atomic Loads} for more detail).
+\item	To user code:
+	No changes.
+	Users must avoid undefined behavior in portable code, just as
+	is the case now.
+\end{itemize}
+
+In short, no changes are needed because current implementations already
+avoid OOTA cycles.
+The point of this paper is to give a semi-formal demonstration of
+why this is the case.
 
 \subsection{Brief OOTA Overview}
 \label{sec:Brief OOTA Overview}
@@ -166,8 +196,10 @@ the C++ standard explicitly prohibits them in 33.5.4p8
 	Implementations should ensure that no “out-of-thin-air” values
 	are computed that circularly depend on their own computation.
 \end{quote}
-The standard's prohibition of OOTA is of course important, but those of us
-writing code in the real world must rely on actual C++ implementations.
+The standard's prohibition of OOTA is of course important, for example, to
+prevent misapplication of the as-if rule in oracular C++ implementations,
+but those of us writing code in the real world must rely on actual C++
+implementations.
 And in these implementations, this prohibition is in fact enforced by TSO
 ordering in strongly ordered systems and by data-dependency ordering in
 weakly ordered systems.\footnote{
@@ -2185,6 +2217,15 @@ their code transformations to those based on single-thread analysis,
 was used to show that such implementations
 are incapable of producing OOTA cycles in UB-free programs
 provided they treat all atomic objects as volatile.
+
+This work shows that avoiding OOTA cycles requires no changes to the
+standard, to current implementions, or to user practices for portable
+code.
+Future implementations must avoid optimizations that invent, duplicate,
+or repurpose atomic loads.
+More work is required to delineate any further restrictions on future
+implementations that might carry out optimizations based on global
+inter-thread analysis.
 
 \clearpage
 \appendix
