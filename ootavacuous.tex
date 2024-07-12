@@ -41,7 +41,7 @@
 \floatname{listing}{Listing}
 
 \begin{document}
-\title{P3064R1: How to Avoid OOTA Without Really Trying}
+\title{P3064R2: How to Avoid OOTA Without Really Trying}
 
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
@@ -51,7 +51,7 @@ Paul E.~McKenney\\{\small \email{paulmck@kernel.org}} \and
 Michael Wong\\{\small \email{fraggamuffin@gmail.com}} \and
 Maged Michael\\{\small \email{maged.michael@gmail.com}}
 }
-\date{May 4, 2024 (Pre-St. Louis)}
+\date{July 12, 2024 (Post-St. Louis)}
 \maketitle{}
 
 Audience: SG1
@@ -3608,9 +3608,6 @@ This section lists a few other litmus tests of interest:
 	for more discussion on this topic.
 \end{itemize}
 
-% \section{History}
-% \label{sec:History}
-
 \clearpage
 
 \section{Litmus Tests from “Causality Test Cases"}
@@ -4161,7 +4158,7 @@ not in any way constitute agreement with anything in this paper.
 % Derek Dreyer: Prior OOTA.
 % Brian Demsky: Prior OOTA.
 
-% Done as of December 18, 2023 %% as of March 18, 2023
+% Done as of December 18, 2023 %% as of March 18, 2024
 %% David Goldblatt
 %% Boqun Feng, Uladzislau Rezki, Neeraj Upadhyay, Joel Fernandes, and
 %	Frederic Weisbecker (RCU proteges)
@@ -4226,6 +4223,16 @@ not in any way constitute agreement with anything in this paper.
 % It might be possible to violate causality.
 % Hardware and compiler bugs might result in OOTA.
 % ML hallucination might convince people that OOTA is OK.
+
+\section{History}
+\label{sec:History}
+
+P3064R2 incorporates feedback from the St.~Louis meeting, primarily
+incorporating clear statements that nothing need change to avoid OOTA.
+In other words, the title really means what it says.
+
+P3064R1 adds non-OOTA examples that show that inventing, duplicating,
+or repurposing atomic loads can violate basic laws of arithmetic.
 
 \bibliographystyle{plain}
 \addcontentsline{toc}{section}{References}
