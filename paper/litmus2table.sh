@@ -45,26 +45,21 @@ inproc != 0 && $0 != "}" {
 }
 
 END {
-	cols = "";
+	cols = "r";
 	head = "";
 	for (i = 0; i <= procnum; i++) {
-		if (cols != "") {
-			cols = cols "|";
-			head = head " & ";
-		}
-		cols = cols "l";
-		head = head "P" i;
+		cols = cols "|l";
+		head = head "& P" i " ";
 	}
 	print bs "begin{tabular}{" cols "}"
-	print head " " bs bs;
+	print head bs bs;
 	print bs "hline"
+	stmtno = 0;
 	for (i in stmtlist) {
-		curstmt = "";
 		tabs = "";
-		for (j in stmtlist[i]) {
-			if (tabs != "")
-				printf " &\n";
-			printf "%s", tabs stmtlist[i][j];
+		printf "%d.", ++stmtno;
+		for (j = 0; j <= procnum; j++) {
+			printf " &\n%s", tabs stmtlist[i][j];
 			tabs = tabs "	";
 		}
 		print " " bs bs;
