@@ -286,10 +286,9 @@ The next section looks at how prior work has refined these issues.
 \label{sec:Prior Work}
 
 All OOTA workers owe a debt to the foundational work in the infamous
-``Causality Test Cases'',\footnote{
+``Causality Test Cases''.\footnote{
 	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
-a version of which may be found in
-Appendix~\ref{app:Litmus Tests from “Causality Test Cases"}.
+% %%% Eventually cite P3064.
 
 Some executable C++ memory models correctly flag at least some executions
 involving OOTA cycles~\cite{JadeAlglave2014HerdingCats}.\footnote{
@@ -420,6 +419,12 @@ others do not.
 \label{lst:Simple Reordering as Litmus Test}
 \end{listing}
 
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-causality-4.litmus @@
+\caption{Causality Test Case 4}
+\label{lst:Causality Test Case 4}
+\end{listing}
+
 Later examples will usually combine the litmus test and the \co{herd7}
 output into one listing, as shown in
 Listing~\ref{lst:Simple Reordering as Litmus Test},
@@ -431,9 +436,7 @@ can also be recast as a \co{herd7} litmus test, as shown in
 Listing~\ref{lst:Causality Test Case 4}
 on page~\pageref{lst:Causality Test Case 4}.
 Other OOTA-related litmus tests may be found in
-Appendix~\ref{app:Illustrative Litmus Tests}
-and
-Appendix~\ref{app:Litmus Tests from “Causality Test Cases"}.
+Appendix~\ref{app:Illustrative Litmus Tests}.
 
 \section{OOTA and Semantic Dependencies}
 \label{sec:OOTA and Semantic Dependencies}
@@ -1883,6 +1886,12 @@ before the stores they read from, no matter what cores they execute on.
 
 \medskip
 
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-causality-2.litmus @@
+\caption{Causality Test Case 2}
+\label{lst:Causality Test Case 2}
+\end{listing}
+
 Another feature we can expect of upcoming computer systems is the
 addition of new hardware instructions.
 For example, one could imagine a conditional-store instruction,
@@ -2150,8 +2159,9 @@ analysis.
 Further explorations could consider additional classes of global analysis,
 for example, analyses that demonstrate that a given expression will
 always evaluate to a particular constant.
-JMM Causality Test Case 1 discussed in
-Appendix~\ref{app:Causality Test Case 1}
+JMM Causality Test Case 1 % %%% Cite P3064.
+% %%% discussed in
+% %%% Appendix~\ref{app:Causality Test Case 1}
 provides an example of such a global analysis.
 
 This paper assumes that the user defines threads, and that the
@@ -3090,8 +3100,9 @@ The first step in this direction is
 Listing~\ref{lst:Three-Process Version of JMM Causality Test Case 4},
 which expands
 Listing~\ref{lst:Causality Test Case 4}
-(discussed in
-Appendix~\ref{app:Causality Test Case 4})
+% %%% Cite P3064.
+% %%% (discussed in
+% %%% Appendix~\ref{app:Causality Test Case 4})
 from two threads to three.
 The \co{herd7} tool reports OOTA values, and
 all threads have straightforward semantic dependencies from their
@@ -3607,508 +3618,6 @@ This section lists a few other litmus tests of interest:
 	See Appendix~\ref{app:Inventing Atomic Loads}
 	for more discussion on this topic.
 \end{itemize}
-
-\clearpage
-
-\section{Litmus Tests from “Causality Test Cases"}
-\label{app:Litmus Tests from “Causality Test Cases"}
-
-These tests might be two decades old, but they are still quite
-relevant.\footnote{
-	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
-We have translated them from Java to C++, and we evaluate them using
-the \co{herd7} tool and also using manual analysis.
-Please note that differences in the semantics of the two languages
-result in changes in verdict for some litmus tests.
-
-\subsection{Causality Test Case 1}
-\label{app:Causality Test Case 1}
-
-Listing~\ref{lst:Causality Test Case 1}
-shows causality test case 1, for which the \co{r1 == r2 == 1} result
-is to be allowed.
-And indeed, this result does show up in the output from the \co{herd7} tool.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-1.litmus @@
-\caption{Causality Test Case 1}
-\label{lst:Causality Test Case 1}
-\end{listing}
-
-Compilers that can prove the value of \co{x} is always
-nonnegative can also determine that there is no semantic dependency between
-\co{P0()}'s load from \co{x} on line~8 and its store to \co{y} on line~10,
-that is, no matter which of the possible values is loaded from \co{x},
-the value 1 will always be stored to \co{y}.
-Relative to less-omniscient compilers, however,
-including those using single-thread analysis or treating atomic
-objects as volatile, there \emph{is} a semantic dependency.
-
-Even omniscient compilers will observe a semantic dependency from
-\co{P1()}'s load from \co{y} on line~14 to its store to \co{x} on line~15.
-
-Either way no OOTA cycle will occur, with omniscient compilers
-having no cycle at all because of the lack of an sdep link in \co{P0()},
-and other compilers prevented by hardware
-dependency ordering from realizing the cycle.
-
-\subsection{Causality Test Case 2}
-\label{app:Causality Test Case 2}
-
-Listing~\ref{lst:Causality Test Case 2}
-shows causality test case 2, for which the \co{r1 == r2 == r3 == 1} result
-is to be allowed.
-This result appears in the \co{herd7} output.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-2.litmus @@
-\caption{Causality Test Case 2}
-\label{lst:Causality Test Case 2}
-\end{listing}
-
-Because \co{P0()}'s loads from \co{x} on lines~8 and~9 are unordered,
-a C++ compiler that treats atomics as quasi volatile
-can act as if the source code loaded from \co{x} only
-once and assigned the returned value to both \co{r1} and \co{r2},
-merging the loads.\footnote{
-	But not in C, where relaxed atomic operations are volatile,
-	and thus are observable behavior not subject to merging.}
-The compiler could then prove that the condition on line~10
-would always true, and act as if the source code had
-unconditionally executed the relaxed store to \co{y} on line~11
-independent of the value loaded from \co{x}.
-Without this dependency there would then be no OOTA cycle.
-
-For compilers that do not merge the two loads, the hardware
-dependency ordering arising from the conditional test on line~10
-will prevent the realization of an OOTA cycle.
-
-\subsection{Causality Test Case 3}
-\label{app:Causality Test Case 3}
-
-Listing~\ref{lst:Causality Test Case 3}
-shows causality test case 3, for which the \co{r1 == r2 == r3 == 1} result
-is to be allowed.
-The \co{herd7} tool reports this result.
-
-The analysis from the previous section applies here.
-Although the addition of \co{P2()} allows sequentially consistent executions
-in which \co{P0()}'s two loads from \co{x} return different values,
-it does not change the fact that those two loads can be merged.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-3.litmus @@
-\caption{Causality Test Case 3}
-\label{lst:Causality Test Case 3}
-\end{listing}
-
-\subsection{Causality Test Case 4}
-\label{app:Causality Test Case 4}
-
-Listing~\ref{lst:Causality Test Case 4}
-shows causality test case 4, for which the \co{r1 == r2 == 1} result
-is to be forbidden.
-The \co{herd7} tool finds this OOTA result;
-the \co{S8} values given on line~3 of its output indicate
-that in the execution it describes, the variables \co{r1} and~\co{r2} were never
-assigned any specific value, so they could just as well be equal to
-one as to anything else.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-4.litmus @@
-\caption{Causality Test Case 4}
-\label{lst:Causality Test Case 4}
-\end{listing}
-
-This test case is virtually the same as the Simple OOTA cycle
-discussed in
-Section~\ref{sec:Simple OOTA Cycle}
-on
-page~\pageref{sec:Simple OOTA Cycle},
-the only difference being the final values of the variables.
-
-\subsection{Causality Test Case 5}
-\label{app:Causality Test Case 5}
-
-Listing~\ref{lst:Causality Test Case 5}
-shows causality test case 5, for which the \co{r1 == r2 == 1} and \co{r3 == 0}
-result is to be forbidden.
-The \co{herd7} tool reports this OOTA result in line~3 of its output.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-5.litmus @@
-\caption{Causality Test Case 5}
-\label{lst:Causality Test Case 5}
-\end{listing}
-
-This is the same as causality test case~4 with \co{P2()} and \co{P3()}
-added, but those routines play no role in the OOTA cycle.
-\co{P2()} has no loads and so cannot participate in an OOTA cycle in
-any case.
-
-\subsection{Causality Test Case 6}
-\label{app:Causality Test Case 6}
-
-Listing~\ref{lst:Causality Test Case 6}
-shows causality test case 6, for which the \co{r1 == r2 == 1}
-result is to be allowed.
-The \co{herd7} tool reports this result.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-6.litmus @@
-\caption{Causality Test Case 6}
-\label{lst:Causality Test Case 6}
-\end{listing}
-
-A compiler that can prove \co{y} is always either
-zero or one can also prove that there is no semantic dependency
-from \co{P1()}'s load on line~14 to its stores on lines~16 and~19.
-Such a compiler could act as if lines~15--20 had been replaced
-by a single store to \co{x}, showing that the dependency isn't
-semantic.
-
-Less-omniscient compilers will preserve the dependency, and then
-hardware dependency ordering will prevent the OOTA cycle from
-being realized.
-
-\subsection{Causality Test Case 7}
-\label{app:Causality Test Case 7}
-
-Listing~\ref{lst:Causality Test Case 7}
-shows causality test case 7, for which the \co{r1 == r2 == r3 == 1}
-result is to be allowed.
-The \co{herd7} tool finds this result.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-7.litmus @@
-\caption{Causality Test Case 7}
-\label{lst:Causality Test Case 7}
-\end{listing}
-
-This test case has everything
-to do with reordering and nothing to do with OOTA cycles.
-The \co{r1 == r2 == r3 == 1} outcome happens when lines~17, 10, 11,
-15, 16 and~9 execute in that order.
-Note that this execution order respects the semantic dependencies in
-lines~10--11 and~15--16, and thus is not ruled out by hardware
-dependency ordering.
-It could have been ruled out if some of the accesses were acquire or
-release, but here they are all relaxed.
-
-\subsection{Causality Test Case 8}
-\label{app:Causality Test Case 8}
-
-Listing~\ref{lst:Causality Test Case 8}
-shows causality test case 8, for which the \co{r1 == r2 == 1}
-result is to be allowed.
-The \co{herd7} tool does not report this result, but it does if
-\co{r2} is initialized to one before being set to
-\co{1 + r1 * r1 - r1}.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-8.litmus @@
-\caption{Causality Test Case 8}
-\label{lst:Causality Test Case 8}
-\end{listing}
-
-Omniscient compilers might note that the computation on line~9
-will have the value one when the load from \co{x} returns either
-zero or one, which are the only values \co{x} and \co{y} can take.
-Such a compiler could then realize that line~9 always sets \co{r2} to one,
-independent of the value loaded in line~8.
-Then there would be no semantic dependency between \co{P0()}'s load
-and store, and thus no OOTA cycle relative to this compiler.
-
-A less-capable compiler would leave the dependency in place,
-and the resulting hardware dependency ordering would prevent
-the OOTA cycle from being realized.
-
-\subsection{Causality Test Case 9}
-\label{app:Causality Test Case 9}
-
-Listing~\ref{lst:Causality Test Case 9}
-shows causality test case 9, for which the \co{r1 == r2 == 1}
-result is to be allowed.
-The \co{herd7} tool does not report this result.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-9.litmus @@
-\caption{Causality Test Case 9}
-\label{lst:Causality Test Case 9}
-\end{listing}
-
-This is the same as causality test case~8 but with \co{P2()} added;
-the store to \co{x} in \co{P2} can interfere with the formation of the
-OOTA cycle.
-
-Unlike in causality test case~8, the computation on line~9 must be
-carried out because now the load on line~8 might return two.
-Consequently \co{P0} and~\co{P1} both have semantic dependencies,
-and hardware dependency ordering will prevent the OOTA cycle from
-being realized.
-
-\subsection{Causality Test Case 9a}
-\label{app:Causality Test Case 9a}
-
-Listing~\ref{lst:Causality Test Case 9a}
-shows causality test case 9a, for which the \co{r1 == r2 == 1}
-result is to be allowed.
-The \co{herd7} tool does not report this result.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-9a.litmus @@
-\caption{Causality Test Case 9a}
-\label{lst:Causality Test Case 9a}
-\end{listing}
-
-This is the same as causality test case~9 except that here \co{P2()}
-sets \co{x} to zero instead of two.
-As as result the computation on line~9 is once again independent of
-the value loaded on line~8, which makes the analysis nearly the same
-as that of causality test case~8.
-
-\subsection{Causality Test Case 10}
-\label{app:Causality Test Case 10}
-
-Listing~\ref{lst:Causality Test Case 10}
-shows causality test case 10, for which the \co{r1 == r2 == 1} and \co{r3 == 0}
-result is to be forbidden.
-The \co{herd7} tool reports this result.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-10.litmus @@
-\caption{Causality Test Case 10}
-\label{lst:Causality Test Case 10}
-\end{listing}
-
-\co{P0()} and \co{P1()} have straightforward
-semantic dependencies between their respective loads and stores, and
-so hardware dependency ordering will prevent an OOTA cycle from being
-realized.
-\co{P2()} has no semantic dependency, and \co{P3()}'s store does not
-occur in this execution (i.e., the one described by the \co{exists} clause)
-because \co{r3} is zero.
-Thus neither of them contributes to an OOTA cycle.
-
-\subsection{Causality Test Case 11}
-\label{app:Causality Test Case 11}
-
-Listing~\ref{lst:Causality Test Case 11}
-shows causality test case 11, for which the \co{r1 == r2 == r3 == r4 == 1}
-result is to be allowed.
-The \co{herd7} tool reports this result.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-11.litmus @@
-\caption{Causality Test Case 11}
-\label{lst:Causality Test Case 11}
-\end{listing}
-
-Like causality test case~7, this test case has nothing to do with OOTA cycles.
-The result may be obtained by executing lines~20, 12, 13, 18, 19, 10, 11,
-and~17 in that order.
-
-\subsection{Causality Test Case 12}
-\label{app:Causality Test Case 12}
-
-Causality Test Case 12 in
-Listing~\ref{lst:Causality Test Case 12}
-uses arrays, which are not yet supported by the \co{herd7} tool.
-
-\begin{listing}[tbp]
-@@ DisplayLitmus litmus/oota-causality-12.litmus @@
-\caption{Causality Test Case 12}
-\label{lst:Causality Test Case 12}
-\end{listing}
-
-An omniscient compiler could note that only \co{P0()} accesses
-array \co{a[]} and act as if the code was simpler, but there would
-still be semantic dependencies between \co{P0()}'s and \co{P1()}s
-relaxed atomic loads and stores involving \co{x} and \co{y}.
-The resulting hardware dependency ordering will prevent an OOTA cycle
-from being realized, whether the compiler is omniscient or not.
-
-\subsection{Causality Test Case 13}
-\label{app:Causality Test Case 13}
-
-Listing~\ref{lst:Causality Test Case 13}
-shows causality test case 13, for which the \co{r1 == r2 == 1}
-result is to be forbidden.
-The \co{herd7} tool reports this result.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-13.litmus @@
-\caption{Causality Test Case 13}
-\label{lst:Causality Test Case 13}
-\end{listing}
-
-This is the same as causality test case~10 without the confounding
-influence of \co{P2()} and~\co{P3()}.
-
-\subsection{Causality Test Case 14}
-\label{app:Causality Test Case 14}
-
-Listing~\ref{lst:Causality Test Case 14}
-shows causality test case 14, for which the \co{r1 == r3 == 1} and \co{r2 == 0}
-result is to be forbidden.
-The \co{herd7} tool reports this result.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-14.litmus @@
-\caption{Causality Test Case 14}
-\label{lst:Causality Test Case 14}
-\end{listing}
-
-In the execution described by the \co{exists} clause,
-\co{P0()} has a semantic dependency from line~9 to
-line~13 and \co{P1()} has a semantic dependency from line~18 to
-line~21.
-(There's also a semantic dependency from line~17 to line~21 but it
-doesn't enter into this OOTA cycle, which involves only \co{x} and~\co{y}.)
-The \co{memory_order_seq_cst} specification on line~17 has no important effect;
-hardware dependency ordering will prevent the cycle from being realized.
-
-\subsection{Causality Test Case 15}
-\label{app:Causality Test Case 15}
-
-Listing~\ref{lst:Causality Test Case 15}
-shows causality test case 15, for which the \co{r0 == r1 == r3 == 1}
-and \co{r2 == 0}
-result is to be forbidden.
-The \co{herd7} tool reports this result.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-15.litmus @@
-\caption{Causality Test Case 15}
-\label{lst:Causality Test Case 15}
-\end{listing}
-
-The execution described by the \co{exists} clause
-has an OOTA cycle involving \co{u} and~\co{v}.
-The dependency in \co{P0()} from line~13 to line~19 and the dependency
-in \co{P1()} from line~24 to line~27 are both semantic.
-The resulting hardware dependency ordering prevents the cycle from
-being realized.
-
-Having no load, \co{P2()} cannot participate in an OOTA cycle.
-
-\subsection{Causality Test Case 16}
-\label{app:Causality Test Case 16}
-
-Listing~\ref{lst:Causality Test Case 16}
-shows causality test case 16, for which the \co{r1 == 2} and \co{r2 == 1}
-result is to be allowed.
-The \co{herd7} tool does not report this result, which is to be
-expected because it would violate the C++ memory model's read-write
-coherence rule regarding the modification order of an atomic object
-(6.9.2.2p17 \co{[intro.races]}).
-Because no abstract execution can obtain \co{r1 == 2} and \co{r2 == 1}, no
-valid realization will either.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-16.litmus @@
-\caption{Causality Test Case 16}
-\label{lst:Causality Test Case 16}
-\end{listing}
-
-\subsection{Causality Test Case 17}
-\label{app:Causality Test Case 17}
-
-Listing~\ref{lst:Causality Test Case 17}
-shows causality test case 17, for which the \co{r1 == r2 == r3 == 42}
-result is to be allowed.
-The \co{herd7} tool does not report this result, although it does
-report a different OOTA cycle involving lines 11, 12, 16, and~17
-(the \co{S17} value on line~3 of the \co{herd7} output).
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-17.litmus @@
-\caption{Causality Test Case 17}
-\label{lst:Causality Test Case 17}
-\end{listing}
-
-A compiler that treats atomics as quasi volatile could reason as follows:
-Suppose that \co{P0()}'s load from \co{x} on line~8 returns the value 42.
-In that case, the second load on line~11 can be merged with the first,
-so that it also returns the value 42.
-On the other hand, if the load on line~8 returns some other value then
-line~10 will store the value 42 to \co{x}, and then the load on line~11
-can be omitted in favor of using the value 42 stored by line~10.
-
-Either way, the value of \co{r1} will be 42.
-Therefore the loads from \co{x} cannot affect the store on line~17,
-so there is no semantic dependency.
-This allows the cycle to be realized,
-but because the dependency in \co{P0()} is not semantic,
-the cycle is not OOTA.
-
-\subsection{Causality Test Case 18}
-\label{app:Causality Test Case 18}
-
-Listing~\ref{lst:Causality Test Case 18}
-shows causality test case 18, for which the \co{r1 == r2 == r3 == 42}
-result is to be allowed.
-The \co{herd7} tool does not report this result.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-18.litmus @@
-\caption{Causality Test Case 18}
-\label{lst:Causality Test Case 18}
-\end{listing}
-
-This is the same as causality test case~17, even to the alternate OOTA
-cycle reported by \co{herd7}, except that line~9 tests
-\co{r3} for equality to zero rather than non-equality to 42.
-Perhaps surprisingly, this makes a difference.
-
-A compiler that treats atomic objects as volatile or uses
-single-thread analysis cannot assume that \co{x} will necessarily be
-equal to 42 following lines~9 and~10; it might have some other value
-such as 1.
-Therefore the compiler cannot conclude that \co{r1} will always be 42
-and must leave the semantic dependency between lines~11 and~12 intact.
-Of course, the resulting OOTA cycle will not be realized, because of
-hardware dependency ordering.
-
-\subsection{Causality Test Case 19}
-\label{app:Causality Test Case 19}
-
-Listing~\ref{lst:Causality Test Case 19}
-shows causality test case 19, for which the \co{r1 == r2 == r3 == 42}
-result is to be allowed.
-The \co{herd7} tool does not report this result but it does report the
-OOTA cycle in line~3 of its output.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-19.litmus @@
-\caption{Causality Test Case 19}
-\label{lst:Causality Test Case 19}
-\end{listing}
-
-This is nearly the same as the Simple OOTA cycle and causality test
-case~4, with the addition of \co{P2()}.
-Just as in those examples, the OOTA cycle cannot be realized by
-compilers that treat atomic objects as volatile or that do
-single-thread analysis and treat atomic objects as quasi volatile.
-
-\subsection{Causality Test Case 20}
-\label{app:Causality Test Case 20}
-
-Listing~\ref{lst:Causality Test Case 20}
-shows causality test case 20, for which the \co{r1 == r2 == r3 == 42}
-result is to be allowed.
-The \co{herd7} tool does not report this result.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-20.litmus @@
-\caption{Causality Test Case 20}
-\label{lst:Causality Test Case 20}
-\end{listing}
-
-This is the same as causality test case~19, even to the OOTA cycle
-reported by \co{herd7}, except that line~19 tests
-\co{r3} for equality to zero rather than non-equality to 42.
-The same analysis applies.
 
 \clearpage
 
