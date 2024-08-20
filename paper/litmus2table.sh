@@ -6,11 +6,25 @@
 
 awk -v amp='&' -v bs='\\' -v dq='"' '
 BEGIN {
+	ininit = 0;
+	inproc = 0;
 	procnum = -1;
 	stmtno = 0;
 	memorder["memory_order_relaxed"] = "rlx";
 	memorder["memory_order_acquire"] = "acq";
 	memorder["memory_order_release"] = "rel";
+}
+
+ininit != 0 && $0 ~ /= *[[1-9]/ {
+	curinit = $0;
+	gsub(/\[/, "", curinit);
+	gsub(/]/, "", curinit);
+	gsub(/[	 ]/, "", curinit);
+	initlist = initlist " " curinit;
+}
+
+procnum == -1 && /^{$/ {
+	ininit = 1;
 }
 
 inproc != 0 && $0 != "}" {
@@ -41,10 +55,13 @@ inproc != 0 && $0 != "}" {
 }
 
 /^}$/ {
+	ininit = 0;
 	inproc = 0;
 }
 
 END {
+	if (initlist != "")
+		print "Non-zero initialization:" initlist;
 	cols = "r";
 	head = "";
 	for (i = 0; i <= procnum; i++) {
