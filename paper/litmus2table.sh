@@ -4,6 +4,7 @@
 #
 # Outputs an abbreviated LaTeX table variant.
 
+sed -e 's/&/\\&/' | sed -e 's/	}/	\\}/' | sed -e 's/{/\\{/' |
 awk -v amp='&' -v bs='\\' -v dq='"' '
 BEGIN {
 	ininit = 0;
@@ -58,6 +59,11 @@ inproc != 0 && $0 != "}" {
 /^}$/ {
 	ininit = 0;
 	inproc = 0;
+}
+
+/^exists/ {
+	existsclause = $0;
+	gsub(/^exists[ 	]*/, "", existsclause);
 }
 
 END {

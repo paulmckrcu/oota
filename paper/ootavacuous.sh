@@ -30,7 +30,7 @@ BEGIN {
 	print "{";
 	print bs "scriptsize";
 	print "___EOF___";
-	print "sed -e " sq "s/" amp "/" bs bs amp "/g" sq " < " path " | sed -e " sq "s/	}/	" bs bs "}/" sq " | sed -e " sq "s/{/" bs bs "{/" sq "| ./litmus2table.sh";
+	print "./litmus2table.sh < " path;
 	print "cat << " sq "___EOF___" sq;
 	print "}";
 	next;
@@ -42,7 +42,7 @@ BEGIN {
 	print "{";
 	print bs "scriptsize";
 	print "___EOF___";
-	print "sed -e " sq "s/" amp "/" bs bs amp "/g" sq " < " path " | sed -e " sq "s/	}/	" bs bs "}/" sq " | sed -e " sq "s/{/" bs bs "{/" sq "| ./litmus2table.sh";
+	print "./litmus2table.sh < " path;
 	print "cat << " sq "___EOF___" sq;
 	print "";
 	print bs "vspace{0.1in}";
