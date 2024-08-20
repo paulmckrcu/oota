@@ -3300,32 +3300,6 @@ would not require inventing or duplicating a load,
 but instead merely inventing a use for
 the previously discarded value in \co{r0}.
 
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/inc.litmus @@
-\caption{Only Atomic Increment}
-\label{lst:Only Atomic Increment}
-\end{listing}
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/inc-range.litmus @@
-\caption{Only Atomic Increment, Extended}
-\label{lst:Only Atomic Increment, Extended}
-\end{listing}
-
-Let us drop the single-thread-analysis constraint for
-the moment, and suppose that the compiler is able to prove
-that the only modification of a given atomic variable is to atomically
-increment it, as is the case for \co{y} in
-Listing~\ref{lst:Only Atomic Increment}.
-Is it okay for a C++ compiler to transform this program into
-Listing~\ref{lst:Only Atomic Increment, Extended}?
-An argument in favor is that the value of \co{y} must have
-passed through the value 42 if \co{r0} and \co{r1}
-bracket that value.
-Arguments against might cite the added overhead of the invented load,
-or the possibility that the check for the value 42 is intended for statistical
-sampling.
-
 There are a number of possible reactions to these situations:
 
 \begin{enumerate}
