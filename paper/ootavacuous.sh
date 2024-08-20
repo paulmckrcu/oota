@@ -17,7 +17,7 @@
 T="`mktemp -d ${TMPDIR-/tmp}/ootavacuous.sh.XXXXXX`"
 trap 'rm -rf $T' 0 2
 
-awk -v sq="'" -v dq='"' -v bs='\\' < ootavacuous.tex '
+awk -v sq="'" -v dq='"' -v bs='\\' -v amp='&' < ootavacuous.tex '
 BEGIN {
 	print "cat << " sq "___EOF___" sq;
 	print "% Automatically built, do not edit";
@@ -26,27 +26,26 @@ BEGIN {
 
 /^@@ DisplayLitmus .* @@$/ {
 	path = $3;
+	print "% " path;
 	print "{";
 	print bs "scriptsize";
-	print bs "begin{verbatim}";
 	print "___EOF___";
-	print "grep -v " sq "^[(/ ]" bs "*" sq " < " path " | ./c2latex.sh";
+	print "sed -e " sq "s/" amp "/" bs bs amp "/g" sq " < " path " | sed -e " sq "s/	}/	" bs bs "}/" sq " | sed -e " sq "s/{/" bs bs "{/" sq "| ./litmus2table.sh";
 	print "cat << " sq "___EOF___" sq;
-	print bs "end{verbatim}";
 	print "}";
 	next;
 }
 
 /^@@ DisplayRunLitmus .* @@$/ {
 	path = $3;
+	print "% " path;
 	print "{";
 	print bs "scriptsize";
-	print bs "begin{verbatim}";
 	print "___EOF___";
-	print "grep -v " sq "^[(/ ]" bs "*" sq " < " path " | ./c2latex.sh";
+	print "sed -e " sq "s/" amp "/" bs bs amp "/g" sq " < " path " | sed -e " sq "s/	}/	" bs bs "}/" sq " | sed -e " sq "s/{/" bs bs "{/" sq "| ./litmus2table.sh";
 	print "cat << " sq "___EOF___" sq;
-	print bs "end{verbatim}";
 	print "";
+	print bs "vspace{0.1in}";
 	print "Analysis by " dq bs "co{herd7 -c11 " path dq "}:";
 	print bs "begin{verbatim}";
 	print "___EOF___";
