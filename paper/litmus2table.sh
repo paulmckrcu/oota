@@ -33,13 +33,14 @@ inproc != 0 && $0 != "}" {
 	gsub(/	/, "~~", stmt);
 	if (moa ~ /memory_order_/) {
 		gsub(/^.*memory_order_/, "memory_order_", moa);
-		gsub(/\);/, "", moa);
+		gsub(/\).*/, "", moa);
 		moa = memorder[moa];
 	}
 	if (stmt ~ /= atomic_load_explicit\(/) {
 		gsub(/= atomic_load_explicit\(/, "=" bs "textsubscript{" moa "} ", stmt);
-		gsub(/, memory_order_[a-z_]*\);/, "", stmt);
-	} else if (stmt != /atomic_store_explicit\(/) {
+		if (gsub(/, memory_order_[a-z_]*\);/, "", stmt) == 0)
+			gsub(/, memory_order_[a-z_]*\)/, "", stmt);
+	} else if (stmt ~ /atomic_store_explicit\(/) {
 		gsub(/atomic_store_explicit\(/, "", stmt);
 		gsub(/, memory_order_[a-z_]*\);/, "", stmt);
 		gsub(/,/, " =" bs "textsubscript{" moa "}", stmt);
@@ -66,7 +67,7 @@ END {
 	head = "";
 	for (i = 0; i <= procnum; i++) {
 		cols = cols "|l";
-		head = head "& P" i " ";
+		head = head "& " bs "multicolumn{1}{c}{P" i "} ";
 	}
 	print bs "begin{tabular}{" cols "}"
 	print head bs bs;
@@ -76,7 +77,7 @@ END {
 		tabs = "";
 		printf "%d.", ++stmtno;
 		for (j = 0; j <= procnum; j++) {
-			printf " &\n%s", tabs stmtlist[i][j];
+			printf " &\n%s", tabs bs "texttt{" stmtlist[i][j] "}";
 			tabs = tabs "	";
 		}
 		print " " bs bs;
