@@ -5,6 +5,7 @@
 # Outputs an abbreviated LaTeX table variant.
 
 sed -e 's/&/\\&/' | sed -e 's/	}/	\\}/' | sed -e 's/{/\\{/' |
+sed -e 's,\\/,$\\vee$,' | sed -e 's,/\\,$\\wedge$,' |
 awk -v amp='&' -v bs='\\' -v dq='"' '
 BEGIN {
 	ininit = 0;
@@ -88,5 +89,10 @@ END {
 		}
 		print " " bs bs;
 	}
-	print bs "end{tabular}"
+	print bs "end{tabular}";
+	if (existsclause != "") {
+		print "";
+		print bs "vspace{0.1in}";
+		print "Condition: " existsclause;
+	}
 }'
