@@ -43,15 +43,13 @@ BEGIN {
 	print bs "scriptsize";
 	print "___EOF___";
 	print "./litmus2table.sh < " path;
+	# print "cat << " sq "___EOF___" sq;
+	# print "";
+	# print bs "vspace{0.1in}";
+	# print "Analysis by " dq bs "co{herd7 -c11 " path dq "}:";
+	# print "___EOF___";
+	print "herd7 -c11 " path " | ./herd2result.sh ";
 	print "cat << " sq "___EOF___" sq;
-	print "";
-	print bs "vspace{0.1in}";
-	print "Analysis by " dq bs "co{herd7 -c11 " path dq "}:";
-	print bs "begin{verbatim}";
-	print "___EOF___";
-	print "herd7 -c11 " path " | grep -v " sq "^$" sq " | ./c2latex.sh ";
-	print "cat << " sq "___EOF___" sq;
-	print bs "end{verbatim}";
 	print "}";
 	next;
 }

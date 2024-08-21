@@ -93,6 +93,6 @@ END {
 	if (existsclause != "") {
 		print "";
 		print bs "vspace{0.1in}";
-		print "Condition: " existsclause;
+		print "Condition " existsclause;
 	}
 }'
