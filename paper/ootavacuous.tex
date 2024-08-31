@@ -154,22 +154,24 @@ OOTA cycles need not involve nonsensical values.
 \label{sec:Simple OOTA Cycle}
 
 \begin{listing}[tbp]
-\begin{verbatim}
- 1 atomic<int> x(0);
- 2 atomic<int> y(0);
- 3
- 4 void thread1()
- 5 {
- 6   int r1 = x.load(memory_order_relaxed);
- 7   y.store(r1, memory_order_relaxed);
- 8 }
- 9
-10 void thread2()
-11 {
-12   int r2 = y.load(memory_order_relaxed);
-13   x.store(r2, memory_order_relaxed);
-14 }
-\end{verbatim}
+% Constructed by hand.
+{
+\scriptsize
+\begin{tabular}{r|l|l}
+& \multicolumn{1}{c}{P0} & \multicolumn{1}{c}{P1} \\
+\hline
+1. &
+\texttt{~~int r1 =\textsubscript{rlx} x} &
+	\texttt{~~int r2 =\textsubscript{rlx} y} \\
+2. &
+\texttt{~~y =\textsubscript{rlx} r1} &
+	\texttt{~~x =\textsubscript{rlx} r2} \\
+\end{tabular}
+
+\vspace{0.1in}
+Condition (0:r1=42 $\wedge$ 1:r2=42)
+sometimes satisfied.
+}
 \caption{Simple OOTA}
 \label{lst:Simple OOTA}
 \end{listing}
@@ -178,16 +180,14 @@ Listing~\ref{lst:Simple OOTA}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
 shows a simple example where an OOTA cycle might result in all of \co{x},
 \co{y}, \co{r1}, and \co{r2} having final values of 42, despite the fact
 that there is nothing in the initial values or the executable code to
-support such an outcome:
-
-\begin{enumerate}
-\item   Line~6 loads from \co{x} into \co{r1}, claiming to read
-	the value of line~13's store rather than \co{x}'s initial value
-	and somehow obtaining 42.
-\item   Line~7 stores \co{r1}, and thus 42, to \co{y}.
-\item   Line~12 loads 42 from \co{y} to \co{r2}.
-\item   Line~13 stores 42 to \co{x}, justifying the value loaded by line~6.
-\end{enumerate}
+support such an outcome.
+First, P0's line~1 loads from \co{x} into \co{r1}, claiming to read the value
+of P1's line-2 store rather than \co{x}'s initial value and somehow
+obtaining 42.
+Second, P0's line~2 stores \co{r1}, and thus 42, to \co{y}.
+Third, P1's line~1 loads 42 from \co{y} to \co{r2}.
+Fourth and finally, P1's line~2 stores 42 to \co{x}, justifying the value
+loaded by P0's line~1.
 
 Because nothing else in the C++ memory model rules out such OOTA cycles,
 the C++ standard explicitly prohibits them in 33.5.4p8
@@ -233,22 +233,24 @@ and this ordering prevents the OOTA result.
 \label{sec:Simple Reordering}
 
 \begin{listing}[tbp]
-\begin{verbatim}
- 1 atomic<int> x(0);
- 2 atomic<int> y(0);
- 3
- 4 void thread1()
- 5 {
- 6   int r1 = x.load(memory_order_relaxed);
- 7   y.store(r1, memory_order_relaxed);
- 8 }
- 9
-10 void thread2()
-11 {
-12   int r2 = y.load(memory_order_relaxed);
-13   x.store(42, memory_order_relaxed);
-14 }
-\end{verbatim}
+% Constructed by hand.
+{
+\scriptsize
+\begin{tabular}{r|l|l}
+& \multicolumn{1}{c}{P0} & \multicolumn{1}{c}{P1} \\
+\hline
+1. &
+\texttt{~~int r1 =\textsubscript{rlx} x} &
+	\texttt{~~int r2 =\textsubscript{rlx} y} \\
+2. &
+\texttt{~~y =\textsubscript{rlx} r1} &
+	\texttt{~~x =\textsubscript{rlx} 42} \\
+\end{tabular}
+
+\vspace{0.1in}
+Condition (0:r1=42 $\wedge$ 1:r2=42)
+sometimes satisfied.
+}
 \caption{Simple Reordering}
 \label{lst:Simple Reordering}
 \end{listing}
@@ -259,13 +261,11 @@ An example of simple reordering is shown in
 Listing~\ref{lst:Simple Reordering}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
 Both the C++ compiler and the CPU are within their rights to reorder
 lines~12 and~13, which can result in all of \co{x}, \co{y}, \co{r1},
-and \co{r2} having the value 42 as follows:
-\begin{enumerate}
-\item   Line~13 stores 42 to \co{x}.
-\item   Line~6 loads 42 from \co{x} into \co{r1}.
-\item   Line~7 stores \co{r1}, and thus 42, to \co{y}.
-\item   Line~12 loads 42 from \co{y} to \co{r2}.
-\end{enumerate}
+and \co{r2} having the value 42 via the following steps.
+First, P1's line~2 stores 42 to \co{x}.
+Second, P0's line~1 loads 42 from \co{x} into \co{r1}.
+Third, P0's line~2 stores \co{r1}, and thus 42, to \co{y}.
+Fourth and finally, P1's line~1 loads 42 from \co{y} to \co{r2}.
 Current C++ implementations can and do exhibit this reordering behavior.
 
 \medskip
