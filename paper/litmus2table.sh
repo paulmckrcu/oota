@@ -5,7 +5,7 @@
 # Outputs an abbreviated LaTeX table variant.
 
 sed -e 's/&/\\&/' | sed -e 's/	}/	\\}/' | sed -e 's/{/\\{/' |
-sed -e 's,\\/,$\\vee$,' | sed -e 's,/\\,$\\wedge$,' |
+sed -e 's,\\/,$\\vee$,g' | sed -e 's,/\\,$\\wedge$,g' |
 awk -v amp='&' -v bs='\\' -v dq='"' '
 BEGIN {
 	ininit = 0;
