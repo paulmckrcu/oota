@@ -176,21 +176,25 @@ sometimes satisfied.
 \label{lst:Simple OOTA}
 \end{listing}
 
-Listing~\ref{lst:Simple OOTA}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
-shows a simple example where an OOTA cycle might result in all of \co{x},
-\co{y}, \co{r1}, and \co{r2} having final values of 42, despite the fact
-that there is nothing in the initial values or the executable code to
-support such an outcome.
-First, P0's line~1 loads from \co{x} into \co{r1}, claiming to read the value
-of P1's line-2 store rather than \co{x}'s initial value and somehow
-obtaining 42.
+Listing~\ref{lst:Simple OOTA} shows a simple example where an OOTA
+cycle might result in all of \co{x}, \co{y}, \co{r1}, and \co{r2}
+having final values of 42, despite the fact that there is nothing in
+the default-zero initial values or the executable code to support such
+an outcome~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
+The ``=\textsubscript{rlx}'' denotes a relaxed access, with variables
+whose names are ``\co{r}'' followed by a number denoting registers,
+and other names denoting shared variables.
+First, P0's line~1 does a relaxed atomic load from \co{x} into \co{r1},
+reading the value of P1's line-2 store rather than \co{x}'s initial
+value of zero and somehow obtaining 42.
 Second, P0's line~2 stores \co{r1}, and thus 42, to \co{y}.
 Third, P1's line~1 loads 42 from \co{y} to \co{r2}.
 Fourth and finally, P1's line~2 stores 42 to \co{x}, justifying the value
 loaded by P0's line~1.
 
-Because nothing else in the C++ memory model rules out such OOTA cycles,
-the C++ standard explicitly prohibits them in 33.5.4p8
+Because nothing else in the C++ memory model rules out such OOTA cycles
+(as indicated by the ``sometimes satisfied'' in the figure), the C++
+standard explicitly prohibits them in 33.5.4p8
 (\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
 \begin{quote}
 	Implementations should ensure that no “out-of-thin-air” values
@@ -209,8 +213,8 @@ weakly ordered systems.\footnote{
 	loaded.}
 
 In Listing~\ref{lst:Simple OOTA}
-there is a \emph{semantic dependency} from line~6 to line~7 and
-another from line~12 to line~13.
+there is a \emph{semantic dependency} from line~1 to line~2 in both
+P0 and P1.
 (Roughly speaking, there is a semantic dependency from a given load
 to a given store when \emph{all other things being equal, a change in the
 value loaded can change the value stored or prevent the store from
@@ -224,8 +228,8 @@ until they have determined its value,\footnote{
 	are no longer speculative.
 	See Section~\ref{sec:Hardware Architecture and Design}
 	for more discussion about hardware speculation.}
-the stores in lines~7 and~13 cannot take place until the CPU
-knows what values are loaded by lines~6 and~12, respectively.
+the stores on line~2 cannot take place until the P0's and P1's CPUs
+know what values are returned by the loads on line~1.
 Thus the hardware orders these stores after their corresponding loads,
 and this ordering prevents the OOTA result.
 
@@ -259,16 +263,18 @@ It is important to distinguish true OOTA cycles from OOTA-like
 behavior caused by simple reordering.
 An example of simple reordering is shown in
 Listing~\ref{lst:Simple Reordering}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
-Both the C++ compiler and the CPU are within their rights to reorder
-lines~12 and~13, which can result in all of \co{x}, \co{y}, \co{r1},
+Both the C++ compiler and the CPU are within their rights to reorder P1's
+lines~1 and~2, which can result in all of \co{x}, \co{y}, \co{r1},
 and \co{r2} having the value 42 via the following steps.
 First, P1's line~2 stores 42 to \co{x}.
 Second, P0's line~1 loads 42 from \co{x} into \co{r1}.
 Third, P0's line~2 stores \co{r1}, and thus 42, to \co{y}.
 Fourth and finally, P1's line~1 loads 42 from \co{y} to \co{r2}.
-Current C++ implementations can and do exhibit this reordering behavior.
+Current C++ implementations can and do exhibit this reordering behavior,
+as indicated by the ``sometimes satisfied'' in the figure.
 
-\medskip
+\subsubsection{Non-Trivial OOTA}
+\label{sec:Non-Trivial OOTA}
 
 This paper will follow P2055R0~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
 in using the term \emph{full C++} to denote the standard including the
@@ -279,6 +285,28 @@ Unlike that article, we will use the term \emph{loose C++}
 to denote a hypothetical standard that excludes this prohibition but
 is otherwise identical to full C++.
 Unqualified \emph{C++} means full C++.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-ctrl.litmus @@
+\caption{OOTA Cycle}
+\label{lst:OOTA Cycle}
+\end{listing}
+
+Listing~\ref{lst:OOTA Cycle}
+shows a code fragment that under loose C++ has an OOTA cycle, though
+the cycle is of course prohibited in full C++.
+This example differs from that of Section~\ref{sec:Simple OOTA Cycle}
+in that line~3 of both processes stores the value 42, but only if
+line~2 of a given process determines that the value loaded was 42,
+keeping in mind that variables are default-initialized to zero.
+
+This OOTA cycle is constructed in the following manner.
+First, P0's and P1's line~1 load from \co{y} and \co{x}, respectively,
+both somehow returning the value 42.
+Second, P0's and P1's line~2 determine that the values loaded were both
+42, so each process advances to its line~3.
+Third, P0's and P1's line~3 stores the value 42 that was (somehow)
+clairvoyantly loaded by the other process's line~1.
 
 The next section looks at how prior work has refined these issues.
 
@@ -319,7 +347,8 @@ Other workers recommend various procedures to identify and avoid OOTA
 cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA},
 but none of these have been looked upon favorably by C++ implementers.
 Some of these workers appear to have abandoned this effort, but as of
-early 2024, Mark Batty is persisting with modular relaxed dependencies.
+2024, Mark Batty is persisting with modular relaxed dependencies.
+@@@ cite web site.
 
 Goldblatt looked at interactions between OOTA cycles and
 undefined behavior (UB)~\cite{DavidGoldblatt2019NoElegantOOTAfix}.
@@ -336,107 +365,6 @@ yet doing so might help explain why no known real-world C++ implementation
 results in OOTA behavior.
 We therefore dig more deeply into OOTA cycles in the light
 of these constraints.
-
-\subsection{Code-Analysis Tool}
-\label{sec:Code-Analysis Tool}
-
-This paper will use the \co{herd7}\footnote{
-	Available at \path{https://github.com/herd/herdtools7}.}
-tool to analyze fragments of C++ code.
-This tool carries out the moral equivalent of full state-space searches
-of concurrent code fragments.
-In some cases its output will include executions with OOTA cycles,
-on occasion reporting undefined values for the variables involved in
-the cycle.\footnote{
-	This happens only some of the time because of idiosyncrasies
-	in the algorithm used by \co{herd7}'s self-consistency solver.}
-
-\begin{listing}[tbp]
-@@ DisplayLitmus litmus/oota-ctrl.litmus @@
-\caption{OOTA Cycle}
-\label{lst:OOTA Cycle}
-\end{listing}
-
-Listing~\ref{lst:OOTA Cycle}
-shows a code fragment that under loose C++ has an OOTA cycle (although
-the cycle is of course prohibited in full C++).
-This section describes the fragment, thereby giving an overview of
-the \co{herd7} tool.
-
-The first line identifies it as a C-language litmus test and gives it
-a name, and this name identifies the litmus test's source file within
-the \path{litmus} directory in the \url{https://github.com/paulmckrcu/oota}
-repository.
-Lines~2--5 initialize variables, in this case setting the initial
-values of the global shared variables \co{x} and \co{y} to zero.
-(Variables that are not explicitly initialized are initialized
-to zero by default.)
-Lines~7--13 define the first thread, \co{P0()}, and lines~15--21
-define the second thread, \co{P1()}.\footnote{
-	The ``P'' stands for ``process'', which is \co{herd7}'s name
-	for ``thread''.}
-The arguments to both \co{P0()} and \co{P1()} specify which of
-the global shared variables each thread may access, in this case, \co{x}
-and \co{y}.
-The body of each thread contains C++ code,
-written in a slightly stilted manner to keep the load operations separate
-from the rest and because \co{herd7}'s knowledge of C++ is limited.
-
-Line~23 has a \co{locations} clause, which causes
-\co{herd7} to dump out the final values of \co{x} and \co{y}.
-Finally, line~24 specifies an \co{exists} clause, which gives a
-condition to check for the final values of the specified variables.
-The \co{0:} prefix denotes a variable local to \co{P0()} and
-the \co{1:} prefix denotes a variable local to \co{P1()}.
-The \co{/\\} is a boolean AND, and the \co{=} signs are equality comparisons.
-If a variable appears in the \co{exists} clause then the final value of
-that variable constitutes observable behavior.
-
-\begin{listing}[tbp]
-@@ RunLitmus litmus/oota-ctrl.litmus @@
-\caption{OOTA Cycle, \co{herd7} Output}
-\label{lst:OOTA Cycle, herd7 Output}
-\end{listing}
-
-Listing~\ref{lst:OOTA Cycle, herd7 Output} shows the corresponding output
-of the \co{herd7} tool.
-Lines~3 and~4 show the possible states, with line~4 showing the
-counterintuitive outcome where both threads load the value 42.
-Normally these lines would include only those variables mentioned
-in the \co{exists} clause, but because of the \co{locations} clause
-the values of \co{x} and \co{y} are also listed, which
-can be helpful for debugging.
-% @@@ As we will see, this outcome is not possible in real-world
-% @@@ implementations due to physical constraints of which \co{herd7}
-% @@@ is (by design) unaware.
-Line~9 contains \co{Sometimes} (as opposed to \co{Never} or \co{Always}),
-indicating that some executions satisfy the \co{exists} clause and
-others do not.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/simple-reordering.litmus @@
-\caption{Simple Reordering as Litmus Test}
-\label{lst:Simple Reordering as Litmus Test}
-\end{listing}
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-4.litmus @@
-\caption{Causality Test Case 4}
-\label{lst:Causality Test Case 4}
-\end{listing}
-
-Later examples will usually combine the litmus test and the \co{herd7}
-output into one listing, as shown in
-Listing~\ref{lst:Simple Reordering as Litmus Test},
-which recasts
-Listing~\ref{lst:Simple Reordering}
-into litmus-test form.
-Listing~\ref{lst:Simple OOTA}
-can also be recast as a \co{herd7} litmus test, as shown in
-Listing~\ref{lst:Causality Test Case 4}
-on page~\pageref{lst:Causality Test Case 4}.
-Other OOTA-related litmus tests may be found in
-Appendix~\ref{app:Illustrative Litmus Tests}.
 
 \section{OOTA and Semantic Dependencies}
 \label{sec:OOTA and Semantic Dependencies}
@@ -2961,6 +2889,12 @@ from two threads to three.
 The \co{herd7} tool reports OOTA values, and
 all threads have straightforward semantic dependencies from their
 loads to their stores.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-causality-4.litmus @@
+\caption{Causality Test Case 4}
+\label{lst:Causality Test Case 4}
+\end{listing}
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-3proc.litmus @@
