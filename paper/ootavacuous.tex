@@ -102,41 +102,10 @@ actions to avoid OOTA.
 In fact, for many compilers the constraints boil down to a simple
 ``Don't invent or duplicate atomic accesses'', which the compiler
 probably wouldn't do anyway.
+Absolutely no changes are required to either the standard or to user code.
 
-We begin with a summary of what needs to change and a brief overview of
-the OOTA problem, followed by an equally brief summary of prior work in
-this area, and ending with a quick overview of the \co{herd7} tool that
-will be used to evaluate litmus tests.
-
-\subsection{What Needs to Change?}
-\label{sec:What Needs to Change?}
-
-What changes are needed to prevent OOTA from C++ implementations using
-traditional compilers and traditional hardware, including CPUs and
-GPGPUs?
-
-\begin{itemize}
-\item	To the standard:
-	No changes.
-	The indefinite prohibition of out-of-thin-air values needs
-	to remain.
-\item	To implementations:
-	No changes.
-	Future implementations must avoid optimizations that invent,
-	duplicate, or repurpose atomic loads.
-	However, such optimizations must be avoided for other reasons,
-	including preserving basic laws of arithmetic
-	(see Appendix~\ref{app:Inventing Atomic Loads} for more detail).
-\item	To user code:
-	No changes.
-	Users must avoid undefined behavior in portable code, just as
-	is the case now.
-\end{itemize}
-
-In short, no changes are needed because current implementations already
-avoid OOTA cycles.
-The point of this paper is to give a semi-formal demonstration of
-why this is the case.
+We begin with a brief overview of the OOTA problem followed by an equally
+brief summary of prior work in this area.
 
 \subsection{Brief OOTA Overview}
 \label{sec:Brief OOTA Overview}
