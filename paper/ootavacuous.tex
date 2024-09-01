@@ -2375,226 +2375,25 @@ absence of other ordering from stronger atomic memory accesses or
 
 \clearpage
 
-\section{But What About Tooling?}
-\label{sec:But What About Tooling?}
+% \section{But What About Tooling?}
+% \label{sec:But What About Tooling?}
+% @@@ State conclusions if needed where needed.
 
-This paper focuses primarily on showing that, under commonly occurring
-constraints, OOTA cycles cannot form in real-world C++ implementations.
+% \subsection{Load/Store Ordering: Hardware View for Software Hackers}
+% \label{sec:Load/Store Ordering: Hardware View for Software Hackers}
+% @@@ State conclusions if needed where needed.
 
-But what about tooling?
+% \subsection{Status Quo and Focused Tooling}
+% \label{sec:Status Quo and Focused Tooling}
+% @@@ State conclusions if needed where needed.
 
-One entirely reasonable reaction is that, given the issues raised in
-Section~\ref{sec:Properties of Semantic Dependencies},
-Section~\ref{sec:C++ Compilers},
-and
-Section~\ref{sec:Outstanding Issues},
-load/store reordering is the least of the problems faced by tooling.
-Nevertheless, this appendix expands on
-Section~\ref{sec:Semantic Dependencies and Tooling}
-by looking into the possibility of:
-\begin{itemize}
-\item	Tooling focusing on only part of the language,
-\item	Changing the language to eliminate some aspects that are
-	troublesome for tooling (and potentially accepting performance
-	and energy-efficiency shortfalls), and
-\item	Changing the language to better delineate those portions that
-	tooling can easily accommodate.
-\end{itemize}
+% \subsection{Change Relaxed to Forbid Load Buffering}
+% \label{sec:Change Relaxed to Forbid Load Buffering}
+% @@@ State conclusions if needed where needed.
 
-But first, the next section looks at why some weakly ordered
-computer hardware appears to forbid reordering of prior relaxed loads with
-later relaxed stores,\footnote{
-	Or, in memory-order-speak, forbid all load-buffering litmus tests.}
-despite the architecture permitting such reordering.
-
-\subsection{Load/Store Ordering: Hardware View for Software Hackers}
-\label{sec:Load/Store Ordering: Hardware View for Software Hackers}
-
-Both the ARM and PowerPC architectural memory models permit reordering prior loads
-against subsequent stores, but actual tests on recent hardware fail to
-produce any evidence of such reordering.
-Nevertheless, thus far neither ARM nor PowerPC hardware architects
-have been willing to strengthen their memory models so as to forbid
-such reordering, despite a number of requests to do
-so~\cite{RichardGrisenthwaite2023TightenRelaxedJustSayNo}.
-
-This appendix offers some possible reasons for this odd juxtaposition
-of negative test results and flat refusal.
-
-One key point is that some hardware (including ARM and PowerPC) provides
-precise exceptions.
-For example, if a given load results in a segmentation violation
-exception, that exception will occur before any instructions following
-that load have committed.
-This means that a given load instruction's execution must have proceeded
-beyond the point where an exception might occur before any subsequent
-store can be permitted to commit, even if that store is completely
-unrelated to that load.
-For example, the later store cannot commit until all prior loads' address
-translations have completed successfully.
-
-However, if the load suffers a cache miss, address translation will have
-completed long before the load returns its value, meaning that a later
-store might well commit before the load completes.
-In fact, that later store might commit before the store which supplies the
-value returned by the load!
-Which explains why some hardware systems really do reorder prior loads
-and later stores.
-
-The question then becomes ``Why would weakly ordered systems fail to
-reorder prior loads with later stores?''
-
-One explanation is ECC errors.
-
-If correctable ECC errors were fixed up in hardware, then only uncorrectable
-ECC errors would be directly visible to software.
-If the only possible reaction to an uncorrectable ECC error was to
-terminate the program suffering that ECC error, it would be safe to
-allow subsequent stores to commit as soon as all prior loads' address
-translations had completed successfully.
-
-However, some kernels and applications have ways of handling even
-uncorrectable errors.
-Operating-system kernels encountering an ECC error might note that the
-affected data was being used by only one user process, and might react by
-killing that user process, taking care to account for memory shared with
-other processes.
-Some user applications might note that the corrupted data affected only
-a particular computation, and might react by restarting that computation.
-On the other hand, it is only reasonable to react to an uncorrectable ECC
-error in a load from a read-only mapped file by re-reading that data
-from that file, then restarting that load instruction.
-In such cases, the kernel and the user application would need to continue
-execution, and would thus require a precise exception.
-
-Systems that offload processing of correctable ECC errors to software
-also require precise exceptions.
-After all, the software is going to need to be able to correct the error
-and then fix up the state to make it appear that the load had returned
-the fixed-up value.
-% I was tempted to add a sentence saying that although one could imaging
-% ECC on memory but not on caches, today's caches are a bit large for this
-% to be a winning strategy.  One might nevertheless consider omitting ECC on
-% the smallest caches closest to the CPU, but this is unlikely to allow LB.
-
-ECC errors are detected near the end of their corresponding load
-instructions' execution, and so any need for precise exceptions rules out
-committing any subsequent stores until after the load has fetched
-(and possibly corrected) its value.
-
-So why are hardware architects reluctant to tighten their memory models
-to forbid reordering of earlier loads and later stores?
-
-If you would like an authoritative answer to this question, you should of
-course ask your friendly local hardware architect.
-In the meantime, here is some semi-informed speculation on this topic:
-
-\begin{itemize}
-\item	Some hardware might choose to forego ECC, for example, in order to
-	reduce cost for low-end systems or to improve energy efficiency
-	for battery-powered systems.
-\item	ECC error correction might still be done in hardware, avoiding
-	the need for precise software-visible exceptions.
-\item	Some systems might prefer to immediately shut down in response to
-	an uncorrectable ECC error, perhaps due to safety considerations.
-	This would entirely avoid the need for software-visible
-	ECC-related exceptions.\footnote{
-		One motivation for immediate shutdown is that if there
-		are uncorrectable errors, there might soon be errors
-		that change one valid bit pattern to another valid
-		bit pattern, which could result in a lack of safety.}
-\item	Someone might come up with a clever way of correcting ECC errors
-	in firmware, avoiding the need for precise software-visible
-	exceptions.
-\item	As late as early 2024, some GPGPUs have been observed reordering
-	earlier loads against later stores.
-	Other hardware architects might therefore feel the need to keep
-	this option open for their own systems.
-\end{itemize}
-
-So although it is not unreasonable to continue asking hardware vendors
-to tighten their memory models so as to prohibit reordering of earlier
-loads and later stores, it also would not be too surprising for them to
-continue to refuse.
-
-\subsection{Status Quo and Focused Tooling}
-\label{sec:Status Quo and Focused Tooling}
-
-The theoretical possibility of OOTA cycles causes some tools to have
-difficulty identifying precisely which outcomes are impossible on
-real-world C++ implementations.
-One approach is for tooling to reject programs containing instances
-of \co{memory_order_relaxed} and \co{memory_order_consume}, so that
-developers desiring their code to be analyzed by such tools would
-avoid using these \co{memory_order} values.
-The is strong precedent for this strategy, with the common prohibition
-against side effects in function arguments being but one example.
-
-However, there is a large body of existing code that uses
-\co{memory_order_relaxed}, and it would be unfortunate if such tools
-could not be applied to this code.
-
-Another approach would be to add flags to C++ implementations
-to cause \co{memory_order_relaxed} to be interpreted as either
-\co{memory_order_acquire} (for loads), \co{memory_order_release} (for
-stores), or \co{memory_order_acq_rel} (for read-modify-write operations).
-On TSO systems and on systems featuring precise ECC exceptions, this
-would allow tooling to be brought to bear without performance or
-energy-efficiency consequences beyond forgone optimizations involving
-memory reference reordering.
-
-However, this would mean that programs compiled in this way would not
-be guaranteed to run correctly on weakly ordered systems that lack
-ECC (or that lack precise exceptions).
-In addition, this change is more strict than necessary, forbidding
-optimizations that tooling could in fact analyze.
-Therefore, the next two sections look at standardizing less severe
-restrictions.
-
-\subsection{Change Relaxed to Forbid Load Buffering}
-\label{sec:Change Relaxed to Forbid Load Buffering}
-
-Tooling does not require relaxed accesses become fully acquire and/or
-release, but rather only that implementations be forbidden from reordering
-prior relaxed loads with subsequent relaxed stores, as has been suggested
-many times over the
-years~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352}.
-
-This preserves portability while enabling tooling to handle all members
-of the \co{memory_order} enumeration, but inflicts some performance and
-energy-efficiency penalties~\cite{LukeGeeson2023TightenRelaxed} in
-code not requiring these ordering
-restrictions~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
-
-\subsection{Add Load-Store Memory Order that Forbids Load Buffering}
-\label{sec:Add Load-Store Memory Order that Forbids Load Buffering}
-
-The addition of a \co{memory_order_load_store} member to the
-\co{memory_order} enumeration has been suggested starting many years
-ago~\cite{HansBoehm2019OOTArevisitedAgain,DanielLustig2018PlacedBefore}.
-This does not resolve all shortcomings in the C++ memory
-model~\cite{PaulEMcKenney2023P0124R8-LKMM,DanielLustig2018PlacedBefore},
-but it would provide a portable \co{memory_order} that minimally
-restricted compiler and hardware optimizations while still permitting
-full analyzability by current software tools.
-
-This change would also leave \co{memory_order_relaxed} in place,
-allowing minimal-overhead accesses in fastpaths.
-These fastpaths would not be analyzable by generic tools, but could
-be handled by special-case tools that analyze the binaries to verify
-that required orderings are enforced by machine-language properties
-such as dependencies.
-And a tool that checks control dependencies has in fact been
-prototyped~\cite{PaulHeidekrueger2022N4910}.
-
-This suggests a combined strategy of adding \co{memory_order} members
-as needed to extend the reach of general-purpose tooling, while also
-identifying \co{memory_order_relaxed} idioms that are checked at the
-machine level using special-purpose tooling.\footnote{
-	Kudos to Peter Sewell for clearly articulating this possibility
-	as part of an overall strategy.}
-
-\clearpage
+% \subsection{Add Load-Store Memory Order that Forbids Load Buffering}
+% \label{sec:Add Load-Store Memory Order that Forbids Load Buffering}
+% @@@ State conclusions if needed where needed.
 
 \section{Illustrative Litmus Tests}
 \label{app:Illustrative Litmus Tests}
