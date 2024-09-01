@@ -2456,9 +2456,7 @@ Section~\ref{sec:Global Analysis and Volatile versus Quasi Volatile}.
 \label{app:Non-Trivial Semantic Dependencies}
 
 Most of the examples in this paper involve simple semantic dependencies
-connecting a single load to a single store.
-One exception appears in
-Appendix~\ref{app:Additional Litmus Tests},
+connecting a single load to a single store,
 but this section will present a more difficult example.
 
 \begin{listing}[tbp]
@@ -3117,29 +3115,6 @@ It is tempting to consider using techniques
 that prevent back-propagation of UB, but these are ineffective in this
 case because the compiler can detect and exploit UB when
 considering line~14 in isolation.
-
-\subsection{Additional Litmus Tests}
-\label{app:Additional Litmus Tests}
-
-This section lists a few other litmus tests of interest:
-
-\begin{itemize}
-\item	The litmus test at
-	\url{https://github.com/paulmckrcu/oota/blob/master/litmus/oota-two-source.litmus}
-	shows multiple overlapping OOTA cycles.
-\item	The litmus test at
-	\url{https://github.com/paulmckrcu/oota/blob/master/litmus/oota-non-lb.litmus}
-	shows that OOTA cycles are not confined to the load-buffering (LB)
-	pattern.
-\item	The litmus test at
-	\url{https://github.com/paulmckrcu/oota/blob/master/litmus/oota-invent-int-load.litmus}
-	shows another invented-load scenario loosely based on
-	Figure~\ref{lst:OOTA Cycle}
-	on
-	page~\pageref{lst:OOTA Cycle}.
-	See Appendix~\ref{app:Inventing Atomic Loads}
-	for more discussion on this topic.
-\end{itemize}
 
 \clearpage
 
