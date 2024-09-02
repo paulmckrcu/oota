@@ -622,8 +622,6 @@ arm of the \co{if} statement \emph{would} agree with the store in
 \co{L1}, and so there would not be a semantic dependency.
 Once again, the decision is up to the implementation.
 
-\medskip
-
 We have seen several examples showing that semantic dependencies may vary
 according to the execution and even the implementation.
 This raises several questions, of which the first is:
@@ -1514,8 +1512,6 @@ And then so must $W'$, because any instruction following a conditional-
 or computed-branch instruction must commit after the branch commits.
 QED.
 
-\medskip
-
 A corollary of this result is that if an implementation's compiler
 either
 \begin{itemize}
@@ -1697,8 +1693,6 @@ variable are present.
 % Can we instead say that transforming the code might require that the
 % witness also be transformed?
 
-\medskip
-
 Despite these outstanding issues, our definition of semantic dependency
 allows us to bring to bear the real-world constraints outlined in the
 next section.
@@ -1806,8 +1800,6 @@ multithreaded core as well as between cores.
 The fact that intracore communication is faster than intercore
 communication does not magically give loads the ability to commit
 before the stores they read from, no matter what cores they execute on.
-
-\medskip
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-causality-2.litmus @@
