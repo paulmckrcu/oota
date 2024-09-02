@@ -1,41 +1,40 @@
-\documentclass[10]{article}
+% \documentclass[10]{article}
 
 % standard packages
 
 % A more pleasant font
 \usepackage[T1]{fontenc} % use postscript type 1 fonts
 \usepackage{textcomp} % use symbols in TS1 encoding
-\usepackage{mathptmx,helvet,courier} % use nice, standard fonts for roman, sans and monospace respectively
+% \usepackage{mathptmx,helvet,courier} % use nice, standard fonts for roman, sans and monospace respectively
 
 % Improves the text layout
 \usepackage{microtype}
 
 \usepackage{lscape}
 \usepackage{fancyhdr}
-\usepackage{epsfig}
+% \usepackage{epsfig}
 \usepackage{subfigure}
 \usepackage{url}
 \usepackage{graphics}
-\usepackage{enumerate}
+% \usepackage{enumerate}
 \usepackage{ifthen}
 \usepackage{float}
 \usepackage{listings}
 \lstset{basicstyle=\ttfamily}
 % \usepackage[strings]{underscore}
 % \usepackage{underscore}
-\usepackage[bookmarks=true,bookmarksnumbered=true,pdfborder={0 0 0}]{hyperref}
+% \usepackage[bookmarks=true,bookmarksnumbered=true,pdfborder={0 0 0}]{hyperref}
 
 \lstset{
   literate={\_}{}{0\discretionary{\_}{}{\_}}%
 }
 
-\usepackage[table]{xcolor}
-\usepackage{booktabs}
+% \usepackage[table]{xcolor}
+% \usepackage{booktabs}
 
 \DeclareUrlCommand\email{}
 
-\pagestyle{fancy}
-\rhead{}
+\pagestyle{plain}
 
 \newfloat{listing}{tbp}{lol}
 \floatname{listing}{Listing}
@@ -52,7 +51,6 @@
 % Michael Wong\\{\small \email{fraggamuffin@gmail.com}} \and
 % Maged Michael\\{\small \email{maged.michael@gmail.com}}
 % }
-\maketitle{}
 
 \begin{abstract}
 	The out-of-thin-air (OOTA) properties
@@ -82,6 +80,7 @@
 	``quasi-volatile'' behavior that we expect C++ implementations
 	will adhere to if they perform single-thread analysis.
 \end{abstract}
+\maketitle{}
 
 \section{Introduction and Background}
 \label{sec:Introduction}
@@ -2159,7 +2158,7 @@ inter-thread analysis.
 % @@@ State conclusions if needed where needed.
 
 \bibliographystyle{plain}
-\addcontentsline{toc}{section}{References}
+% \addcontentsline{toc}{section}{References}
 \bibliography{bib/RCU,bib/WFS,bib/hw,bib/os,bib/parallelsys,bib/patterns,bib/perfmeas,bib/refs,bib/syncrefs,bib/search,bib/swtools,bib/realtime,bib/TM,bib/standards,bib/memorymodel.bib}
 
 \end{document}
