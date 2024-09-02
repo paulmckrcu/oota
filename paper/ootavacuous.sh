@@ -28,7 +28,7 @@ BEGIN {
 	path = $3;
 	print "% " path;
 	print "{";
-	print bs "scriptsize";
+	print bs "small";
 	print "___EOF___";
 	print "./litmus2table.sh < " path;
 	print "cat << " sq "___EOF___" sq;
@@ -40,7 +40,7 @@ BEGIN {
 	path = $3;
 	print "% " path;
 	print "{";
-	print bs "scriptsize";
+	print bs "small";
 	print "___EOF___";
 	print "./litmus2table.sh < " path;
 	# print "cat << " sq "___EOF___" sq;
@@ -57,7 +57,7 @@ BEGIN {
 /^@@ RunLitmus .* @@$/ {
 	path = $3;
 	print "{";
-	print bs "scriptsize";
+	print bs "small";
 	print bs "begin{verbatim}";
 	print "___EOF___";
 	print "herd7 -c11 " path " | grep -v " sq "^$" sq " | ./c2latex.sh ";
