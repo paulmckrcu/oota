@@ -90,9 +90,10 @@ reasonable constraints on how they treat accesses to atomic objects
 cannot exhibit out-of-thin-air (OOTA) cycles.
 It follows that these implementations need to take almost no special
 actions to avoid OOTA.
-In fact, for many compilers the constraints boil down to a simple
-``Don't invent or duplicate atomic accesses'', which the compiler
-probably wouldn't do anyway.
+In fact, for many compilers the constraints boil down to a simple ``Don't
+invent or duplicate atomic accesses'', which the compiler should not
+do anyway if it is to evaluate arithmetic expressions involving atomic
+accesses in accordance with the abstract machine.
 Absolutely no changes are required to either the standard or to user code.
 
 We begin with a brief overview of the OOTA problem followed by an equally
@@ -236,10 +237,10 @@ as indicated by the ``sometimes satisfied'' in the figure.
 \subsubsection{Non-Trivial OOTA}
 \label{sec:Non-Trivial OOTA}
 
-This paper will follow P2055R0~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
-in using the term \emph{full C++} to denote the standard including the
+This paper follows P2055R0~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
+in using \emph{full C++} to denote the standard including the
 prohibition of OOTA mentioned above.
-Unlike that article, we will use the term \emph{loose C++}
+Unlike that article, we use \emph{loose C++}
 (rather than \emph{strict C++}, which seems too similar to
 \emph{full C++} for comfort)
 to denote a hypothetical standard that excludes this prohibition but
@@ -307,7 +308,8 @@ Other workers recommend various procedures to identify and avoid OOTA
 cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA},
 but none of these have been looked upon favorably by C++ implementers.
 Some of these workers appear to have abandoned this effort, but as of
-2024, Mark Batty is persisting with modular relaxed dependencies.
+2024, Mark Batty is persisting with modular relaxed dependencies, which
+may have the added ability of checking compiler optimizations.
 @@@ cite web site.
 
 Goldblatt looked at interactions between OOTA cycles and
@@ -328,6 +330,19 @@ of these constraints.
 
 \section{OOTA and Semantic Dependencies}
 \label{sec:OOTA and Semantic Dependencies}
+
+\emph{Tagline: ``Semantic dependencies are more complicated than you think.''}
+
+% @@@
+% 1: rfe, not rf.
+% 2: Rules of arithmetic (*0).
+% 3: Many-to-one sdep (*0 + ... )
+% 4: Compiler knowledge, cross-thread special case.
+% 5: Different stores.
+% 6: "If" statements.
+% 7: Matching up stores.
+% Semantic dependencies depend on execution.
+% @@@
 
 Section~\ref{sec:OOTA: rf versus rfe}
 demonstrates advantages of formulating an OOTA cycle as a cycle in
@@ -621,6 +636,8 @@ What exactly is an execution?
 \section{What is an Execution?}
 \label{sec:What is an Execution?}
 
+\emph{Tagline: ``Need to look at machine code.''}
+
 This section looks more carefully at executions, in some cases revisiting
 example code from
 Section~\ref{sec:Properties of Semantic Dependencies}.
@@ -848,6 +865,9 @@ to enforce that relation, namely, compilers.
 \section{C++ Compilers}
 \label{sec:C++ Compilers}
 
+\emph{Tagline: Compilers are constrained in optimizing atomics, especially
+volatile atomics.}
+
 A complete C++ implementation consists of much more than just a compiler.
 Among other things, for example, it might have a collection of
 \co{.h} header files, a linker, runtime libraries, and a dynamic loader.
@@ -895,31 +915,29 @@ abstract execution.
 \subsection{Global Optimization Can Destroy Dependencies}
 \label{sec:Global Optimization Can Destroy Dependencies}
 
+% @@@ Needed?  If so, can this be in sdep section?
+
 Recall the Simple OOTA example in Listing~\ref{lst:Simple OOTA} on
 page~\pageref{lst:Simple OOTA},
 in which \co{thread1()} loads the value of \co{x} and stores it in
 \co{y} while \co{thread2()} does the reverse.
-A globally optimizing loose C++ compiler given that program might
-transform it to the following before translating it into machine code,
-if the compiler is sufficiently perverse:
-\begin{quote}
-\begin{verbatim}
- 1 atomic<int> x(0);
- 2 atomic<int> y(0);
- 3
- 4 void thread1()
- 5 {
- 6   int r1 = 42;
- 7   y.store(r1, memory_order_relaxed);
- 8 }
- 9
-10 void thread2()
-11 {
-12   int r2 = 42;
-13   x.store(r2, memory_order_relaxed);
-14 }
-\end{verbatim}
-\end{quote}
+A sufficiently perverse globally optimizing loose C++ compiler might
+transform that program to the following before translating it into
+machine code: \\
+% Constructed by hand.
+{
+\small
+\begin{tabular}{r|l|l}
+% & \multicolumn{1}{c}{P0} & \multicolumn{1}{c}{P1} \\
+% \hline
+1. &
+\texttt{~~int r1 = 42} &
+	\texttt{~~int r2 = 42} \\
+2. &
+\texttt{~~y =\textsubscript{rlx} r1} &
+	\texttt{~~z =\textsubscript{rlx} r2} \\
+\end{tabular}
+} \\
 The loads previously on lines~6 and~12 have been replaced by constants.
 Such a transformation complies with the loose C++ standard,
 even though the resulting executable file would produce an unintuitive
@@ -956,6 +974,8 @@ Later on we will return to globally optimizing compilers.
 
 \subsection{Inventing Atomic Loads Can Destroy Semantic Dependencies}
 \label{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}
+
+\emph{ @@@ Merge into earlier discussion of inventing atomic loads. }
 
 Consider this code, in which the final values of \co{r1} and~\co{r2}
 are observable:
@@ -1109,6 +1129,8 @@ Fundamental Property}
 \label{sec:Hardware Dependencies, Instruction Ordering, and the
 Fundamental Property}
 
+\emph{Tagline: ``How to think about semantic dependencies.'' }
+
 Section~\ref{sec:Dependencies at the Hardware Level}
 discusses hardware-level dependencies involving machine instructions.
 Section~\ref{sec:Instruction Ordering}
@@ -1260,12 +1282,11 @@ omitted in some hardware execution $H$ realizing $A$.
 Then for some $i$, load $R_i$ is not omitted in $H$ and the
 instruction it maps to is ordered before the instruction $W$ maps to.
 \end{quote}
-It's quite straightforward to show that under any implementation in which
-semantic dependencies satisfy the Fundamental Property, no OOTA cycle
-has a nontrivial realization.
 
-Indeed, suppose that abstract execution $A$ is realized by hardware
-execution $H$ and $A$ has an OOTA cycle.
+No implementation in which semantic dependencies satisfy the Fundamental
+Property has a nontrivial OOTA cycle.
+To see this, suppose that abstract execution $A$ is realized by hardware
+execution $H$ and $A$ does have an OOTA cycle.
 This means there are atomic stores $W_i$ in $A$,
 semantically depending on atomic loads
 $\{R_{i,j}\}$ where each of the loads reads from one of the $W_k$
@@ -1277,11 +1298,10 @@ one of the $W_i'$ instructions, let's say $W_0'$, must commit first.
 By the Fundamental Property, one of the loads that $W_0$ depends on,
 let's say $R_{0,0}$, is not omitted and $R_{0,0}'$ is ordered before $W_0'$.
 But now we have a contradiction:
-\begin{itemize}
-\item	$W_0'$ commits after $R_{0,0}'$;
-\item	$R_{0,0}'$ commits after the store instruction $W_k'$ it reads from;
-\item	$W_k'$ commits no earlier than $W_0'$.
-\end{itemize}
+(1)~$W_0'$ commits after $R_{0,0}'$;
+(2)~$R_{0,0}'$ commits after the store instruction $W_k'$ it reads from;
+and finally
+(3)~$W_k'$ commits no earlier than $W_0'$.
 
 If all the stores in the OOTA cycle are omitted then all the reads
 must be omitted as well.
@@ -1298,6 +1318,8 @@ all the accesses are omitted to be \emph{trivial}.
 
 \section{A Definition of Semantic Dependency}
 \label{sec:A Definition of Semantic Dependency}
+
+\emph{ Tagline: ``How to think about OOTA.'' }
 
 Semantic dependency is a notoriously difficult concept to define
 rigorously and precisely.
