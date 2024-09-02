@@ -78,7 +78,7 @@
 	only volatile atomics.
 	We also extend this work to nonvolatile atomics by defining
 	``quasi-volatile'' behavior that we expect C++ implementations
-	will adhere to if they perform single-thread analysis.
+	will adhere to if they confine themselves to single-thread analysis.
 \end{abstract}
 \maketitle{}
 
@@ -221,8 +221,7 @@ sometimes satisfied.
 \end{listing}
 
 It is important to distinguish true OOTA cycles from OOTA-like
-behavior caused by simple reordering.
-An example of simple reordering is shown in
+behavior caused by simple reordering, such as that shown in
 Listing~\ref{lst:Simple Reordering}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
 Both the C++ compiler and the CPU are within their rights to reorder P1's
 lines~1 and~2, which can result in all of \co{x}, \co{y}, \co{r1},
@@ -307,7 +306,7 @@ youths, but it is now the year 2024.
 Other workers recommend various procedures to identify and avoid OOTA
 cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA},
 but none of these have been looked upon favorably by C++ implementers.
-Some of these workers appear to have abandoned this effort, but as of
+Many of these workers appear to have abandoned this effort, but as of
 2024, Mark Batty is persisting with modular relaxed dependencies, which
 may have the added ability of checking compiler optimizations.
 @@@ cite web site.
@@ -317,7 +316,7 @@ undefined behavior (UB)~\cite{DavidGoldblatt2019NoElegantOOTAfix}.
 % Appendix~\ref{app:Aside on Undefined Behavior}
 % analyzes his examples and notes ways to separate UB and OOTA-cycle
 % concerns.
-This document will concentrate on examples lacking UB.
+This paper focuses on examples lacking UB.
 
 All this work focused on either identifying OOTA or seeing how C++
 implementations could avoid it.
@@ -349,8 +348,7 @@ demonstrates advantages of formulating an OOTA cycle as a cycle in
 sdep $\cup$ rfe instead of the traditional sdep $\cup$ rf.
 Section~\ref{sec:Properties of Semantic Dependencies}
 then discusses properties of semantic dependences, showing that they
-are functions of executions rather than strictly of source code,
-among other things.
+are not strict functions of source code.
 
 \subsection{OOTA: rf versus rfe}
 \label{sec:OOTA: rf versus rfe}
@@ -407,7 +405,7 @@ to \co{y} by line~2.
 And given that the load from \co{y} no longer exists, it cannot possibly
 act as a temporal constraint.
 
-In order to avoid these rfi links we will substitute rfe
+To avoid this issue, we will substitute rfe
 for rf, defining an OOTA cycle---for now---as a cycle in sdep $\cup$ rfe.
 Any rfi links in a cycle can instead be interpreted as part of sdep.
 Although this does shunt additional complexity onto the term
@@ -437,9 +435,7 @@ code produced by a compiler.
 There would then be no constraint forcing the implementation to execute
 the thread's store later in global time than the load it supposedly depends on,
 and thus no impediment to the occurrence of an OOTA cycle.
-We will see examples of this destruction in
-Sections~\ref{sec:Global Optimization Can Destroy Dependencies}
-and~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies} below.
+Later, we will see examples of this destruction.
 
 \subsection{Properties of Semantic Dependencies}
 \label{sec:Properties of Semantic Dependencies}
@@ -678,51 +674,9 @@ pattern of loads and stores be consistent with the C++ memory model.
 We assume that programs will not indulge in any computations that
 could vary spontaneously from one execution to another,
 such as basing a dependency on the time of day or a process ID.
-
-The implementation-defined aspects can affect whether or not an
-abstract execution contains a semantic dependency.
-As an example consider the following, where the type of \co{c} is \co{char}:
-\begin{quote}
-\begin{verbatim}
-y = (c >= 0);
-\end{verbatim}
-\end{quote}
-Here \co{y} is semantically dependent on \co{c} in executions
-running on implementations in
-which \co{char} is a signed type,
-but not those for which it is unsigned.
-
-The same is true for the nondeterministic aspects of an execution.
-Consider this example, with \co{i} initially zero:
-\begin{quote}
-\begin{verbatim}
-int foo(int a, int b)
-{
-   return a / b;
-}
-
-r1 = foo(++i, ++i);
-x = r1 * z;
-\end{verbatim}
-\end{quote}
-Because early C~implementers could not come to agreement, the standard
-does not specify the order of evaluation of function arguments, so
-the value calculated for \co{r1} might be zero ($1/2$ truncated) or two
-($2/1$).
-In the former case there is no semantic dependency from \co{z} to \co{x},
-but in the latter case there is.\footnote{
-	Thanks to Peter Sewell for pointing out this possibility.}
-
-(According to the current version of the standard, conflicting side effects
-in unsequenced subexpressions constitute undefined behavior,
-although there are proposals to make them defined in both
-C++~\cite{GabrielDosReis2016P0145r3}
-and C~\cite{AlexCeleste2023N3203}.
-Nevertheless, the example above is allowed because the order of evaluation
-of arguments to a function call is ``indeterminately sequenced''
-(7.6.1.3p7 \co{[expr.call]}) rather than unsequenced, a subtle distinction.)
-
-\medskip
+In short, the standard grants C++ implementations considerable freedom,
+as detailed in
+Section~\ref{sec:C++ Compilers}.
 
 The abstract executions we use will be fully specified.
 This means that all the missing information must be supplied:
@@ -815,7 +769,7 @@ of a program need be realizable by the machine-code executable file
 produced by that implementation.
 In fact, we will see that \emph{none} of the possible OOTA executions
 allowed by the loose C++ abstract machine will ever be realized
-by the executables produced by many compilers,
+by the executables produced by many compilers.
 
 Exactly what the standard's restriction on volatile accesses means
 isn't entirely clear.
@@ -865,8 +819,8 @@ to enforce that relation, namely, compilers.
 \section{C++ Compilers}
 \label{sec:C++ Compilers}
 
-\emph{Tagline: Compilers are constrained in optimizing atomics, especially
-volatile atomics.}
+\emph{Tagline: Compilers have considerable freedom, but are constrained
+in optimizing atomics, especially volatile atomics.}
 
 A complete C++ implementation consists of much more than just a compiler.
 Among other things, for example, it might have a collection of
@@ -877,9 +831,12 @@ a C++ source program to directly executable machine code.
 We will therefore use the terms ``compiler'' and ``implementation''
 interchangeably.
 
+Section~\ref{sec:Architectures Influence the Behavior of Compilers}
+show that machine architectures influence C++ compilers.
+Section~\ref{sec:Optimizations Influence the Behavior of Compilers}
+show, perhaps unsurprisingly, that optimizers influence C++ compilers.
 Section~\ref{sec:Users Influence the Behavior of Compilers}
-shows that C++ compilers can be influenced by their users as well
-as by the standard.
+shows that compilers can also be influenced by their users.
 Section~\ref{sec:Global Optimization Can Destroy Dependencies}
 presents an example showing that global optimizations can destroy
 semantic dependencies, and then
@@ -889,6 +846,56 @@ semantic dependencies.
 Section~\ref{sec:Volatile and Quasi Volatile Accesses}
 then presents required properties of volatile atomic operations, and
 also defines properties of quasi-volatile atomic operations.
+
+\subsection{Architectures Influence the Behavior of Compilers}
+\label{sec:Architectures Influence the Behavior of Compilers}
+
+The implementation-defined aspects of the standard permit architectures to
+differ as to whether an abstract execution contains a semantic dependency.
+As an example consider the following, where the type of \co{c} is \co{char}:
+\begin{quote}
+\begin{verbatim}
+y = (c >= 0);
+\end{verbatim}
+\end{quote}
+Here \co{y} is semantically dependent on \co{c} in executions
+running on implementations in
+which \co{char} is a signed type,
+but not those for which it is unsigned.
+
+\subsection{Optimizations Influence the Behavior of Compilers}
+\label{sec:Optimizations Influence the Behavior of Compilers}
+
+Compiler optimizers also exploit the nondeterministic aspects of an
+execution.
+Consider this example, with \co{i} initially zero:
+\begin{quote}
+\begin{verbatim}
+int foo(int a, int b)
+{
+   return a / b;
+}
+
+r1 = foo(++i, ++i);
+x = r1 * z;
+\end{verbatim}
+\end{quote}
+Because early C~implementers could not come to agreement, the standard
+does not specify the order of evaluation of function arguments, so
+the value calculated for \co{r1} might be zero ($1/2$ truncated) or two
+($2/1$).
+In the former case there is no semantic dependency from \co{z} to \co{x},
+but in the latter case there is.\footnote{
+	Thanks to Peter Sewell for pointing out this possibility.}
+
+(According to the current version of the standard, conflicting side effects
+in unsequenced subexpressions constitute undefined behavior,
+although there are proposals to make them defined in both
+C++~\cite{GabrielDosReis2016P0145r3}
+and C~\cite{AlexCeleste2023N3203}.
+Nevertheless, the example above is allowed because the order of evaluation
+of arguments to a function call is ``indeterminately sequenced''
+(7.6.1.3p7 \co{[expr.call]}) rather than unsequenced, a subtle distinction.)
 
 \subsection{Users Influence the Behavior of Compilers}
 \label{sec:Users Influence the Behavior of Compilers}
