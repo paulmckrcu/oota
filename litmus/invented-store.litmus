@@ -9,9 +9,8 @@ C invented-store
 }
 
 P0(atomic_int *x) {
-	// Invented store followed by intended store.
-	atomic_store_explicit(x, 42, memory_order_relaxed);
-	atomic_store_explicit(x, 3, memory_order_relaxed);
+	atomic_store_explicit(x, 42, memory_order_relaxed); // Invented
+	atomic_store_explicit(x, 3, memory_order_relaxed); // Intended
 }
 
 P1(atomic_int *x) {

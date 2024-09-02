@@ -9,9 +9,8 @@ C duplicated-store
 }
 
 P0(atomic_int *x) {
-	atomic_store_explicit(x, 1, memory_order_relaxed);
-	// Duplicated store following intended store.
-	atomic_store_explicit(x, 1, memory_order_relaxed);
+	atomic_store_explicit(x, 1, memory_order_relaxed); // Duplicated
+	atomic_store_explicit(x, 1, memory_order_relaxed); // Intended
 }
 
 P1(atomic_int *x) {
