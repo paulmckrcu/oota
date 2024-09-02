@@ -920,8 +920,6 @@ abstract execution.
 \subsection{Global Optimization Can Destroy Dependencies}
 \label{sec:Global Optimization Can Destroy Dependencies}
 
-% @@@ Needed?  If so, can this be in sdep section?
-
 Recall the Simple OOTA example in Listing~\ref{lst:Simple OOTA} on
 page~\pageref{lst:Simple OOTA},
 in which \co{thread1()} loads the value of \co{x} and stores it in
@@ -980,10 +978,34 @@ Later on we will return to globally optimizing compilers.
 \subsection{Inventing Atomic Loads Can Destroy Semantic Dependencies}
 \label{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}
 
-\emph{ @@@ Merge into earlier discussion of inventing atomic loads. }
+Invented atomic loads are problematic:
+\begin{quote}
+\begin{verbatim}
+int r0 = x;
+int r1 = r0 * r0 + 2 * r0 + 1;
+\end{verbatim}
+\end{quote}
+For sufficiently small values of \co{x}, the abstract machine is
+guaranteed to produce a perfect square in \co{r1}.
 
-Consider this code, in which the final values of \co{r1} and~\co{r2}
-are observable:
+But if the compiler is permitted to invent atomic loads then the compiler
+might transform this code as follows:
+\begin{quote}
+\begin{verbatim}
+int r0 = x;
+int invented = x;
+int r1 = r0 * r0 + 2 * invented + 1;
+\end{verbatim}
+\end{quote}
+If the load into \co{r0} happened when the value of \co{x}
+was zero and the load into \co{invented} happened when the value of
+\co{x} was 10, then the value of \co{r1} will be 21, which is not
+a perfect square.
+This fails to provide the abstract machine's guarantees.
+
+Inventing atomic loads can also result in OOTA-like behavior.
+For example, consider this code, in which the final values of \co{r1}
+and~\co{r2} are observable:
 \begin{quote}
 \begin{verbatim}
    int r1 = (x != 0);
@@ -1020,40 +1042,8 @@ for \co{r1} whichever value agrees with \co{r2}, as shown on line~6.
 Then the value stored to \co{z} on line~7 will always be one,
 with no dependence on the value loaded from \co{y}.
 
-A noteworthy aspect of this transformation is that it invents an atomic load:
-The original form of the code reads \co{x} only once,
-whereas the transformed code reads it twice.
-Therefore we can rule out transformations like this one by insisting
+Therefore we should rule out transformations like these by insisting
 the compiler not invent (or duplicate) atomic loads.
-Please note that invented and duplicated atomic loads are also problematic
-in arithmetic:
-\begin{quote}
-\begin{verbatim}
-int r0 = x;
-int r1 = r0 * r0 + 2 * r0 + 1;
-\end{verbatim}
-\end{quote}
-For sufficiently small values of \co{x}, the abstract machine is
-guaranteed to produce a perfect square in \co{r1}.
-
-But if the compiler is permitted to invent atomic loads then the compiled
-code might not respect this guarantee, thus incorrectly deviating
-from the abstract machine.
-This issue is evident in a transformed version of the above code:
-\begin{quote}
-\begin{verbatim}
-int r0 = x;
-int invented = x;
-int r1 = r0 * r0 + 2 * invented + 1;
-\end{verbatim}
-\end{quote}
-For example, if the load into \co{r0} happened when the value of \co{x}
-was zero and the load into \co{invented} happened when the value of
-\co{x} was 10, then the value of \co{r1} will be 21, which is not
-a perfect square.\footnote{
-	See also the ``Invented Atomic Loads'' paragraph of
-        Section~\ref{sec:Constraints of the Standard}.}
-
 In fact, we will require that atomic accesses be treated as
 ``quasi volatile'', in that the compiler is allowed to omit,
 merge, or reorder them but not invent them.
@@ -1161,16 +1151,16 @@ A few examples:
 	(the sum to be stored in a general-purpose register and some
 	condition-code bits---e.g., Zero, Carry, and Overflow---to be
 	stored in a status register).
-\item	A conditional-move instruction would have as inputs the
-	condition-code bits to test, the source register value, and the
-	target register value; the output would be the value to be stored
-	in the target register.
-\item	A conditional- or computed-branch instruction would have as inputs
-	the condition-code bits to test, the address of the following
-	instruction (to be used if the condition is false) and the
-	destination address (to be used if the condition is true).
-	The output is the new address to be written to the
-	instruction-pointer register.
+% \item	A conditional-move instruction would have as inputs the
+%	condition-code bits to test, the source register value, and the
+%	target register value; the output would be the value to be stored
+%	in the target register.
+% \item	A conditional- or computed-branch instruction would have as inputs
+%	the condition-code bits to test, the address of the following
+%	instruction (to be used if the condition is false) and the
+%	destination address (to be used if the condition is true).
+%	The output is the new address to be written to the
+%	instruction-pointer register.
 \item	A memory-load instruction's input is the address to load from,
 	and its output is the value obtained by the load, to be stored
 	in a register.
@@ -1722,6 +1712,10 @@ tooling.
 \subsection{Hardware Architecture and Design}
 \label{sec:Hardware Architecture and Design}
 
+\emph{Can we summarize this section, especially given that the ASPLOS
+audience can be expected to have a greater understanding of these issues
+than the C++ standards committee?}
+
 Computer systems are expected to continue increasing their use of
 speculative execution.
 Nevertheless, the main points of this paper will remain unaffected.
@@ -1832,6 +1826,9 @@ set of loads until after (in global time) those loads have committed.
 \subsection{Constraints of the Standard}
 \label{sec:Constraints of the Standard}
 
+\emph{Can we summarize this section with a list of permitted and prohibited
+optimizations in the discussion of quasi-volatile?}
+
 Volatile atomic accesses constitute observable
 behavior~\cite[\co{intro.abstract}]{ThomasKoeppe2023N4950} and
 must be executed in strict accordance with the rules of the C++ abstract
@@ -1915,53 +1912,9 @@ program's observable behaviors.
 Again, the compiler might be able to prove that there
 are no other accesses to \co{x} at the time of the duplicated store.
 
-\paragraph{Invented Atomic Loads}
-\begin{listing}[tbp]
-\scriptsize
-\begin{verbatim}
- 1 struct foo {
- 2   int a;
- 3   int b;
- 4 };
- 5 _Atomic struct foo *globalfoop;
- 6
- 7 void bar()
- 8 {
- 9   int a;
-10   int b;
-11   struct foo *fp;
-12
-13   fp = atomic_load_explicit(&globalfoop, memory_order_acquire);
-14   a = fp->a;
-15   // fp = atomic_load_explicit(&globalfoop, memory_order_acquire);
-16   b = fp->b;
-17   do_something_with(a, b);
-18 }
-\end{verbatim}
-\caption{Example Duplicated Load}
-\label{lst:Example Duplicated Load}
-\end{listing}
-Although one can argue that it is functionally correct to invent atomic
-loads as long as the loaded value is not used, doing so can result in
-extra cache misses for no good purpose.
-And duplicating an atomic load can also lead to incorrect results if done
-carelessly.
-To see this, consider
-Listing~\ref{lst:Example Duplicated Load}.
-Suppose that the load on line~13 were duplicated, for example, as if the
-compiler had uncommented line~15.
-Then the values of \co{a} and \co{b} passed to line~17's call to
-\co{do_something_with()} might be from different instances of the
-\co{foo} structure, something that \co{do_something_with()} probably
-isn't prepared to deal with and that represents incorrect behavior,
-that is, behavior that the abstract machine does not exhibit.
-% @@@ See
-% @@@ Appendix~\ref{app:Inventing Atomic Loads}
-% @@@ for more details on this example and other examples of invented
-% @@@ atomic loads.
-
-For these reasons, C++ compilers should avoid inventing atomic
-loads, and in fact should avoid even duplicating them.
+In contrast, compilers should not duplicate, repurpose, or otherwise
+invent atomic loads, as discussed in
+Section~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}.
 
 \paragraph{Omitted Redundant Atomic Stores}
 In contrast, a pair of back-to-back nonvolatile atomic stores to the
@@ -2008,6 +1961,8 @@ to them.
 
 \subsection{Semantic Dependencies and Tooling}
 \label{sec:Semantic Dependencies and Tooling}
+
+\emph{Do we really need this?}
 
 Where a C++ implementation's primary function is to correctly execute
 a C++ program, the function of tooling is often to evaluate properties
