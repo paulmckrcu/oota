@@ -122,11 +122,11 @@ OOTA cycles need not involve nonsensical values.
 & \multicolumn{1}{c}{P0} & \multicolumn{1}{c}{P1} \\
 \hline
 1. &
-\texttt{~~int r1 =\textsubscript{rlx} x} &
-	\texttt{~~int r2 =\textsubscript{rlx} y} \\
+\texttt{~~int r1 = x} &
+	\texttt{~~int r2 = y} \\
 2. &
-\texttt{~~y =\textsubscript{rlx} r1} &
-	\texttt{~~x =\textsubscript{rlx} r2} \\
+\texttt{~~y = r1} &
+	\texttt{~~x = r2} \\
 \end{tabular}
 
 \vspace{0.1in}
@@ -142,9 +142,9 @@ cycle might result in all of \co{x}, \co{y}, \co{r1}, and \co{r2}
 having final values of 42, despite the fact that there is nothing in
 the default-zero initial values or the executable code to support such
 an outcome~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
-The ``=\textsubscript{rlx}'' denotes a relaxed access, with variables
-whose names are ``\co{r}'' followed by a number denoting registers,
-and other names denoting shared variables.
+Throughout this paper, variables whose names are ``\co{r}'' followed by
+a number denote registers, and other names denote shared variables.
+All accesses to shared variable are relaxed atomic accesses.
 First, P0's line~1 does a relaxed atomic load from \co{x} into \co{r1},
 reading the value of P1's line-2 store rather than \co{x}'s initial
 value of zero and somehow obtaining 42.
@@ -205,11 +205,11 @@ and this ordering prevents the OOTA result.
 & \multicolumn{1}{c}{P0} & \multicolumn{1}{c}{P1} \\
 \hline
 1. &
-\texttt{~~int r1 =\textsubscript{rlx} x} &
-	\texttt{~~int r2 =\textsubscript{rlx} y} \\
+\texttt{~~int r1 = x} &
+	\texttt{~~int r2 = y} \\
 2. &
-\texttt{~~y =\textsubscript{rlx} r1} &
-	\texttt{~~x =\textsubscript{rlx} 42} \\
+\texttt{~~y = r1} &
+	\texttt{~~x = 42} \\
 \end{tabular}
 
 \vspace{0.1in}
@@ -381,13 +381,13 @@ as exemplified by the following code: \\
 % & \multicolumn{1}{c}{P0} \\
 % \hline
 1. &
-\texttt{~~int r2 =\textsubscript{rlx} x} \\
+\texttt{~~int r2 = x} \\
 2. &
-\texttt{~~y =\textsubscript{rlx} r2} \\
+\texttt{~~y = r2} \\
 3. &
-\texttt{~~int r3 =\textsubscript{rlx} y} \\
+\texttt{~~int r3 = y} \\
 4. &
-\texttt{~~z =\textsubscript{rlx} r3} \\
+\texttt{~~z = r3} \\
 \end{tabular}
 } \\
 % \end{quote}
@@ -473,8 +473,6 @@ Consider for example:
 x = y * z;
 \end{verbatim}
 \end{quote}
-(Here and below, we have written shared-variable accesses without
-annotations, for brevity.  Please imagine they are all relaxed atomic.)
 
 As long as \co{z} is zero, changes in the
 value of \co{y} will not cause a change in the value stored to \co{x}.
@@ -937,8 +935,8 @@ machine code: \\
 \texttt{~~int r1 = 42} &
 	\texttt{~~int r2 = 42} \\
 2. &
-\texttt{~~y =\textsubscript{rlx} r1} &
-	\texttt{~~z =\textsubscript{rlx} r2} \\
+\texttt{~~y = r1} &
+	\texttt{~~z = r2} \\
 \end{tabular}
 } \\
 The loads previously on lines~6 and~12 have been replaced by constants.

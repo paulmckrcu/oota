@@ -39,13 +39,19 @@ inproc != 0 && $0 != "}" {
 		moa = memorder[moa];
 	}
 	if (stmt ~ /= atomic_load_explicit\(/) {
-		gsub(/= atomic_load_explicit\(/, "=" bs "textsubscript{" moa "} ", stmt);
+		# Uncomment next statement to get memory-order subscripts.
+		# gsub(/= atomic_load_explicit\(/, "=" bs "textsubscript{" moa "} ", stmt);
+		gsub(/= atomic_load_explicit\(/, "= ", stmt);
+		# Comment previous statement to get memory-order subscripts.
 		if (gsub(/, memory_order_[a-z_]*\);/, "", stmt) == 0)
 			gsub(/, memory_order_[a-z_]*\)/, "", stmt);
 	} else if (stmt ~ /atomic_store_explicit\(/) {
 		gsub(/atomic_store_explicit\(/, "", stmt);
 		gsub(/, memory_order_[a-z_]*\);/, "", stmt);
-		gsub(/,/, " =" bs "textsubscript{" moa "}", stmt);
+		# Uncomment next statement to get memory-order subscripts.
+		# gsub(/,/, " =" bs "textsubscript{" moa "}", stmt);
+		gsub(/,/, " = ", stmt);
+		# Comment previous statement to get memory-order subscripts.
 	}
 	stmtlist[++stmtno][procnum] = stmt;
 	# print procnum ":" stmtno, stmt
