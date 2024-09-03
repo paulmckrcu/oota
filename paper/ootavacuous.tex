@@ -1461,180 +1461,6 @@ then programs produced by that implementation will never exhibit OOTA.
 Thus the implementation will automatically comply with full C++, even
 though it may be been designed only to comply with loose C++.
 
-\subsection{Outstanding Issues}
-\label{sec:Outstanding Issues}
-
-Here we consider some general questions related to our definition of
-semantic dependency.
-
-\subsubsection{Relative versus Absolute Dependency}
-\label{sec:Relative versus Absolute Dependency}
-
-A drawback of the definition is that it is only relative to a specific
-compiler or implementation.
-This may strike some people as wishy-washy and avoiding the real
-problem, in that a given piece of code should either contain or not
-contain a semantic dependency, independent of the implementation used to
-run it.
-
-We can address this drawback by defining an \emph{absolute semantic
-dependency} as one that is present relative to any valid loose C++
-implementation, past, present, or future, real or imagined.
-Of course this notion has its own problems, including that it is
-extremely nonconstructive and impossible to apply in practice.
-However it may be the best we can do with our current understanding
-of computing systems.
-
-There is one thing we can definitely state:
-Programs produced by an implementation of the right sort will never
-exhibit absolute OOTA (that is, an OOTA cycle in which all the
-semantic dependencies are absolute).
-This is simply because an absolute semantic dependency is {\it
-a fortiori\/} a semantic dependency relative to the compiler in use.
-
-But in fact we have shown more than this:
-Programs will never exhibit an OOTA cycle relative to the compiler
-used to build them, even when that cycle is not absolute.
-In this sense we have gone beyond the requirement of full C++.
-
-\subsubsection{Global Analysis and Volatile versus Quasi Volatile}
-\label{sec:Global Analysis and Volatile versus Quasi Volatile}
-
-In principle we don't need to require global-analysis compilers to
-treat atomic objects as volatile; our results would still hold if they
-merely treated them as quasi volatile.
-We chose not to do this because it would violate our intuitions about
-semantic dependencies.
-
-For example, consider the Simple OOTA program shown in
-Listing~\ref{lst:Simple OOTA}.
-A loose C++ compiler using global analysis and treating \co{x} and \co{y} as
-quasi-volatile objects could omit the two loads, replacing them in the
-machine code with simple assignments ``\co{r1 = 42}'' and
-``\co{r2 = 42}''.
-This would be a valid transformation, and the resulting behavior would
-not count as OOTA according to our definition because the
-dependencies in \co{thread1} and \co{thread2} would not be semantic.
-
-To see why not, recall that a semantic dependency must have a witness,
-another execution in which the store acts differently.
-But this transformed program has no other hardware executions; every time it
-runs it will store 42 to both \co{x} and \co{y}.
-(Keep in mind also that since the atomic objects are not treated as
-volatile, they are not subject to unspecified interference when the
-program runs in a nonbenign environment.)
-
-This unintuitive behavior could not occur if the two loads were not
-omitted.
-In fact, the definition of semantic dependency might remain
-perfectly acceptable if the requirement for global-analysis compilers
-were weakened, if the compiler treated atomic objects as quasi
-volatile and in addition was not allowed to omit accesses to them.
-This is a possible topic for future research.
-
-\subsubsection{Effect of Memory Layout}
-\label{sec:Effect of Memory Layout}
-
-Part of our demonstration of the Fundamental Property of semantic
-dependencies relies on the fact, stated in
-Section~\ref{sec:Abstract Executions},
-that an abstract execution of a thread is entirely determined by the
-values obtained for its loads.
-But when we compare abstract executions of the same thread in two
-different programs, this may no longer be entirely true owing to the
-effect of differing memory layouts.
-
-Consider this simple example:
-\begin{quote}
-\begin{verbatim}
-x = (int) &x;
-\end{verbatim}
-\end{quote}
-Even though the example contains no loads at all, it may store
-different values when running in different programs because the
-object \co{x} may be allocated at differing addresses in those
-programs.
-According to our definition, this could count as a degenerate OOTA
-cycle of length one, in which the store is semantically dependent on
-an empty set of loads!
-
-To rule out such pathological counterexamples we should require that
-in a witness to a semantic dependency, the addresses of all the
-objects and functions referred to in the thread $T$ are the same as
-in the original execution.
-This is a very technical restriction but there are occasions when
-the issue might realistically arise, such as when computing a hash
-value based on an object's address.
-
-\subsubsection{Merging Quasi-Volatile Loads}
-\label{sec:Merging Quasi-Volatile Loads}
-
-The compiler is permitted to merge quasi-volatile loads.
-This can lead to surprising results because a particular load
-may be merged with an earlier load in one execution and with a
-later load in another.
-This is demonstrated in the following, which is a variant of
-the example in
-Section~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}:
-\begin{quote}
-\begin{verbatim}
-int r1 = (x != 0);
-int r2 = (x != 0);
-int r3 = (x != 0);
-int r4 = (y != 0);
-z = (r2 == r4);
-\end{verbatim}
-\end{quote}
-Consider an abstract execution in which \co{r1}, \co{r2}, and \co{r4}
-are zero and \co{r3} is one (because another thread changed the value
-of \co{x} between two of the loads).
-We would expect that the store to \co{z} would be semantically
-dependent on the load of \co{y} in this execution.
-
-However, a single-thread analysis compiler can translate this into the
-machine-code equivalent of:
-\begin{quote}
-\begin{verbatim}
-int r1 = (x != 0);
-int r2;
-int r3 = (x != 0);
-int r4 = (y != 0);
-if (r1 != r3) {
-   r2 = r4;
-   z = 1;
-} else {
-   r2 = r1;
-   z = (r2 == r4);
-}
-\end{verbatim}
-\end{quote}
-In effect, the \co{r2} load is merged with the \co{r1} load in
-executions where \co{r1} is equal to \co{r3} or to \co{r4}, and it is
-merged with the \co{r3} load in other executions.
-
-To demonstrate the semantic dependency in the original code,
-a suitable witness would have
-to include a hardware realization of the abstract execution in which
-\co{r1} and \co{r2} are zero and \co{r3} and \co{r4} are one.
-But there are no hardware realizations of this execution with the
-machine code indicated above!
-Since \co{r1} is different from both \co{r3} and \co{r4}, the \co{r2}
-load will be merged with the \co{r3} load and so \co{r2} will
-necessarily be one, not zero.
-Thus, relative to this compiler the example does not contain a
-semantic dependency.
-
-Although it is unexpected, we cannot say that this conclusion is
-definitely wrong, because our intuitive notions of semantic
-dependency are not clear in cases where multiple loads of the same
-variable are present.
-% Can we instead say that transforming the code might require that the
-% witness also be transformed?
-
-Despite these outstanding issues, our definition of semantic dependency
-allows us to bring to bear the real-world constraints outlined in the
-next section.
-
 \section{Real-World Constraints}
 \label{sec:Real-World Constraints}
 
@@ -1965,6 +1791,180 @@ While taking this approach sacrifices significant generality, it also
 has the significant benefit of greatly reducing the cost of dependency
 analysis, potentially all the way down to zero.
 
+\section{Issues and Refinements}
+\label{sec:Issues and Refinements}
+
+Here we consider some general questions related to our definition of
+semantic dependency.
+
+\subsection{Relative versus Absolute Dependency}
+\label{sec:Relative versus Absolute Dependency}
+
+A drawback of the definition is that it is only relative to a specific
+compiler or implementation.
+This may strike some people as wishy-washy and avoiding the real
+problem, in that a given piece of code should either contain or not
+contain a semantic dependency, independent of the implementation used to
+run it.
+
+We can address this drawback by defining an \emph{absolute semantic
+dependency} as one that is present relative to any valid loose C++
+implementation, past, present, or future, real or imagined.
+Of course this notion has its own problems, including that it is
+extremely nonconstructive and impossible to apply in practice.
+However it may be the best we can do with our current understanding
+of computing systems.
+
+There is one thing we can definitely state:
+Programs produced by an implementation of the right sort will never
+exhibit absolute OOTA (that is, an OOTA cycle in which all the
+semantic dependencies are absolute).
+This is simply because an absolute semantic dependency is {\it
+a fortiori\/} a semantic dependency relative to the compiler in use.
+
+But in fact we have shown more than this:
+Programs will never exhibit an OOTA cycle relative to the compiler
+used to build them, even when that cycle is not absolute.
+In this sense we have gone beyond the requirement of full C++.
+
+\subsection{Global Analysis and Volatile versus Quasi Volatile}
+\label{sec:Global Analysis and Volatile versus Quasi Volatile}
+
+In principle we don't need to require global-analysis compilers to
+treat atomic objects as volatile; our results would still hold if they
+merely treated them as quasi volatile.
+We chose not to do this because it would violate our intuitions about
+semantic dependencies.
+
+For example, consider the Simple OOTA program shown in
+Listing~\ref{lst:Simple OOTA}.
+A loose C++ compiler using global analysis and treating \co{x} and \co{y} as
+quasi-volatile objects could omit the two loads, replacing them in the
+machine code with simple assignments ``\co{r1 = 42}'' and
+``\co{r2 = 42}''.
+This would be a valid transformation, and the resulting behavior would
+not count as OOTA according to our definition because the
+dependencies in \co{thread1} and \co{thread2} would not be semantic.
+
+To see why not, recall that a semantic dependency must have a witness,
+another execution in which the store acts differently.
+But this transformed program has no other hardware executions; every time it
+runs it will store 42 to both \co{x} and \co{y}.
+(Keep in mind also that since the atomic objects are not treated as
+volatile, they are not subject to unspecified interference when the
+program runs in a nonbenign environment.)
+
+This unintuitive behavior could not occur if the two loads were not
+omitted.
+In fact, the definition of semantic dependency might remain
+perfectly acceptable if the requirement for global-analysis compilers
+were weakened, if the compiler treated atomic objects as quasi
+volatile and in addition was not allowed to omit accesses to them.
+This is a possible topic for future research.
+
+\subsection{Effect of Memory Layout}
+\label{sec:Effect of Memory Layout}
+
+Part of our demonstration of the Fundamental Property of semantic
+dependencies relies on the fact, stated in
+Section~\ref{sec:Abstract Executions},
+that an abstract execution of a thread is entirely determined by the
+values obtained for its loads.
+But when we compare abstract executions of the same thread in two
+different programs, this may no longer be entirely true owing to the
+effect of differing memory layouts.
+
+Consider this simple example:
+\begin{quote}
+\begin{verbatim}
+x = (int) &x;
+\end{verbatim}
+\end{quote}
+Even though the example contains no loads at all, it may store
+different values when running in different programs because the
+object \co{x} may be allocated at differing addresses in those
+programs.
+According to our definition, this could count as a degenerate OOTA
+cycle of length one, in which the store is semantically dependent on
+an empty set of loads!
+
+To rule out such pathological counterexamples we should require that
+in a witness to a semantic dependency, the addresses of all the
+objects and functions referred to in the thread $T$ are the same as
+in the original execution.
+This is a very technical restriction but there are occasions when
+the issue might realistically arise, such as when computing a hash
+value based on an object's address.
+
+\subsection{Merging Quasi-Volatile Loads}
+\label{sec:Merging Quasi-Volatile Loads}
+
+The compiler is permitted to merge quasi-volatile loads.
+This can lead to surprising results because a particular load
+may be merged with an earlier load in one execution and with a
+later load in another.
+This is demonstrated in the following, which is a variant of
+the example in
+Section~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}:
+\begin{quote}
+\begin{verbatim}
+int r1 = (x != 0);
+int r2 = (x != 0);
+int r3 = (x != 0);
+int r4 = (y != 0);
+z = (r2 == r4);
+\end{verbatim}
+\end{quote}
+Consider an abstract execution in which \co{r1}, \co{r2}, and \co{r4}
+are zero and \co{r3} is one (because another thread changed the value
+of \co{x} between two of the loads).
+We would expect that the store to \co{z} would be semantically
+dependent on the load of \co{y} in this execution.
+
+However, a single-thread analysis compiler can translate this into the
+machine-code equivalent of:
+\begin{quote}
+\begin{verbatim}
+int r1 = (x != 0);
+int r2;
+int r3 = (x != 0);
+int r4 = (y != 0);
+if (r1 != r3) {
+   r2 = r4;
+   z = 1;
+} else {
+   r2 = r1;
+   z = (r2 == r4);
+}
+\end{verbatim}
+\end{quote}
+In effect, the \co{r2} load is merged with the \co{r1} load in
+executions where \co{r1} is equal to \co{r3} or to \co{r4}, and it is
+merged with the \co{r3} load in other executions.
+
+To demonstrate the semantic dependency in the original code,
+a suitable witness would have
+to include a hardware realization of the abstract execution in which
+\co{r1} and \co{r2} are zero and \co{r3} and \co{r4} are one.
+But there are no hardware realizations of this execution with the
+machine code indicated above!
+Since \co{r1} is different from both \co{r3} and \co{r4}, the \co{r2}
+load will be merged with the \co{r3} load and so \co{r2} will
+necessarily be one, not zero.
+Thus, relative to this compiler the example does not contain a
+semantic dependency.
+
+Although it is unexpected, we cannot say that this conclusion is
+definitely wrong, because our intuitive notions of semantic
+dependency are not clear in cases where multiple loads of the same
+variable are present.
+% Can we instead say that transforming the code might require that the
+% witness also be transformed?
+
+Despite these outstanding issues, our definition of semantic dependency
+allows us to bring to bear the real-world constraints outlined in the
+next section.
+
 \section{Future Directions}
 \label{sec:Future Directions}
 
@@ -2004,8 +2004,7 @@ such as those based on the current time, process IDs, or pointer values
 (see Section~\ref{sec:Effect of Memory Layout}).
 
 Finally, future work might expand on
-Sections~\ref{sec:Global Analysis and Volatile versus Quasi Volatile},
-and~\ref{sec:Merging Quasi-Volatile Loads}
+Section~\ref{sec:Issues and Refinements}
 so as to more precisely delineate the limits of permissible
 behavior for quasi-volatile object accesses.
 
