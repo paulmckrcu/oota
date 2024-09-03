@@ -327,28 +327,14 @@ results in OOTA behavior.
 We therefore dig more deeply into OOTA cycles in the light
 of these constraints.
 
-\section{OOTA and Semantic Dependencies}
-\label{sec:OOTA and Semantic Dependencies}
+\section{OOTA and Semantic Dependencies (sdep)}
+\label{sec:OOTA and Semantic Dependencies (sdep)}
 
 \emph{Tagline: ``Semantic dependencies are more complicated than you think.''}
 
-% @@@
-% 1: rfe, not rf.
-% 2: Rules of arithmetic (*0).
-% 3: Many-to-one sdep (*0 + ... )
-% 4: Compiler knowledge, cross-thread special case.
-% 5: Different stores.
-% 6: "If" statements.
-% 7: Matching up stores.
-% Semantic dependencies depend on execution.
-% @@@
-
-Section~\ref{sec:OOTA: rf versus rfe}
-demonstrates advantages of formulating an OOTA cycle as a cycle in
-sdep $\cup$ rfe instead of the traditional sdep $\cup$ rf.
-Section~\ref{sec:Properties of Semantic Dependencies}
-then discusses properties of semantic dependences, showing that they
-are not strict functions of source code.
+This section formulates OOTA cycles as cycles in sdep $\cup$ rfe instead
+of the traditional sdep $\cup$ rf, then shows that sdep is not a strict
+function of the source code.
 
 \subsection{OOTA: rf versus rfe}
 \label{sec:OOTA: rf versus rfe}
@@ -630,16 +616,9 @@ What exactly is an execution?
 
 \emph{Tagline: ``Need to look at machine code.''}
 
-This section looks more carefully at executions, in some cases revisiting
-example code from
-Section~\ref{sec:Properties of Semantic Dependencies}.
-Section~\ref{sec:Abstract Executions}
-looks at executions from the viewpoint of the abstract machine, and
-Section~\ref{sec:Hardware Executions}
-looks at them from the viewpoint of the computer hardware.
-Finally,
-Section~\ref{sec:Relation Between Abstract and Hardware Executions}
-describes how to relate these two viewpoints.
+This section looks more carefully at executions from the viewpoint of
+the abstract machine and the computer hardware, and then reconciles
+these two viewpoints.
 
 \subsection{Abstract Executions}
 \label{sec:Abstract Executions}
@@ -818,37 +797,23 @@ to enforce that relation, namely, compilers.
 \emph{Tagline: Compilers have considerable freedom, but are constrained
 in optimizing atomics, especially volatile atomics.}
 
-A complete C++ implementation consists of much more than just a compiler.
-Among other things, for example, it might have a collection of
+In addition to a compiler, a complete C++ implementation might include
 \co{.h} header files, a linker, runtime libraries, and a dynamic loader.
 Nevertheless, for our purposes the compiler is the most important
 component because it is what primarily determines the translation from
 a C++ source program to directly executable machine code.
-We will therefore use the terms ``compiler'' and ``implementation''
-interchangeably.
+We will therefore use ``compiler'' and ``implementation'' interchangeably.
 
-Section~\ref{sec:Architectures Influence the Behavior of Compilers}
-show that machine architectures influence C++ compilers.
-Section~\ref{sec:Optimizations Influence the Behavior of Compilers}
-show, perhaps unsurprisingly, that optimizers influence C++ compilers.
-Section~\ref{sec:Users Influence the Behavior of Compilers}
-shows that compilers can also be influenced by their users.
-Section~\ref{sec:Global Optimization Can Destroy Dependencies}
-presents an example showing that global optimizations can destroy
-semantic dependencies, and then
-Section~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}
-analyzes examples showing that inventing atomic loads can destroy
-semantic dependencies.
-Section~\ref{sec:Volatile and Quasi Volatile Accesses}
-then presents required properties of volatile atomic operations, and
-also defines properties of quasi-volatile atomic operations.
+This section discusses influences and constraints on C++ compilers,
+then uses this information to define necessary properties of
+\emph{quasi-volatile} atomic operations.
 
 \subsection{Architectures Influence the Behavior of Compilers}
 \label{sec:Architectures Influence the Behavior of Compilers}
 
 The implementation-defined aspects of the standard permit architectures to
 differ as to whether an abstract execution contains a semantic dependency.
-As an example consider the following, where the type of \co{c} is \co{char}:
+For example, consider the following, where the type of \co{c} is \co{char}:
 \begin{quote}
 \begin{verbatim}
 y = (c >= 0);
@@ -1124,15 +1089,9 @@ Fundamental Property}
 
 \emph{Tagline: ``How to think about semantic dependencies.'' }
 
-Section~\ref{sec:Dependencies at the Hardware Level}
-discusses hardware-level dependencies involving machine instructions.
-Section~\ref{sec:Instruction Ordering}
-then examines the relationships between various instruction-ordering
-mechanisms and semantic dependencies.
-This material feeds into
-Section~\ref{sec:The Fundamental Property of Semantic Dependencies},
-which presents the fundamental property of semantic dependencies
-and related complications.
+This section examines dependencies at the machine-instruction level,
+then combines this with mapping from the previous section to define the
+fundamental property of semantic dependencies.
 
 \subsection{Dependencies at the Hardware Level}
 \label{sec:Dependencies at the Hardware Level}
@@ -1335,17 +1294,8 @@ Section~\ref{sec:Volatile and Quasi Volatile Accesses}.
 The key insight is that this allows us to consider semantic
 dependencies at the level of the machine code, where they are much
 more tractable.
-
-Section~\ref{sec:For Compilers Using Single-Thread Analysis}
-focuses on compilers that restrict their analysis to a single
-thread,
-Section~\ref{sec:For Compilers Using Global Analysis}
-relaxes this single-thread restriction,
-Section~\ref{sec:Verifying the Fundamental Property}
-verifies the fundamental property of semantic dependencies,
-and
-Section~\ref{sec:Outstanding Issues}
-discusses general questions regarding our definitions.
+This insight allows us to demonstrate that OOTA cycles cannot form
+in the C++ implementations addressed by this paper.
 
 \subsection{For Compilers Using Single-Thread Analysis}
 \label{sec:For Compilers Using Single-Thread Analysis}
