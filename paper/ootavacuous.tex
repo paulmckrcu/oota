@@ -1079,8 +1079,11 @@ Lastly, the requirement for order preservation is weakened; it applies
 only to pairs of accesses to the same quasi-volatile object.
 Accesses to different objects may be reordered relative to each other.
 
-Section~\ref{sec:Constraints of the Standard}
-presents examples illustrating some of these requirements.
+Applying these requirements to specific examples results in prohibiting
+invention or duplication of atomic loads and stores.
+However, in the absence of ordering constraints, it permits omitting
+redundant non-volatile atomic stores and fusing of non-volatile atomic
+accesses to adjacent objects.
 
 \section{Hardware Dependencies, Instruction Ordering, and the
 Fundamental Property}
@@ -1596,142 +1599,6 @@ A key conclusion to draw from this discussion is that
 regardless of how advanced a computer system may be,
 it cannot commit a store having a hardware dependency on some
 set of loads until after (in global time) those loads have committed.
-
-\subsection{Constraints of the Standard}
-\label{sec:Constraints of the Standard}
-
-\emph{Can we summarize this section with a list of permitted and prohibited
-optimizations in the discussion of quasi-volatile?}
-
-Volatile atomic accesses constitute observable
-behavior~\cite[\co{intro.abstract}]{ThomasKoeppe2023N4950} and
-must be executed in strict accordance with the rules of the C++ abstract
-machine.
-This means that a volatile atomic store in the source code
-corresponds directly to a machine-code store instruction, which can
-commit only after all loads whose values are used to compute the
-store's address and value have committed.
-OOTA aficionados will recognize this as a special case of ordering
-relaxed loads before relaxed stores, albeit one not requiring
-expensive memory-fence instructions on weakly ordered architectures.
-
-Although C++ nonvolatile accesses to atomic objects are not observable
-behavior, any compiler that restricts its code analysis to a
-single thread must assume (unless it can prove otherwise) that a given
-relaxed atomic store can affect observable behavior in a different
-thread that loads the value stored.
-This assumption does not constrain the compiler to anywhere near
-the extent that a volatile relaxed atomic store would, but it does add
-significant constraints over those related to nonvolatile non-atomic
-stores.
-
-For example, nonvolatile relaxed atomic accesses are subject to the
-C++ memory model.
-The ``order-preserving'' bullet point from
-Section~\ref{sec:Volatile and Quasi Volatile Accesses}
-prohibits reordering of quasi-volatile accesses when they are
-to the same object,
-but such reordering is in any case directly forbidden by the memory model
-(the four coherence rules discussed in 6.9.2.2p14--19 \co{[intro.races]}).
-The ``onto'' bullet point also largely reiterates restrictions that follow
-from the standard, in particular,
-that compilers should not invent atomic stores,
-duplicate atomic stores, or invent atomic loads.
-On the other hand, it is permissible for compilers to omit redundant
-atomic stores or fuse nonvolatile atomic accesses of adjacent objects
-under appropriate circumstances;
-these topics correspond to the ``total'' and ``one-to-one'' bullet points of
-Section~\ref{sec:Volatile and Quasi Volatile Accesses}.
-
-\paragraph{Invented Atomic Stores}
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/invented-store.litmus @@
-\caption{Example Invented Store}
-\label{lst:Example Invented Store}
-\end{listing}
-The reason that atomic stores should not be invented is that doing so can
-introduce new (and almost certainly undesirable) behaviors that are
-forbidden by the abstract machine.
-To see this, consider Listing~\ref{lst:Example Invented Store},
-a \co{herd7} litmus test that demonstrates such a behavior.
-Without P0's line~1, only the values~0 and~3 can be loaded into \co{r1} by
-P1's line~1.
-With P0's line~1, the additional value~42 can also be loaded into \co{r1}.
-The compiler is therefore forbidden from inventing the store of 42
-unless it can prove that doing so does not negatively affect the
-program's observable behaviors.
-For example, the compiler might be able to prove that there
-are no other accesses to \co{x} at the time of the invented
-store---but it's very hard to imagine how a compiler that analyzes
-only a single thread at a time could prove such a thing.
-
-\paragraph{Duplicated Atomic Stores}
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/duplicated-store.litmus @@
-\caption{Example Duplicated Store}
-\label{lst:Example Duplicated Store}
-\end{listing}
-Duplicating atomic stores is a special case of inventing them, but it is
-worth illustrating the fact that duplicating stores can also introduce
-new and undesirable behaviors.
-To see this, consider Listing~\ref{lst:Example Duplicated Store}, a
-litmus test that demonstrates such a behavior.
-Without P0's line~1, if the value loaded into \co{r1} is one then the final value
-of \co{x} must be two.
-With that line, the final value of \co{x} can be one even when the
-value loaded into \co{r1} is one.
-The compiler is therefore forbidden from duplicating atomic stores
-unless it can prove that doing so does not negatively affect the
-program's observable behaviors.
-Again, the compiler might be able to prove that there
-are no other accesses to \co{x} at the time of the duplicated store.
-
-In contrast, compilers should not duplicate, repurpose, or otherwise
-invent atomic loads, as discussed in
-Section~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}.
-
-\paragraph{Omitted Redundant Atomic Stores}
-In contrast, a pair of back-to-back nonvolatile atomic stores to the
-same object
-always might be executed such that no other thread accesses the object
-during the time between those two stores.
-This means that if the compiler omitted the first store,
-the user would have no way to prove this fact short of
-inspecting the assembly code.
-In cases where such omissions are undesirable, the user can resort to
-volatile atomic stores or to inline assembly\footnote{
-	For example, by placing the Linux-kernel \co{barrier()} macro
-	between the two stores.
-	This macro is an empty GCC \co{asm} that specifies the \co{memory}
-	clobber.}
-to prevent them.
-
-Omitting a redundant store cannot create an OOTA cycle,
-because any valid execution (OOTA or not)
-of the program with the first of a back-to-back pair of nonvolatile
-relaxed atomic stores omitted is a valid execution of the
-program with the store present.
-% This is awkward because a reader might reasonably extend the "Acting
-% as if" all the way to the comma.  The best I could do was "It is not
-% possible to create an OOTA cycle by acting as if a redundant store
-% was omitted from the source code", which is admittedly not all that
-% great.
-
-\paragraph{Fused Accesses of Adjacent Nonvolatile Atomic Objects}
-Suppose a pair of adjacent nonvolatile atomic objects, when combined,
-form a single machine-word aligned and machine-word sized unit.
-Suppose further that the source code contains a pair of atomic
-loads, one from each of these objects, with the last of the pair
-being a relaxed load.
-Then the compiler could generate instead
-a single atomic load of the combined pair,
-with the memory-ordering semantics of the first load.
-A similar fact applies to pairs of stores.
-
-This holds even when the atomic objects are treated as quasi volatile,
-providing an example of how the ``one-to-one'' bullet point of
-Section~\ref{sec:Volatile and Quasi Volatile Accesses} does not apply
-to them.
 
 \subsection{Semantic Dependencies and Tooling}
 \label{sec:Semantic Dependencies and Tooling}
