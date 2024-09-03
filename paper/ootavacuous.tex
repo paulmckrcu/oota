@@ -167,11 +167,10 @@ but those of us writing code in the real world must rely on actual C++
 implementations.
 And in these implementations, this prohibition is in fact enforced by TSO
 ordering in strongly ordered systems and by data-dependency ordering in
-weakly ordered systems.\footnote{
-	The need to prohibit simple OOTA is one reason why compiler-based
-	value speculation optimizations require checks on such
-	speculation, and these checks must be based on actual values
-	loaded.}
+weakly ordered systems.
+The need to prohibit simple OOTA is one reason why compiler-based value
+speculation optimizations require checks on such speculation, and further
+requires that these checks must be based on the values actually loaded.
 
 In Listing~\ref{lst:Simple OOTA}
 there is a \emph{semantic dependency} from line~1 to line~2 in both
@@ -186,9 +185,7 @@ Since real-world CPUs cannot store something
 until they have determined its value,\footnote{
 	Another way of saying this is that real-world CPUs do not
 	make their stores visible to other CPUs until those stores
-	are no longer speculative.
-	See Section~\ref{sec:Hardware Architecture and Design}
-	for more discussion about hardware speculation.}
+	are no longer speculative.}
 the stores on line~2 cannot take place until the P0's and P1's CPUs
 know what values are returned by the loads on line~1.
 Thus the hardware orders these stores after their corresponding loads,
@@ -1464,200 +1461,6 @@ then programs produced by that implementation will never exhibit OOTA.
 Thus the implementation will automatically comply with full C++, even
 though it may be been designed only to comply with loose C++.
 
-\section{Real-World Constraints}
-\label{sec:Real-World Constraints}
-
-The C++ standard imposes many constraints, and these have been considered
-in prior work.
-In real-world C++ implementations, however, the standard's abstract machine
-must be mapped onto real hardware, and this imposes additional
-constraints stemming from hardware architecture and design.
-This mapping and these constraints have been only partially accounted
-for in the standard and other work.
-Part of the reason for this is
-that accurate and executable formal descriptions of hardware memory
-models did not appear until after the standard was
-released~\cite{JadeAlglave2011ppcmem,Maranget2012TutorialARMPower}.
-But they do exist now.
-
-The following sections discuss these constraints, starting with
-hardware constraints and continuing with additional constraints imposed
-by the standard.
-An additional section discusses the OOTA-cycle implications for C++
-tooling.
-
-\subsection{Hardware Architecture and Design}
-\label{sec:Hardware Architecture and Design}
-
-\emph{Can we summarize this section, especially given that the ASPLOS
-audience can be expected to have a greater understanding of these issues
-than the C++ standards committee?}
-
-Computer systems are expected to continue increasing their use of
-speculative execution.
-Nevertheless, the main points of this paper will remain unaffected.
-To see why, keep in mind that on real systems observable effects
-must eventually be committed, but no effect can be committed
-while any of the computations that determine the effect remain
-speculative.
-Combining this with the obvious fact that a machine instruction cannot
-commit until it is no longer speculative, we can draw two conclusions:
-\begin{itemize}
-\item	A load cannot commit until the store it reads from has
-	committed.\footnote{
-	An early ARMv8 memory model did allow loads that read from an
-	earlier store in the same thread to commit before the store.
-	This apparent exception merely reflects a difference in
-	nomenclature; in the memory model a store was said to commit at
-	the time when it made its new value available to other
-	threads, whereas we say that a store commits at the time when
-	the CPU has irrevocably decided that it will take place with a
-	particular fully determined value and address.}
-\item	A store cannot commit until all the loads on which it has a
-	hardware dependency have committed.
-\end{itemize}
-
-As an example showing what can go wrong when these principles are
-violated, consider Listing~\ref{lst:Speculated Store and Non-Speculated Load}.
-Suppose that the storage for \co{x} is located immediately before that
-for \co{y[]}, and
-suppose further that hardware speculation incorrectly guesses the value
-of \co{r1} will be $-1$, so that the speculated store of 42 on line~11 uses
-the address of \co{x}.\footnote{
-	Yes, \co{y[-1]} is UB, but the CPU neither knows
-	nor cares, nor should it.}
-Then if line~13 reads from the speculative store and commits, it will load
-the value 42 into \co{r2}---an observable effect since \co{r2}
-is mentioned in the \co{exists} clause on line~16---although
-by the rules of the C++ abstract machine the value must instead be zero.
-
-\begin{listing}[tbp]
-@@ DisplayLitmus litmus/speculative-store.litmus @@
-\caption{Speculated Store and Non-Speculated Load}
-\label{lst:Speculated Store and Non-Speculated Load}
-\end{listing}
-
-Applied to Listing~\ref{lst:OOTA Cycle} on
-page~\pageref{lst:OOTA Cycle}, for another example,
-the principles dictate that if the load on line~8 reads from the store
-on line~18 and the load on line~16 reads from the store on line~10
-(as they do in the execution described by the listing's \co{exists} clause),
-then each of the stores must commit before its corresponding load.
-A further application says that
-neither line~10 nor line~12 can commit until after the load
-in line~8 (and also the conditional on line~9) has committed.
-Similarly, neither line~18 nor line~20 can commit until after line~16
-(and~17) has committed.
-Taken together, these constraints imply that the OOTA cycle in the
-listing cannot be realized, because to do so would require that
-none of the machine instructions corresponding to lines~8, 10, 16,
-and~18 could commit before the others.
-Furthermore, it's not possible to circumvent this reasoning by suggesting
-that some of those lines could commit at the same time,
-because instructions take time to execute even when executing
-speculatively.
-
-Yes, this does mean that hardware can produce OOTA cycles during
-speculative execution, but the hardware is required to prevent such
-speculative cycles from committing.
-As a special case of this requirement, if a load obtains
-a value from a speculated store that has not yet committed,
-and the store gets squelched,
-then the load must be restarted before it commits even if the load and
-the store are executed by different CPUs.
-
-The requirement applies within a single
-multithreaded core as well as between cores.
-The fact that intracore communication is faster than intercore
-communication does not magically give loads the ability to commit
-before the stores they read from, no matter what cores they execute on.
-
-\begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-causality-2.litmus @@
-\caption{Causality Test Case 2}
-\label{lst:Causality Test Case 2}
-\end{listing}
-
-Another feature we can expect of upcoming computer systems is the
-addition of new hardware instructions.
-For example, one could imagine a conditional-store instruction,
-similar to existing conditional-move instructions but carrying out
-a store to memory rather than a move to a register.
-The condition would control whether or not the store takes place.
-A compiler doing single-thread analysis could use a conditional-store
-instruction to generate code corresponding to lines~10 and~11 of
-Listing~\ref{lst:Causality Test Case 2}
-on page~\pageref{lst:Causality Test Case 2}
-without use of a conditional branch, potentially
-enabling more hardware optimizations than would otherwise be permitted.
-Nevertheless, the conditional store could not be committed until
-the instructions it depends on (lines~8 and~9) have committed.
-Any new instruction will be subject to this constraint,
-just as the instructions in current systems are.
-
-A key conclusion to draw from this discussion is that
-regardless of how advanced a computer system may be,
-it cannot commit a store having a hardware dependency on some
-set of loads until after (in global time) those loads have committed.
-
-\subsection{Semantic Dependencies and Tooling}
-\label{sec:Semantic Dependencies and Tooling}
-
-\emph{Do we really need this?}
-
-Where a C++ implementation's primary function is to correctly execute
-a C++ program, the function of tooling is often to evaluate properties
-of possible executions of that same program.
-While implementations should avoid breaking semantic dependencies,
-tools are in some cases permitted to misclassify them, as shown in
-Table~\ref{tab:Dependency Classification For Tools}.
-
-\begin{table}
-\centering
-\begin{tabular}{c|c|l}
-Actual Execution	& Tooling		& Result \\
-\hline
-sdep			& sdep			& Ordered \\
-\cline{2-3}
-			& $\neg$sdep		& False Positive (Warning?) \\
-\hline
-$\neg$sdep		& sdep			& False Negative (Warning?) \\
-\cline{2-3}
-			& $\neg$sdep		& Unordered \\
-\end{tabular}
-\caption{Dependency Classification For Tools}
-\label{tab:Dependency Classification For Tools}
-\end{table}
-
-Any misclassification will result in either a false positive or
-a false negative, except that many tools give some indication of a
-misclassification, for example, printing a warning message indicating
-that the code is too complex for it to analyze.
-Some projects would choose to restructure the code in such cases, on the
-grounds that code that is difficult for an automated tool to understand
-is also likely to be misunderstood by its all-too-human developers.
-
-One advantage that tools often have over C++ implementations is the
-ability to devote much more computational power to the problem at hand.
-In fact, some tools respond to excessive complexity by consuming all
-available CPU and memory, which can also be interpreted as a good and
-sufficient warning message.
-
-However, there is an important special case for tools that are closely
-associated with a C++ compiler.
-Such tools can simply use that compiler's classification of
-dependencies as semantic on the one hand or nonsemantic on the
-other, whether by working with the compiler's intermediate
-representations, examining binaries produced by the compiler, tracing
-the program's execution, or, in the case of dynamic tools, actually
-executing the program.
-Either way, this approach reduces the problem of analysis from the
-level of the C++ abstract machine to a much simpler lower level of
-abstraction.
-While taking this approach sacrifices significant generality, it also
-has the significant benefit of greatly reducing the cost of dependency
-analysis, potentially all the way down to zero.
-
 \section{Issues and Refinements}
 \label{sec:Issues and Refinements}
 
@@ -1828,9 +1631,63 @@ variable are present.
 % Can we instead say that transforming the code might require that the
 % witness also be transformed?
 
-Despite these outstanding issues, our definition of semantic dependency
-allows us to bring to bear the real-world constraints outlined in the
-next section.
+\subsection{Semantic Dependencies and Tooling}
+\label{sec:Semantic Dependencies and Tooling}
+
+\emph{Do we really need this?}
+
+Where a C++ implementation's primary function is to correctly execute
+a C++ program, the function of tooling is often to evaluate properties
+of possible executions of that same program.
+While implementations should avoid breaking semantic dependencies,
+tools are in some cases permitted to misclassify them, as shown in
+Table~\ref{tab:Dependency Classification For Tools}.
+
+\begin{table}
+\centering
+\begin{tabular}{c|c|l}
+Actual Execution	& Tooling		& Result \\
+\hline
+sdep			& sdep			& Ordered \\
+\cline{2-3}
+			& $\neg$sdep		& False Positive (Warning?) \\
+\hline
+$\neg$sdep		& sdep			& False Negative (Warning?) \\
+\cline{2-3}
+			& $\neg$sdep		& Unordered \\
+\end{tabular}
+\caption{Dependency Classification For Tools}
+\label{tab:Dependency Classification For Tools}
+\end{table}
+
+Any misclassification will result in either a false positive or
+a false negative, except that many tools give some indication of a
+misclassification, for example, printing a warning message indicating
+that the code is too complex for it to analyze.
+Some projects would choose to restructure the code in such cases, on the
+grounds that code that is difficult for an automated tool to understand
+is also likely to be misunderstood by its all-too-human developers.
+
+One advantage that tools often have over C++ implementations is the
+ability to devote much more computational power to the problem at hand.
+In fact, some tools respond to excessive complexity by consuming all
+available CPU and memory, which can also be interpreted as a good and
+sufficient warning message.
+
+However, there is an important special case for tools that are closely
+associated with a C++ compiler.
+Such tools can simply use that compiler's classification of
+dependencies as semantic on the one hand or nonsemantic on the
+other, whether by working with the compiler's intermediate
+representations, examining binaries produced by the compiler, tracing
+the program's execution, or, in the case of dynamic tools, actually
+executing the program.
+Either way, this approach reduces the problem of analysis from the
+level of the C++ abstract machine to a much simpler lower level of
+abstraction.
+While taking this approach sacrifices significant generality, it also
+has the significant benefit of greatly reducing the cost of dependency
+analysis, potentially all the way down to zero.
 
 \section{Future Directions}
 \label{sec:Future Directions}
