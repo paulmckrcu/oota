@@ -1631,15 +1631,23 @@ variable are present.
 % Can we instead say that transforming the code might require that the
 % witness also be transformed?
 
-\section{Future Directions}
-\label{sec:Future Directions}
+\section{Conclusions and Future Directions}
+\label{sec:Conclusions and Future Directions}
 
 This paper focused solely on compilers, primarily those that do only
 local per-thread anaylsis and optimization.
 It introduced the notion of quasi-volatile object accesses and gave
 a definition for semantic dependency that is relative to a particular
 C++ implementation.
+It formulated a Fundamental Property of semantic dependency and proved
+that implementations subject to some very mild restrictions on how
+they treat atomic object accesses do have this property.
+Finally, it demonstrated that satisfying the Fundamental Property
+guarantees an implementation cannot give rise to OOTA executions.
 
+The conclusion to be drawn from this work is that in this context,
+avoiding OOTA cycles requires no changes to the standard,
+to current implementions, or to user practices for portable code.
 Further explorations could:
 \begin{itemize}
 \item	Extend these results to some classes of interpreters and JITs
@@ -1656,52 +1664,6 @@ Further explorations could:
 \item	Delineate more precisely the limits of permissible behavior
 	for quasi-volatile object accesses.
 \end{itemize}
-
-\section{Conclusion}
-\label{sec:Conclusion}
-
-This paper has presented samples of code containing non-trivial
-semantic dependencies, uncovering some shortcomings in typical definitions of
-``semantic dependency''.
-It pointed out examples where semantic dependencies
-are a function of an execution rather than of the source code, and examples
-where a single semantic dependency extends from multiple loads
-to a store but not from any one of those loads.
-These complex dependencies motivated a generalization of the definition
-of ``OOTA cycle'', which is shown in
-Section~\ref{sec:Semantic Dependencies Can Be Many-To-One}.
-
-This generalization, combined with a focus on compiler-based loose C++
-implementations using single-thread analysis, and a consideration of
-the relation between source code and machine code, led to the formulation
-of the Fundamental Property of semantic dependency shown in
-Section~\ref{sec:The Fundamental Property of Semantic Dependencies}.
-This in turn led to a precise definition of ``semantic dependency'' given in
-Section~\ref{sec:For Compilers Using Single-Thread Analysis}.
-This definition was used in
-Section~\ref{sec:Verifying the Fundamental Property}
-to demonstrate that these implementations are
-incapable of producing OOTA cycles in UB-free programs,
-provided they treat all nonvolatile atomic objects as
-quasi volatile, obeying the limitations outlined in
-Section~\ref{sec:Volatile and Quasi Volatile Accesses}.
-
-A variant definition of ``semantic dependency'' given in
-Section~\ref{sec:For Compilers Using Global Analysis}, appropriate for
-compiler-based loose C++ implementations that don't restrict
-their code transformations to those based on single-thread analysis,
-was used to show that such implementations
-are incapable of producing OOTA cycles in UB-free programs
-provided they treat all atomic objects as volatile.
-
-This work shows that avoiding OOTA cycles requires no changes to the
-standard, to current implementions, or to user practices for portable
-code.
-Future implementations must avoid optimizations that invent, duplicate,
-or repurpose atomic loads.
-More work is required to delineate any further restrictions on future
-implementations that might carry out optimizations based on global
-inter-thread analysis.
 
 % \clearpage
 % \appendix
