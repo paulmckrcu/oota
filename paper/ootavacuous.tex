@@ -1634,45 +1634,28 @@ variable are present.
 \section{Future Directions}
 \label{sec:Future Directions}
 
-This paper focuses solely on compilers, but it should be possible to
-extend these results to some classes of interpreters and JITs on the
-one hand and to link-time optimizations (LTO) on the other.
+This paper focused solely on compilers, primarily those that do only
+local per-thread anaylsis and optimization.
+It introduced the notion of quasi-volatile object accesses and gave
+a definition for semantic dependency that is relative to a particular
+C++ implementation.
 
-This paper focuses primarily on compilers that do only local per-thread
-analysis.
-Further explorations could consider additional classes of global analysis,
-for example, analyses that demonstrate that a given expression will
-always evaluate to a particular constant.
-JMM Causality Test Case 1 % %%% Cite P3064.
-% %%% discussed in
-% %%% Appendix~\ref{app:Causality Test Case 1}
-provides an example of such a global analysis.
-
-This paper assumes that the user defines threads, and that the
-C++ implementation executes those threads unchanged.
-Future analyses might examine the possibility of ``flattening''
-optimizations that combine multiple threads into one.
-(Note that such optimizations are more difficult than they might first appear.)
-
-This paper shows that semantic dependencies are relative to specific
-executions of a program and the specific compiler in use rather than
-being determined solely by the source code.
-Future work might expand on
-Section~\ref{sec:Relative versus Absolute Dependency},
-exploring special cases in which absolute semantic dependencies are
-functions just of the source code.
-
-This paper considers only programs whose threads
-communicate using shared memory.
-Future work might include the effects of input and output or
-other operations which can vary from one execution to another,
-such as those based on the current time, process IDs, or pointer values
-(see Section~\ref{sec:Effect of Memory Layout}).
-
-Finally, future work might expand on
-Section~\ref{sec:Issues and Refinements}
-so as to more precisely delineate the limits of permissible
-behavior for quasi-volatile object accesses.
+Further explorations could:
+\begin{itemize}
+\item	Extend these results to some classes of interpreters and JITs
+	on one hand, and to link-time optimizations (LTO) on the other.
+\item	Consider various classes of global analysis, such as
+	demonstrating that a given expression will always evaluate
+	to a constant.
+\item	Examine the possibility of ``flattening'' optimizations that
+	combine multiple threads into one.
+\item	Explore cases in which semantic dependencies must be absolute,
+	not relative to any particular compiler.
+\item	Include the effects of input and output or other operations
+	which can vary from one execution to another.
+\item	Delineate more precisely the limits of permissible behavior
+	for quasi-volatile object accesses.
+\end{itemize}
 
 \section{Conclusion}
 \label{sec:Conclusion}
