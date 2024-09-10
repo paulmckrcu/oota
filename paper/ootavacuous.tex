@@ -1514,7 +1514,7 @@ machine code with simple assignments ``\co{r1 = 42}'' and
 ``\co{r2 = 42}''.
 This would be a valid transformation, and the resulting behavior would
 not count as OOTA according to our definition because the
-dependencies in \co{thread1} and \co{thread2} would not be semantic.
+dependencies in P0 and P1 would not be semantic.
 
 To see why not, recall that a semantic dependency must have a witness,
 another execution in which the store acts differently.
@@ -1630,65 +1630,6 @@ dependency are not clear in cases where multiple loads of the same
 variable are present.
 % Can we instead say that transforming the code might require that the
 % witness also be transformed?
-
-\subsection{Semantic Dependencies and Tooling}
-\label{sec:Semantic Dependencies and Tooling}
-
-\emph{Do we really need this?}
-
-Where a C++ implementation's primary function is to correctly execute
-a C++ program, the function of tooling is often to evaluate properties
-of possible executions of that same program.
-While implementations should avoid breaking semantic dependencies,
-tools are in some cases permitted to misclassify them, as shown in
-Table~\ref{tab:Dependency Classification For Tools}.
-
-\begin{table}
-\centering
-\begin{tabular}{c|c|l}
-Actual Execution	& Tooling		& Result \\
-\hline
-sdep			& sdep			& Ordered \\
-\cline{2-3}
-			& $\neg$sdep		& False Positive (Warning?) \\
-\hline
-$\neg$sdep		& sdep			& False Negative (Warning?) \\
-\cline{2-3}
-			& $\neg$sdep		& Unordered \\
-\end{tabular}
-\caption{Dependency Classification For Tools}
-\label{tab:Dependency Classification For Tools}
-\end{table}
-
-Any misclassification will result in either a false positive or
-a false negative, except that many tools give some indication of a
-misclassification, for example, printing a warning message indicating
-that the code is too complex for it to analyze.
-Some projects would choose to restructure the code in such cases, on the
-grounds that code that is difficult for an automated tool to understand
-is also likely to be misunderstood by its all-too-human developers.
-
-One advantage that tools often have over C++ implementations is the
-ability to devote much more computational power to the problem at
-hand~\cite{JayRichards2024SymbolicMrder}.
-In fact, some tools respond to excessive complexity by consuming all
-available CPU and memory, which can also be interpreted as a good and
-sufficient warning message.
-
-However, there is an important special case for tools that are closely
-associated with a C++ compiler.
-Such tools can simply use that compiler's classification of
-dependencies as semantic on the one hand or nonsemantic on the
-other, whether by working with the compiler's intermediate
-representations, examining binaries produced by the compiler, tracing
-the program's execution, or, in the case of dynamic tools, actually
-executing the program.
-Either way, this approach reduces the problem of analysis from the
-level of the C++ abstract machine to a much simpler lower level of
-abstraction.
-While taking this approach sacrifices significant generality, it also
-has the significant benefit of greatly reducing the cost of dependency
-analysis, potentially all the way down to zero.
 
 \section{Future Directions}
 \label{sec:Future Directions}
