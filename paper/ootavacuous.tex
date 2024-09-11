@@ -57,25 +57,24 @@
 	(OOTA) behaviors of C++ \co{memory_order_relaxed} accesses
 	have been either non-executable, complex, or unloved by
 	implementers.
-	However, we know of no instances of OOTA behavior in real C++
+	At the same time, we know of no instances of OOTA behavior in real C++
 	implementations.
 
 	We focus on shared-memory programs and C++ implementations based
 	on traditional compilers and hardware, including CPUs and GPGPUs,
-	thus permitting easier analysis of semantic dependencies and
-	OOTA behaviors, thanks to existing formal hardware models.
+	thus easing analysis of semantic dependencies and OOTA behaviors
+	via existing hardware models.
 	We show that these models' constraints prevent OOTA cycles from
 	occurring in undefined-behavior-free C++ programs running on
-	compiler-based implementations, provided the cycles involve only
-	volatile atomics.
+	compiler-based implementations that use single-thread analysis,
+	provided the cycles involve only volatile atomics.
 	We also extend this work to nonvolatile atomics by defining
-	``quasi-volatile'' behavior that we C++ implementations
-	must adhere to in order to evaluate arithmetic expresssions
-	involving atomic accesses in accordance with the abstract
-	machine.
+	``quasi-volatile'' behavior that C++ implementations must adhere
+	to in order to evaluate arithmetic expressions involving atomic
+	accesses in accordance with the standard.
 
-	It follows that such implementations need take no special action
-	to avoid OOTA, and that no changes are required to user code or
+	It follows that enforcing OOTA avoidance requires no special
+	action from implementations and no changes to user code or
 	to the standard.
 \end{abstract}
 \maketitle{}
