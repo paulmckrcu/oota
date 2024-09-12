@@ -1184,7 +1184,7 @@ nevertheless hope it will help move the discussion forward.
 The definition given below is applicable only to C++ implementations
 that treat all atomic objects as though they are volatile or
 quasi volatile.
-(For compilers that perform only single-thread analysis, not global
+(For compilers that perform only per-thread analysis, not global
 analysis, quasi volatile is sufficient.)
 In this setting we can relate abstract and hardware executions by
 means of the map of accesses described in
@@ -1199,7 +1199,7 @@ in the C++ implementations addressed by this paper.
 \label{sec:For Compilers Using Single-Thread Analysis}
 
 In this section we consider implementations whose compilers perform
-only single-thread analysis and treat atomic objects as
+only per-thread analysis and treat atomic objects as
 quasi volatile.
 This implies that if two different programs contain the same thread
 (i.e., the same source code for the functions and objects in the thread), the
@@ -1351,7 +1351,7 @@ QED.
 A corollary of this result is that if an implementation's compiler
 either
 \begin{itemize}
-\item	uses single-thread analysis and treats atomic objects as
+\item	uses per-thread analysis and treats atomic objects as
 	quasi volatile, or
 \item	uses global analysis and treats atomic objects as volatile,
 \end{itemize}
@@ -1493,7 +1493,7 @@ of \co{x} between two of the loads).
 We would expect that the store to \co{z} would be semantically
 dependent on the load of \co{y} in this execution.
 
-However, a single-thread analysis compiler can translate this into the
+However, a per-thread analysis compiler can translate this into the
 machine-code equivalent of:
 \begin{quote}
 \begin{verbatim}
@@ -1537,7 +1537,7 @@ variable are present.
 \label{sec:Conclusions and Future Directions}
 
 This paper focused solely on compilers, primarily those that do only
-local per-thread anaylsis and optimization.
+per-thread analysis and optimization.
 It introduced the notion of quasi-volatile object accesses and gave
 a definition for semantic dependency that is relative to a particular
 C++ implementation.
