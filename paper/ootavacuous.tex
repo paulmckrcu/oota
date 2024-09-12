@@ -124,10 +124,11 @@ values of 42, despite there being no instances of 42 in the default-zero
 initial values or in the executable
 code~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.\footnote{
 	Throughout this paper, variables whose names are ``\co{r}''
-	followed by a number denote CPU registers, and other names denote
-	shared variables.
+	followed by a number denote private per-process variables
+	(``registers''),
+	and other names denote shared variables.
 	All shared-variable accesses are relaxed atomic.}
-First, P0's line~1 does a load from \co{x} into \co{r1},
+First, process P0's line~1 does a load from \co{x} into \co{r1},
 reading the value of P1's line-2 store rather than \co{x}'s initial
 value of zero and somehow obtaining 42.
 Second, P0's line~2 stores \co{r1}, and thus 42, to \co{y}.
@@ -138,9 +139,9 @@ by P0's line~1.
 Because nothing else in the C++ memory model rules out such OOTA cycles
 (as indicated by the ``sometimes satisfied'' in the figure), the C++
 standard explicitly prohibits them in 33.5.4p8
-(\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950},
-which prevents misapplication of the as-if rule in oracular C++
-implementations:
+(\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}
+(which prevents misapplication of the as-if rule in oracular C++
+implementations):
 \begin{quote}
 	Implementations should ensure that no “out-of-thin-air” values
 	are computed that circularly depend on their own computation.
@@ -211,9 +212,8 @@ unmotivated values, as shown in
 Listing~\ref{lst:OOTA Cycle}.
 Line~3 of both processes stores the value 42 only when line~2 determines
 that the value loaded was 42.
-However, this OOTA result has not been observed on real implementations
-due to the default-zero initialization combined with semantic dependencies
-from line~1 to line~3.
+This, combined with the default-zero initialization, explains why this
+OOTA result has not been observed on real implementations.
 
 \subsection{Prior Work}
 \label{sec:Prior Work}
