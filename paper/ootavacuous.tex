@@ -68,11 +68,11 @@
 	occurring in undefined-behavior-free C++ programs running on
 	such implementations, provided the cycles involve only volatile
 	atomics.
-	For implementations doing only single-threaded analysis, we
-	accommodate nonvolatile atomics by defining ``quasi-volatile''
-	behavior that must be adhered to in order to evaluate arithmetic
-	expressions involving atomic accesses in accordance with the
-	standard.
+	For implementations doing only per-thread analysis and
+	optimization, we accommodate nonvolatile atomics by defining
+	``quasi-volatile'' behavior, adherence to which avoids situations
+	in which arithmetic-expression evaluation involving atomic
+	accesses could otherwise violate the standard.
 
 	It follows that enforcing OOTA avoidance requires no special
 	action from implementations and no changes to user code or
@@ -120,14 +120,14 @@ In the most extreme cases a nonsensical value can pop up ``out of thin air''
 as shown in
 Listing~\ref{lst:Simple OOTA}.
 Here, all of \co{x}, \co{y}, \co{r1}, and \co{r2} might have final
-values of 42, despite their being no instances of 42 in the default-zero
-initialization or in the executable
+values of 42, despite there being no instances of 42 in the default-zero
+initial values or in the executable
 code~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.\footnote{
 	Throughout this paper, variables whose names are ``\co{r}''
-	followed by a number denote registers, and other names denote
+	followed by a number denote CPU registers, and other names denote
 	shared variables.
-	All accesses to shared variable are relaxed atomic accesses.}
-First, P0's line~1 does a relaxed atomic load from \co{x} into \co{r1},
+	All shared-variable accesses are relaxed atomic.}
+First, P0's line~1 does a load from \co{x} into \co{r1},
 reading the value of P1's line-2 store rather than \co{x}'s initial
 value of zero and somehow obtaining 42.
 Second, P0's line~2 stores \co{r1}, and thus 42, to \co{y}.
@@ -164,7 +164,7 @@ until they have determined its value,\footnote{
 	Another way of saying this is that real-world CPUs do not
 	make their stores visible to other CPUs until those stores
 	are no longer speculative.
-	This same restriction applies to compiler-based speculation.}
+	A similar restriction applies to compiler-based speculation.}
 the stores on line~2 cannot take place until the P0's and P1's CPUs
 know what values are returned by the loads on line~1.
 Thus the hardware orders these stores after their corresponding loads,
@@ -196,8 +196,8 @@ sometimes satisfied.
 Simple reordering can cause non-OOTA, but OOTA-like, behavior, as
 exemplified by
 Listing~\ref{lst:Simple Reordering}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
-Both the compiler and the CPU might reorder P1's lines~1 and~2, so that
-all of \co{x}, \co{y}, \co{r1}, and \co{r2} might have the value 42,
+Either the compiler or the CPU might reorder P1's lines~1 and~2, so that
+all of \co{x}, \co{y}, \co{r1}, and \co{r2} might end up with the value 42,
 as indicated by the ``sometimes satisfied'' in the figure.
 
 \begin{listing}[tbp]
@@ -206,15 +206,14 @@ as indicated by the ``sometimes satisfied'' in the figure.
 \label{lst:OOTA Cycle}
 \end{listing}
 
-On the other hand, OOTA cycles can arise even when value 42 is mentioned,
-as shown in
+On the other hand, OOTA cycles need not involve nonsensical or
+unmotivated values, as shown in
 Listing~\ref{lst:OOTA Cycle}.
 Line~3 of both processes stores the value 42 only when line~2 determines
 that the value loaded was 42.
-Default-zero initialization prevents this in both full C++ and (as we will
-see) real-world loose C++, but not an oracular loose C++ implementation.
-
-The next section looks at prior work on these issues.
+However, this OOTA result has not been observed on real implementations
+due to the default-zero initialization combined with semantic dependencies
+from line~1 to line~3.
 
 \subsection{Prior Work}
 \label{sec:Prior Work}
@@ -255,18 +254,18 @@ As of 2024, Mark Batty is persisting with modular relaxed dependencies,
 which may have the added ability of checking compiler
 optimizations~\cite{JayRichards2024SymbolicMrder}.
 
-Goldblatt looked at interactions between OOTA cycles and
+Goldblatt looked at interactions between OOTA and
 undefined behavior (UB)~\cite{DavidGoldblatt2019NoElegantOOTAfix}.
 % Appendix~\ref{app:Aside on Undefined Behavior}
 % analyzes his examples and notes ways to separate UB and OOTA-cycle
 % concerns.
-We focus on UB-free examples.
+We consider only UB-free examples.
 
 All this work focused on either identifying OOTA or helping C++
 implementations to avoid it.
 None applied real-world hardware ordering constraints to the problem
 of avoiding OOTA cycles.
-This paper's contribution is showing how these constraints prevent
+This paper's contribution is to show how these constraints prevent
 real-world C++ implementations from exhibiting OOTA behavior.
 
 \section{OOTA and Semantic Dependencies (sdep)}
