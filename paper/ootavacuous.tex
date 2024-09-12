@@ -1125,11 +1125,9 @@ input.\footnote{
 \subsection{The Fundamental Property of Semantic Dependencies}
 \label{sec:The Fundamental Property of Semantic Dependencies}
 
-With the contents of the last few sections under our belts, we can
-formulate the Fundamental Property that we would like all semantic
-dependencies to satisfy.
-Note that this formulation makes sense only for implementations in
-which all atomic objects are treated as volatile or quasi volatile.
+We can now formulate the Fundamental Property that we want all semantic
+dependencies to satisfy in implementations that treat all atomic objects
+as volatile or quasi volatile.
 \begin{quote}
 Let $W$ be a store which semantically depends on loads
 $\{R_0$, \ldots,~$R_n\}$ in some abstract execution $A$,
@@ -1141,8 +1139,8 @@ instruction it maps to is ordered before the instruction $W$ maps to.
 
 No implementation in which semantic dependencies satisfy the Fundamental
 Property has a nontrivial OOTA cycle.
-To see this, suppose that abstract execution $A$ is realized by hardware
-execution $H$ and $A$ does have an OOTA cycle.
+To see this, suppose that abstract execution $A$ having an OOTA cycle
+is realized by hardware execution $H$.
 This means there are atomic stores $W_i$ in $A$,
 semantically depending on atomic loads
 $\{R_{i,j}\}$ where each of the loads reads from one of the $W_k$
@@ -1159,18 +1157,15 @@ But now we have a contradiction:
 and finally
 (3)~$W_k'$ commits no earlier than $W_0'$.
 
-If all the stores in the OOTA cycle are omitted then all the reads
-must be omitted as well.
-In effect, the entire cycle has been optimized
-out of existence by the compiler.
-Although we are unable to prove it, we conjecture that in this
-situation there must be another abstract execution which has the
-same observable effects as $A$ and is also realized by $H$, but in
-which the OOTA cycle does not occur.
+If all the stores in the OOTA cycle are omitted then all the reads must
+also be omitted, meaning that the entire cycle has been optimized away.
+We conjecture that in this situation there must be another abstract
+execution which has the same observable effects as $A$ and is also
+realized by $H$, but in which the OOTA cycle does not occur.
 Thus there would be no way to tell, merely by observing the effects of
-$H$, whether there was an OOTA cycle or not.
-For this reason we declare realizations of OOTA cycles in which
-all the accesses are omitted to be \emph{trivial}.
+$H$, whether or not there was an OOTA cycle.
+We therefore declare OOTA cycles in which all accesses are omitted to
+be \emph{trivial}.
 
 \section{A Definition of Semantic Dependency}
 \label{sec:A Definition of Semantic Dependency}
