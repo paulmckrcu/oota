@@ -1041,18 +1041,15 @@ fundamental property of semantic dependencies.
 \subsection{Dependencies at the Hardware Level}
 \label{sec:Dependencies at the Hardware Level}
 
-Dependencies between machine instructions can be understood in terms
-of the flow of information within a CPU.
-Each instruction has a set of inputs and is the source of a set of outputs,
-some of which flow to the inputs of later instructions.
+Dependencies between machine instructions correspond to the flow of
+information within a CPU.
+Each instruction takes a set of inputs and provides a set of outputs,
+some of which flow to inputs of later instructions.
 The inputs determine what an instruction will do.
-A few examples:
-\begin{itemize}
-\item	An \co{add} instruction would typically have two inputs
-	(the register values to be added together) and two outputs
-	(the sum to be stored in a general-purpose register and some
-	condition-code bits---e.g., Zero, Carry, and Overflow---to be
-	stored in a status register).
+
+For example, an \co{add} instruction might have two inputs (the values to
+be summed) and two outputs (the sum and some condition-code bits---e.g.,
+Zero, Carry, and Overflow).
 % \item	A conditional-move instruction would have as inputs the
 %	condition-code bits to test, the source register value, and the
 %	target register value; the output would be the value to be stored
@@ -1063,28 +1060,20 @@ A few examples:
 %	destination address (to be used if the condition is true).
 %	The output is the new address to be written to the
 %	instruction-pointer register.
-\item	A memory-load instruction's input is the address to load from,
-	and its output is the value obtained by the load, to be stored
-	in a register.
-\item	A memory-store instruction's inputs are the value to store and
-	the address at which to store it; there are no outputs.
-\end{itemize}
-Note: Hardware dependency analysis considers only the information
-flowing \emph{within} a CPU, not information flowing between the
-CPU and memory, which is handled separately as part of the action
-taken by an instruction.
+For another example, a memory-load instruction's input is the address
+to load from, and its output is the value obtained by the load.
+For a final example, a memory-store instruction's inputs are the value
+to store and the address at which to store it; there are no outputs.
 
 Using this scheme, we say that an instruction $J$ is dependent on
 another instruction $I$ when any of $I$'s outputs flow into $J$'s inputs,
-perhaps indirectly via some intermediate instructions.
-Tracing back the flow of information between instructions, you can
-see that any hardware dependency must ultimately emanate from a load
-instruction or the thread's initial register values (or possibly some sort of
-input instruction, but we will not consider that complication here).
-These are the only sources of truly new information in a thread.
-
-The concept is simple, but it is important because of the way
-dependencies affect instruction ordering in weakly ordered architectures.
+perhaps via intermediate instructions.
+Any hardware dependency ultimately emanates from register initial values,
+load instructions, immediate values, or I/O accesses.
+We set aside I/O, so that load instructions are the only sources
+of truly new information in a thread.
+Dependencies are important because they affect instruction ordering in
+weakly ordered architectures.
 
 \subsection{Instruction Ordering}
 \label{sec:Instruction Ordering}
