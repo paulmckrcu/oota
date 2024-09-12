@@ -223,20 +223,19 @@ All OOTA workers owe a debt to the foundational work in the infamous
 	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
 % %%% Eventually cite P3064.
 
-Some executable C++ memory models correctly flag at least some executions
-involving OOTA cycles~\cite{JadeAlglave2014HerdingCats}.\footnote{
-	Others cleverly avoid this issue by forbidding atomic
-	stores of nonconstant values~\cite{MarkBatty2011cppmem}.}
+Some executable C++ memory models correctly flag some OOTA
+cycles~\cite{JadeAlglave2014HerdingCats}.\footnote{
+	Others avoid OOTA by forbidding atomic stores of nonconstant
+	values~\cite{MarkBatty2011cppmem}.}
 % @@@ Better herd7 C11 citation?
 However, because these models are atemporal, they cannot reject
 OOTA executions other than by flagging the OOTA value as arbitrary,
 which some in fact do in at least some cases.
 
 P0442R0 (``Out-of-Thin-Air Execution is Vacuous'')~\cite{PaulEMcKenney2016OOTA}
-provided a decision procedure for classifying behaviors as permitted
-misordering on the one hand or disallowed OOTA on the other, using
-a perturbation method based on the insight that all OOTA behaviors are
-fixed-point computations.
+provided a decision procedure for distinguishing between reordering and
+OOTA, using a perturbation method based on the insight that OOTA cycles
+are fixed-point computations.
 
 Some workers recommend avoiding OOTA by forcing prior relaxed
 loads to be ordered before subsequent relaxed
@@ -245,15 +244,14 @@ but this can require real instructions be
 executed~\cite[Section 7.1]{Maranget2012TutorialARMPower},
 consuming real time and real electrical power to solve a strictly
 theoretical problem.
-This might have been acceptable in the 1960s of some of the authors'
-youths, but it is now the year 2024.
+% This might have been acceptable in the 1960s of some of the authors'
+% youths, but it is now the year 2024.
 
 Other workers recommend various procedures to identify and avoid OOTA
 cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA},
-but none of these have been looked upon favorably by C++ implementers.
-Many of these workers appear to have abandoned this effort, but as of
-2024, Mark Batty is persisting with modular relaxed dependencies, which
-may have the added ability of checking compiler
+but none of these have been accepted by C++ implementers.
+As of 2024, Mark Batty is persisting with modular relaxed dependencies,
+which may have the added ability of checking compiler
 optimizations~\cite{JayRichards2024SymbolicMrder}.
 
 Goldblatt looked at interactions between OOTA cycles and
@@ -261,16 +259,14 @@ undefined behavior (UB)~\cite{DavidGoldblatt2019NoElegantOOTAfix}.
 % Appendix~\ref{app:Aside on Undefined Behavior}
 % analyzes his examples and notes ways to separate UB and OOTA-cycle
 % concerns.
-This paper focuses on examples lacking UB.
+We focus on UB-free examples.
 
-All this work focused on either identifying OOTA or seeing how C++
-implementations could avoid it.
+All this work focused on either identifying OOTA or helping C++
+implementations to avoid it.
 None applied real-world hardware ordering constraints to the problem
-of avoiding OOTA cycles,
-yet doing so might help explain why no known real-world C++ implementation
-results in OOTA behavior.
-We therefore dig more deeply into OOTA cycles in the light
-of these constraints.
+of avoiding OOTA cycles.
+This paper's contribution is showing how these constraints prevent
+real-world C++ implementations from exhibiting OOTA behavior.
 
 \section{OOTA and Semantic Dependencies (sdep)}
 \label{sec:OOTA and Semantic Dependencies (sdep)}
