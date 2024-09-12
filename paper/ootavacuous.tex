@@ -1072,85 +1072,55 @@ Any hardware dependency ultimately emanates from register initial values,
 load instructions, immediate values, or I/O accesses.
 We set aside I/O, so that load instructions are the only sources
 of truly new information in a thread.
-Dependencies are important because they affect instruction ordering in
-weakly ordered architectures.
 
 \subsection{Instruction Ordering}
 \label{sec:Instruction Ordering}
 
 A CPU may start executing an instruction speculatively, but at some
-point it must \emph{commit} to a decision either to definitely execute the
-instruction's action with some collection of well defined inputs and outputs
-or else to abandon it.
-Thanks to the law of cause and~effect, a CPU is not able to commit an
-instruction or its outputs until the relevant inputs' sources have committed.
-The reason is obvious: An input is subject to change at any time until
-its source commits to its value,
-and the instruction and its outputs can't commit until the CPU has fully
-determined what it will do and what they will be.
-(On the other hand, the CPU need not wait for inputs that won't affect
-the instruction's results.
-For instance, a conditional-move instruction wouldn't need to wait for
-the source register input to be determined once it knew that the
-condition was definitely false.
-And, although no architectures we are aware of do this, there is nothing
-in principle to prevent a CPU from committing a \co{multiply}
-instruction as soon as either one of its inputs' sources has committed to the
-value zero.)
-
-Of course, an instruction's inputs don't all have to be outputs from
-earlier instructions; some of them may be immediate constants present
-in the instruction itself.
-In this case there is no need to wait for those inputs because
-their values are fully determined from the start.
+point it must either abandon that instruction or \emph{commit} it with
+a set of specific outputs based on well-defined inputs.
+A CPU is clearly not permitted to commit an instruction its inputs have
+been committed, unless the remaining uncommitted inputs cannot affect
+that instruction's outputs.
+For instance, a conditional-move instruction needn't wait for the source
+input to commit if it knows that the condition is definitely false.
 
 The overall effect of these hardware dependencies is that if a change to an
 output of instruction $I$ would lead to a change in the action or outputs of
 a later instruction $J$, then the CPU must commit $I$'s output before
 committing $J$'s action and outputs.
-Thus dependencies force instructions to commit in order, even on
-weakly ordered architectures.
-
+Thus dependencies force the affected instructions to commit in order,
+even on weakly ordered architectures.
 We will say that one instruction is \emph{ordered after} another to mean that
-the CPU forces it to commit after the other one commits.
-Hence instructions are ordered after the instructions they depend on.
-(Note that this implies nothing about when a load instruction retrieves
-its value from memory; it may do so long before it or a prior
-instruction commits.)
+it must commit after the other one commits.\footnote{
+	Note that this implies nothing about when a load instruction
+	retrieves its value from memory; it may do so long before it
+	commits.}
 
-Dependencies aren't the only mechanism that can lead to
-ordering in hardware executions.
-The simplest alternative is a load reading from a store in another
-thread, i.e., the rfe relation.
+Dependencies aren't the only ordering mechanism.
 As mentioned in Section~\ref{sec:Brief OOTA Overview}, a CPU does
-not make the value of a store instruction available for other CPUs to
-load until the store commits or some time later.
-And after this happens, it takes some time for the information about
-the store to travel from that CPU to others, owing to the inescapable
-facts that processors have nonzero size and information cannot travel
-faster than the speed of light.
-Since the load instruction cannot commit until its output (the value it
-reads) is fully determined, it must commit after the store it reads
+not make the value of a store instruction available to other CPUs
+until after the store commits.
+It then takes additional time for the stored value to travel to other
+CPUs, owing to finite speed of light and non-zero size of computing
+hardware.
+Since a load instruction cannot commit until its output (the value
+read) is fully determined, it must commit after the store it reads
 from.
-(To be fair, this should be considered more as a \emph{result} of
-ordering than as a \emph{cause} of ordering, in that
-if a load commits before a store on another thread then it
-cannot possibly read from that store.)
 
-A similarly straightforward mechanism for ordering is conditional or
-computed branches.
+Conditional or computed branches also provide ordering.
 An instruction executing after such a branch cannot commit
 until the CPU has committed to whether the branch will be taken and
-if taken, where it will branch to (that is, the output value it will
-send to the instruction-pointer register);
+if taken, where it will branch to;
 until then the CPU cannot know whether the later instruction should
 be executed at all.
 Therefore instructions following a conditional- or computed-branch
-instruction in a hardware execution must commit after the branch, and hence
-after the source for the branch's condition or destination input.
-(There could theoretically be an exception for a branch that
-conditionally jumps to the immediately following instruction.
-We can ignore this possibility by treating such branches as no-ops.)
+instruction must commit after the branch, and hence after the source
+for the branch's condition and/or destination
+input.\footnote{
+	One exception is a branch that conditionally jumps to the
+	next instruction.
+	We ignore this possibility by treating such branches as no-ops.}
 
 \subsection{The Fundamental Property of Semantic Dependencies}
 \label{sec:The Fundamental Property of Semantic Dependencies}
