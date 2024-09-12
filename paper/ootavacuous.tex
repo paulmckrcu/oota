@@ -83,24 +83,12 @@
 \label{sec:Introduction}
 
 We begin with a brief overview of the OOTA problem followed by an equally
-brief summary of prior work in this area.
+brief summary of prior OOTA work.
 
 \subsection{Brief OOTA Overview}
 \label{sec:Brief OOTA Overview}
 
-In broad terms,
-OOTA occurs theoretically when a group of threads load from each others' stores
-and each thread's store depends on the value returned by that thread's load.
-The collection of loads and stores forms an \emph{OOTA cycle}.
-In the most extreme cases a nonsensical value can pop up ``out of thin air'';
-however, as shown by
-Listing~\ref{lst:OOTA Cycle} below,
-OOTA cycles need not involve nonsensical values.
-
-\subsubsection{Simple OOTA Cycle}
-\label{sec:Simple OOTA Cycle}
-
-\begin{listing}[tbp]
+\begin{listing}[bp]
 % Constructed by hand.
 {
 \small
@@ -123,40 +111,43 @@ sometimes satisfied.
 \label{lst:Simple OOTA}
 \end{listing}
 
-Listing~\ref{lst:Simple OOTA} shows a simple example where an OOTA
-cycle might result in all of \co{x}, \co{y}, \co{r1}, and \co{r2}
-having final values of 42, despite the fact that there is nothing in
-the default-zero initial values or the executable code to support such
-an outcome~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
-Throughout this paper, variables whose names are ``\co{r}'' followed by
-a number denote registers, and other names denote shared variables.
-All accesses to shared variable are relaxed atomic accesses.
+In broad terms, OOTA occurs when a group of threads load from each others'
+stores and each thread's store depends on the value returned by that
+thread's load.
+The collection of loads and stores forms an \emph{OOTA cycle}.
+In the most extreme cases a nonsensical value can pop up ``out of thin air''
+as shown in
+Listing~\ref{lst:Simple OOTA}.
+Here, all of \co{x}, \co{y}, \co{r1}, and \co{r2} might have final
+values of 42, despite their being no instances of 42 in the default-zero
+initialization or in the executable
+code~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.\footnote{
+	Throughout this paper, variables whose names are ``\co{r}''
+	followed by a number denote registers, and other names denote
+	shared variables.
+	All accesses to shared variable are relaxed atomic accesses.}
 First, P0's line~1 does a relaxed atomic load from \co{x} into \co{r1},
 reading the value of P1's line-2 store rather than \co{x}'s initial
 value of zero and somehow obtaining 42.
 Second, P0's line~2 stores \co{r1}, and thus 42, to \co{y}.
 Third, P1's line~1 loads 42 from \co{y} to \co{r2}.
-Fourth and finally, P1's line~2 stores 42 to \co{x}, justifying the value
-loaded by P0's line~1.
+Finally, P1's line~2 stores 42 to \co{x}, justifying the value loaded
+by P0's line~1.
 
 Because nothing else in the C++ memory model rules out such OOTA cycles
 (as indicated by the ``sometimes satisfied'' in the figure), the C++
 standard explicitly prohibits them in 33.5.4p8
-(\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
+(\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950},
+which prevents misapplication of the as-if rule in oracular C++
+implementations:
 \begin{quote}
 	Implementations should ensure that no “out-of-thin-air” values
 	are computed that circularly depend on their own computation.
 \end{quote}
-The standard's prohibition of OOTA is of course important, for example, to
-prevent misapplication of the as-if rule in oracular C++ implementations,
-but those of us writing code in the real world must rely on actual C++
-implementations.
-And in these implementations, this prohibition is in fact enforced by TSO
-ordering in strongly ordered systems and by data-dependency ordering in
-weakly ordered systems.
-The need to prohibit simple OOTA is one reason why compiler-based value
-speculation optimizations require checks on such speculation, and further
-requires that these checks must be based on the values actually loaded.
+This paper uses \emph{full C++} to denote the standard including this
+prohibition of OOTA and \emph{loose C++} to denote a hypothetical standard
+that excludes this prohibition but is otherwise identical to full C++.
+Unqualified \emph{C++} means full C++.
 
 In Listing~\ref{lst:Simple OOTA}
 there is a \emph{semantic dependency} from line~1 to line~2 in both
@@ -171,16 +162,14 @@ Since real-world CPUs cannot store something
 until they have determined its value,\footnote{
 	Another way of saying this is that real-world CPUs do not
 	make their stores visible to other CPUs until those stores
-	are no longer speculative.}
+	are no longer speculative.
+	This same restriction applies to compiler-based speculation.}
 the stores on line~2 cannot take place until the P0's and P1's CPUs
 know what values are returned by the loads on line~1.
 Thus the hardware orders these stores after their corresponding loads,
 and this ordering prevents the OOTA result.
 
-\subsubsection{Simple Reordering}
-\label{sec:Simple Reordering}
-
-\begin{listing}[tbp]
+\begin{listing}[bp]
 % Constructed by hand.
 {
 \small
@@ -203,31 +192,12 @@ sometimes satisfied.
 \label{lst:Simple Reordering}
 \end{listing}
 
-It is important to distinguish true OOTA cycles from OOTA-like
-behavior caused by simple reordering, such as that shown in
+Simple reordering can cause non-OOTA, but OOTA-like, behavior, as
+exemplified by
 Listing~\ref{lst:Simple Reordering}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
-Both the C++ compiler and the CPU are within their rights to reorder P1's
-lines~1 and~2, which can result in all of \co{x}, \co{y}, \co{r1},
-and \co{r2} having the value 42 via the following steps.
-First, P1's line~2 stores 42 to \co{x}.
-Second, P0's line~1 loads 42 from \co{x} into \co{r1}.
-Third, P0's line~2 stores \co{r1}, and thus 42, to \co{y}.
-Fourth and finally, P1's line~1 loads 42 from \co{y} to \co{r2}.
-Current C++ implementations can and do exhibit this reordering behavior,
+Both the compiler and the CPU might reorder P1's lines~1 and~2, so that
+all of \co{x}, \co{y}, \co{r1}, and \co{r2} might have the value 42,
 as indicated by the ``sometimes satisfied'' in the figure.
-
-\subsubsection{Non-Trivial OOTA}
-\label{sec:Non-Trivial OOTA}
-
-This paper follows P2055R0~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}
-in using \emph{full C++} to denote the standard including the
-prohibition of OOTA mentioned above.
-Unlike that article, we use \emph{loose C++}
-(rather than \emph{strict C++}, which seems too similar to
-\emph{full C++} for comfort)
-to denote a hypothetical standard that excludes this prohibition but
-is otherwise identical to full C++.
-Unqualified \emph{C++} means full C++.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-ctrl.litmus @@
@@ -235,23 +205,15 @@ Unqualified \emph{C++} means full C++.
 \label{lst:OOTA Cycle}
 \end{listing}
 
-Listing~\ref{lst:OOTA Cycle}
-shows a code fragment that under loose C++ has an OOTA cycle, though
-the cycle is of course prohibited in full C++.
-This example differs from that of Section~\ref{sec:Simple OOTA Cycle}
-in that line~3 of both processes stores the value 42, but only if
-line~2 of a given process determines that the value loaded was 42,
-keeping in mind that variables are default-initialized to zero.
+On the other hand, OOTA cycles can arise even when value 42 is mentioned,
+as shown in
+Listing~\ref{lst:OOTA Cycle}.
+Line~3 of both processes stores the value 42 only when line~2 determines
+that the value loaded was 42.
+Default-zero initialization prevents this in both full C++ and (as we will
+see) real-world loose C++, but not an oracular loose C++ implementation.
 
-This OOTA cycle is constructed in the following manner.
-First, P0's and P1's line~1 load from \co{y} and \co{x}, respectively,
-both somehow returning the value 42.
-Second, P0's and P1's line~2 determine that the values loaded were both
-42, so each process advances to its line~3.
-Third, P0's and P1's line~3 stores the value 42 that was (somehow)
-clairvoyantly loaded by the other process's line~1.
-
-The next section looks at how prior work has refined these issues.
+The next section looks at prior work on these issues.
 
 \subsection{Prior Work}
 \label{sec:Prior Work}
@@ -1174,7 +1136,7 @@ Dependencies aren't the only mechanism that can lead to
 ordering in hardware executions.
 The simplest alternative is a load reading from a store in another
 thread, i.e., the rfe relation.
-As mentioned in Section~\ref{sec:Simple OOTA Cycle}, a CPU does
+As mentioned in Section~\ref{sec:Brief OOTA Overview}, a CPU does
 not make the value of a store instruction available for other CPUs to
 load until the store commits or some time later.
 And after this happens, it takes some time for the information about
