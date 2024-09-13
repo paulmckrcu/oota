@@ -81,7 +81,7 @@ END {
 	head = "";
 	for (i = 0; i <= procnum; i++) {
 		cols = cols "|l";
-		head = head "& " bs "multicolumn{1}{c}{P" i "} ";
+		head = head "& " bs "multicolumn{1}{c}{T" i "} ";
 	}
 	print bs "begin{tabular}{" cols "}"
 	print head bs bs;

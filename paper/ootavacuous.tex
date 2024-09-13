@@ -94,7 +94,7 @@ brief summary of prior OOTA work.
 {
 \small
 \begin{tabular}{r|l|l}
-& \multicolumn{1}{c}{P0} & \multicolumn{1}{c}{P1} \\
+& \multicolumn{1}{c}{T0} & \multicolumn{1}{c}{T1} \\
 \hline
 1. &
 \texttt{~~int r1 = x} &
@@ -128,13 +128,13 @@ code~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.\footnote{
 	(``registers''),
 	and other names denote shared variables.
 	All shared-variable accesses are relaxed atomic.}
-First, process P0's line~1 does a load from \co{x} into \co{r1},
-reading the value of P1's line-2 store rather than \co{x}'s initial
+First, thread T0's line~1 does a load from \co{x} into \co{r1},
+reading the value of T1's line-2 store rather than \co{x}'s initial
 value of zero and somehow obtaining 42.
-Second, P0's line~2 stores \co{r1}, and thus 42, to \co{y}.
-Third, P1's line~1 loads 42 from \co{y} to \co{r2}.
-Finally, P1's line~2 stores 42 to \co{x}, justifying the value loaded
-by P0's line~1.
+Second, T0's line~2 stores \co{r1}, and thus 42, to \co{y}.
+Third, T1's line~1 loads 42 from \co{y} to \co{r2}.
+Finally, T1's line~2 stores 42 to \co{x}, justifying the value loaded
+by T0's line~1.
 
 Because nothing else in the C++ memory model rules out such OOTA cycles
 (as indicated by the ``sometimes satisfied'' in the figure), the C++
@@ -153,7 +153,7 @@ Unqualified \emph{C++} means full C++.
 
 In Listing~\ref{lst:Simple OOTA}
 there is a \emph{semantic dependency} from line~1 to line~2 in both
-P0 and P1.
+T0 and T1.
 (Roughly speaking, there is a semantic dependency from a given load
 to a given store when \emph{all other things being equal, a change in the
 value loaded can change the value stored or prevent the store from
@@ -166,7 +166,7 @@ until they have determined its value,\footnote{
 	make their stores visible to other CPUs until those stores
 	are no longer speculative.
 	A similar restriction applies to compiler-based speculation.}
-the stores on line~2 cannot take place until the P0's and P1's CPUs
+the stores on line~2 cannot take place until the T0's and T1's CPUs
 know what values are returned by the loads on line~1.
 Thus the hardware orders these stores after their corresponding loads,
 and this ordering prevents the OOTA result.
@@ -176,7 +176,7 @@ and this ordering prevents the OOTA result.
 {
 \small
 \begin{tabular}{r|l|l}
-& \multicolumn{1}{c}{P0} & \multicolumn{1}{c}{P1} \\
+& \multicolumn{1}{c}{T0} & \multicolumn{1}{c}{T1} \\
 \hline
 1. &
 \texttt{~~int r1 = x} &
@@ -197,7 +197,7 @@ sometimes satisfied.
 Simple reordering can cause non-OOTA, but OOTA-like, behavior, as
 exemplified by
 Listing~\ref{lst:Simple Reordering}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
-Either the compiler or the CPU might reorder P1's lines~1 and~2, so that
+Either the compiler or the CPU might reorder T1's lines~1 and~2, so that
 all of \co{x}, \co{y}, \co{r1}, and \co{r2} might end up with the value 42,
 as indicated by the ``sometimes satisfied'' in the figure.
 
@@ -305,7 +305,7 @@ as exemplified by the following code: \\
 {
 \small
 \begin{tabular}{r|l}
-% & \multicolumn{1}{c}{P0} \\
+% & \multicolumn{1}{c}{T0} \\
 % \hline
 1. &
 \texttt{~~int r2 = x} \\
@@ -318,7 +318,7 @@ as exemplified by the following code: \\
 \end{tabular}
 } \\
 % \end{quote}
-This is an elaboration of P1 from
+This is an elaboration of T1 from
 Listing~\ref{lst:Simple OOTA}
 that adds \co{z} along with lines~3 and~4.
 The problem is that a C++ implementation may
@@ -826,7 +826,7 @@ abstract execution.
 
 Recall the Simple OOTA example in Listing~\ref{lst:Simple OOTA} on
 page~\pageref{lst:Simple OOTA},
-in which P0 loads the value of \co{x} and stores it in \co{y} while P1
+in which T0 loads the value of \co{x} and stores it in \co{y} while T1
 does the reverse.
 A sufficiently perverse globally optimizing loose C++ compiler might
 transform that program to the following before translating it into
@@ -835,7 +835,7 @@ machine code: \\
 {
 \small
 \begin{tabular}{r|l|l}
-% & \multicolumn{1}{c}{P0} & \multicolumn{1}{c}{P1} \\
+% & \multicolumn{1}{c}{T0} & \multicolumn{1}{c}{T1} \\
 % \hline
 1. &
 \texttt{~~int r1 = 42} &
@@ -1078,9 +1078,9 @@ of truly new information in a thread.
 A CPU may start executing an instruction speculatively, but at some
 point it must either abandon that instruction or \emph{commit} it with
 a set of specific outputs based on well-defined inputs.
-A CPU is clearly not permitted to commit an instruction its inputs have
-been committed, unless the remaining uncommitted inputs cannot affect
-that instruction's outputs.
+A CPU is clearly not permitted to commit an instruction until its inputs
+have been committed, unless the remaining uncommitted inputs cannot
+affect that instruction's outputs.
 For instance, a conditional-move instruction needn't wait for the source
 input to commit if it knows that the condition is definitely false.
 
@@ -1416,7 +1416,7 @@ machine code with simple assignments ``\co{r1 = 42}'' and
 ``\co{r2 = 42}''.
 This would be a valid transformation, and the resulting behavior would
 not count as OOTA according to our definition because the
-dependencies in P0 and P1 would not be semantic.
+dependencies in T0 and T1 would not be semantic.
 
 To see why not, recall that a semantic dependency must have a witness,
 another execution in which the store acts differently.
