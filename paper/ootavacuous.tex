@@ -219,7 +219,8 @@ Section~\ref{sec:Hardware Dependencies, Instruction Ordering, and the Fundamenta
 \subsection{Prior Work}
 \label{sec:Prior Work}
 
-All OOTA workers owe a debt to the foundational work in the infamous
+All OOTA workers owe a debt of gratitude to the foundational work led
+by William Pugh leading to the infamous Java-language
 ``Causality Test Cases''.\footnote{
 	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
 % %%% Eventually cite P3064.
@@ -274,9 +275,8 @@ real-world C++ implementations from exhibiting OOTA behavior.
 
 \emph{Tagline: ``Semantic dependencies are more complicated than you think.''}
 
-This section formulates OOTA cycles as cycles in sdep $\cup$ rfe instead
-of the traditional sdep $\cup$ rf, then shows that sdep is not a strict
-function of the source code.
+This section analyzes the main components of OOTA cycles, namely
+semantic dependencies and reads-from links.
 
 \subsection{OOTA: rf versus rfe}
 \label{sec:OOTA: rf versus rfe}
@@ -293,9 +293,9 @@ The idea has been formalized by defining an OOTA cycle as a cycle
 in sdep $\cup$ rf~\cite{PaulEMcKenney2014OOTA},
 % This citation credits the formulation to Ali Sezgin, third author
 % of N4323 ("Out-of-Thin-Air Execution is Vacuous").
-where sdep is the set of semantic dependencies within
-each thread and rf is the set of store-to-load ``reads-from'' links,
-whether within a thread (rfi) or between threads (rfe).
+where sdep is the set of semantic dependencies within each thread and
+rf is the set of store-to-load ``reads-from'' links, whether internally
+within a thread (rfi) or externally between threads (rfe).
 % @@@ Consider adding citation defining rf, rfi, and rfe.
 
 This is a fine definition and is consistent with the words in the C++
