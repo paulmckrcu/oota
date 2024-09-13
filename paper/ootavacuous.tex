@@ -220,7 +220,7 @@ Section~\ref{sec:Hardware Dependencies, Instruction Ordering, and the Fundamenta
 \label{sec:Prior Work}
 
 All OOTA workers owe a debt of gratitude to the foundational work led
-by William Pugh leading to the infamous Java-language
+by William Pugh, represented by the infamous Java-language
 ``Causality Test Cases''.\footnote{
 	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
 % %%% Eventually cite P3064.
@@ -368,25 +368,7 @@ Later, we will see examples of this destruction.
 \subsection{Properties of Semantic Dependencies}
 \label{sec:Properties of Semantic Dependencies}
 
-This section uncovers some semantic-dependency complexities.
-Section~\ref{sec:Semantic Dependencies and Source Code}
-shows that semantic dependencies are functions of executions,
-rather than being strict functions of the source code.
-Section~\ref{sec:Semantic Dependencies Can Be Many-To-One}
-shows that semantic dependencies do not necessarily extend
-from a single load to a single store, but can instead involve
-multiple loads.
-Section~\ref{sec:Semantic Dependencies Affected by Cross-Thread Optimizations}
-shows that semantic dependencies can be affected by cross-thread
-optimizations.
-Sections~\ref{sec:Semantic Dependencies Affected by if Statements}
-and~\ref{sec:Semantic Dependencies Not Affected by if Statements}
-show that \co{if} statements can have surprising effects on semantic
-dependencies, up to and including eliminating them completely.
-Finally,
-Section~\ref{sec:Semantic Dependencies and Matching Up Stores}
-demonstrates some challenges in determining which of a group of
-stores is involved in a given semantic dependency.
+This section discusses semantic-dependency complexities.
 
 \subsubsection{Semantic Dependencies and Source Code}
 \label{sec:Semantic Dependencies and Source Code}
