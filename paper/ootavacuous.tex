@@ -212,8 +212,9 @@ unmotivated values, as shown in
 Listing~\ref{lst:OOTA Cycle}.
 Line~3 of both processes stores the value 42 only when line~2 determines
 that the value loaded was 42.
-This, combined with the default-zero initialization, explains why this
-OOTA result has not been observed on real implementations.
+As with Listing~\ref{lst:Simple OOTA}, hardware ordering prevents the
+OOTA result, as discussed further in
+Section~\ref{sec:Hardware Dependencies, Instruction Ordering, and the Fundamental Property}.
 
 \subsection{Prior Work}
 \label{sec:Prior Work}
