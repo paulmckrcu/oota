@@ -70,7 +70,7 @@
 	atomics.
 	We accommodate nonvolatile atomics by defining ``quasi-volatile''
 	behavior that enables implementations doing per-thread analysis
-	and optimization to not only avoid OOTA, but also to avoid 
+	and optimization not only to avoid OOTA, but also to avoid 
 	incorrectly evaluating arithmetic expressions involving atomic
 	accesses.
 
@@ -124,7 +124,7 @@ values of 42, despite there being no instances of 42 in the default-zero
 initial values or in the executable
 code~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.\footnote{
 	Throughout this paper, variables whose names are ``\co{r}''
-	followed by a number denote private per-process variables
+	followed by a number denote private per-thread variables
 	(``registers''),
 	and other names denote shared variables.
 	All shared-variable accesses are relaxed atomic.}
@@ -210,7 +210,7 @@ as indicated by the ``sometimes satisfied'' in the figure.
 On the other hand, OOTA cycles need not involve nonsensical or
 unmotivated values, as shown in
 Listing~\ref{lst:OOTA Cycle}.
-Line~3 of both processes stores the value 42 only when line~2 determines
+Line~3 of both threads stores the value 42 only when line~2 determines
 that the value loaded was 42.
 As with Listing~\ref{lst:Simple OOTA}, hardware ordering prevents the
 OOTA result, as discussed further in
