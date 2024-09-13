@@ -68,11 +68,11 @@
 	occurring in undefined-behavior-free C++ programs running on
 	such implementations, provided the cycles involve only volatile
 	atomics.
-	For implementations doing only per-thread analysis and
-	optimization, we accommodate nonvolatile atomics by defining
-	``quasi-volatile'' behavior, adherence to which avoids situations
-	in which arithmetic-expression evaluation involving atomic
-	accesses could otherwise violate the standard.
+	We accommodate nonvolatile atomics by defining ``quasi-volatile''
+	behavior that enables implementations doing per-thread analysis
+	and optimization to not only avoid OOTA, but also to avoid 
+	incorrectly evaluating arithmetic expressions involving atomic
+	accesses.
 
 	It follows that enforcing OOTA avoidance requires no special
 	action from implementations and no changes to user code or
