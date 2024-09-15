@@ -166,7 +166,7 @@ until they have determined its value,\footnote{
 	make their stores visible to other CPUs until those stores
 	are no longer speculative.
 	A similar restriction applies to compiler-based speculation.}
-the stores on line~2 cannot take place until the T0's and T1's CPUs
+the stores on line~2 cannot take place until T0's and T1's CPUs
 know what values are returned by the loads on line~1.
 Thus the hardware orders these stores after their corresponding loads,
 and this ordering prevents the OOTA result.
@@ -202,7 +202,33 @@ all of \co{x}, \co{y}, \co{r1}, and \co{r2} might end up with the value 42,
 as indicated by the ``sometimes satisfied'' in the figure.
 
 \begin{listing}[tbp]
-@@ DisplayRunLitmus litmus/oota-ctrl.litmus @@
+% Constructed by litmus2table.sh and modified by hand
+{
+\small
+\begin{tabular}{r|l|l}
+& \multicolumn{1}{c}{T0} & \multicolumn{1}{c}{T1} \\
+\hline
+1. &
+\texttt{~int r0 = y} &
+	\texttt{~int r1 = x} \\
+2. &
+\texttt{~if (r0 == 42)} &
+	\texttt{~if (r1 == 42)} \\
+3. &
+\texttt{\qquad x = 42} &
+	\texttt{\qquad y = 42} \\
+4. &
+\texttt{~else} &
+	\texttt{~else} \\
+5. &
+\texttt{\qquad x = r0} &
+	\texttt{\qquad y = r1} \\
+\end{tabular}
+
+\vspace{0.1in}
+Condition (0:r0=42 $\wedge$ 1:r1=42)
+sometimes satisfied.
+}
 \caption{OOTA Cycle}
 \label{lst:OOTA Cycle}
 \end{listing}
@@ -242,8 +268,8 @@ are fixed-point computations.
 Some workers recommend avoiding OOTA by forcing prior relaxed
 loads to be ordered before subsequent relaxed
 stores~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352},
-but this can require real instructions be
-executed~\cite[Section 7.1]{Maranget2012TutorialARMPower},
+but this can require executing real
+instructions~\cite[Section 7.1]{Maranget2012TutorialARMPower},
 consuming real time and real electrical power to solve a strictly
 theoretical problem.
 % This might have been acceptable in the 1960s of some of the authors'
@@ -327,10 +353,10 @@ note that line~3 could well execute immediately after line~2, giving
 other threads no chance to modify \co{y} in between.
 Such an implementation might therefore behave as if line~3 had been
 removed from the source code and line~4's \co{r3} had been replaced by
-\co{r2}.
-This means that line~4 stores the same value to \co{z} that was stored
+\co{r2},
+causing line~4 always to store the same value to \co{z} as was stored
 to \co{y} by line~2.
-And given that the load from \co{y} no longer exists, it cannot possibly
+And since the load from \co{y} has been removed, it cannot possibly
 act as a temporal constraint.
 
 To avoid this issue, we will substitute rfe
@@ -363,12 +389,12 @@ code produced by a compiler.
 There would then be no constraint forcing the implementation to execute
 the thread's store later in global time than the load it supposedly depends on,
 and thus no impediment to the occurrence of an OOTA cycle.
-Later, we will see examples of this destruction.
+We will see examples of this destruction later on.
 
 \subsection{Properties of Semantic Dependencies}
 \label{sec:Properties of Semantic Dependencies}
 
-This section discusses semantic-dependency complexities.
+Here we consider some of the complexities of semantic dependency.
 
 \subsubsection{Semantic Dependencies and Source Code}
 \label{sec:Semantic Dependencies and Source Code}
@@ -422,7 +448,7 @@ we will say that an execution is an instance of OOTA if in that execution:
 	such that each $R_{i,j}$ reads from one of the $W_k$
 	stores in a different thread.
 \end{quote}
-This makes OOTA more complicated than a simple cycle but
+This can make OOTA more complicated than a simple cycle but
 we will continue to refer to ``OOTA cycles'' out of habit.
 Note that this new definition includes and generalizes the earlier
 ``cycle in sdep $\cup$ rfe'' definition.
@@ -538,9 +564,9 @@ What exactly is an execution?
 \section{What is an Execution?}
 \label{sec:What is an Execution?}
 
-\emph{Tagline: ``Need to look at machine code.''}
+\emph{Tagline: ``Need to look at both source code and machine code.''}
 
-This section looks more carefully at executions from the viewpoint of
+This section looks more carefully at executions from the viewpoints of
 the abstract machine and the computer hardware, and then reconciles
 these two viewpoints.
 
@@ -570,9 +596,9 @@ operations of a source program in great, but not complete, detail:
 In addition to these points, the standard does not specify which store
 an atomic load must read from, beyond requiring that the overall
 pattern of loads and stores be consistent with the C++ memory model.
-We assume that programs will not indulge in any computations that
+(We assume that programs will not indulge in any computations that
 could vary spontaneously from one execution to another,
-such as basing a dependency on the time of day or a process ID.
+such as basing a dependency on the time of day or a process ID.)
 In short, the standard grants C++ implementations considerable freedom,
 as detailed in
 Section~\ref{sec:C++ Compilers}.
@@ -654,8 +680,8 @@ This means:
 (1)~The program's output must be the same as that of the abstract execution;
 (2)~Volatile accesses ``are evaluated strictly according to the
 rules of the abstract machine'' (4.1.2p6.1 \co{[intro.abstract]}); and
-(3)~(There is a condition on the timing and interleaving of input and output,
-which does not matter for our purposes.)
+(3)~(A condition on the timing and interleaving of input and output,
+which does not matter for our purposes).
 We will say that the abstract execution is \emph{realized by} the
 hardware execution.
 
@@ -728,9 +754,9 @@ component because it is what primarily determines the translation from
 a C++ source program to directly executable machine code.
 We will therefore use ``compiler'' and ``implementation'' interchangeably.
 
-This section discusses influences and constraints on C++ compilers,
-then uses this information to define necessary properties of
-\emph{quasi-volatile} atomic operations.
+This section discusses influences and constraints on C++ compilers
+and then uses this information to define necessary properties of
+volatile and \emph{quasi-volatile} atomic accesses.
 
 \subsection{Architectures Influence the Behavior of Compilers}
 \label{sec:Architectures Influence the Behavior of Compilers}
@@ -813,9 +839,9 @@ in which T0 loads the value of \co{x} and stores it in \co{y} while T1
 does the reverse.
 A sufficiently perverse globally optimizing loose C++ compiler might
 transform that program to the following before translating it into
-machine code: \\
+machine code:
 % Constructed by hand.
-{
+\begin{quote}
 \small
 \begin{tabular}{r|l|l}
 % & \multicolumn{1}{c}{T0} & \multicolumn{1}{c}{T1} \\
@@ -827,8 +853,8 @@ machine code: \\
 \texttt{~~y = r1} &
 	\texttt{~~z = r2} \\
 \end{tabular}
-} \\
-The loads previously on lines~6 and~12 have been replaced by constants.
+\end{quote}
+The loads previously on line~1 have been replaced by constants.
 Such a transformation complies with the loose C++ standard,
 even though the resulting executable file would produce an unintuitive
 OOTA outcome every time it runs!
@@ -862,8 +888,10 @@ the same source code, regardless of the rest of the code in the programs
 containing those threads.
 Later on we will return to globally optimizing compilers.
 
-\subsection{Inventing Atomic Loads Can Destroy Semantic Dependencies}
-\label{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}
+\subsection{Inventing Atomic Loads Can Cause Errors and
+Destroy Semantic Dependencies}
+\label{sec:Inventing Atomic Loads Can Cause Errors and
+Destroy Semantic Dependencies}
 
 Invented atomic loads are problematic:
 \begin{quote}
@@ -872,7 +900,7 @@ int r0 = x;
 int r1 = r0 * r0 + 2 * r0 + 1;
 \end{verbatim}
 \end{quote}
-For sufficiently small values of \co{x}, the abstract machine is
+For values of \co{x} small enough not to cause overflow, the abstract machine is
 guaranteed to produce a perfect square in \co{r1}.
 
 But if the compiler is permitted to invent atomic loads then the compiler
@@ -888,7 +916,8 @@ If the load into \co{r0} happened when the value of \co{x}
 was zero and the load into \co{invented} happened when the value of
 \co{x} was 10, then the value of \co{r1} will be 21, which is not
 a perfect square.
-This fails to provide the abstract machine's guarantees.
+This fails to satisfy the abstract machine's guarantee
+and therefore is an invalid transformation.
 
 Inventing atomic loads can also result in OOTA-like behavior.
 For example, consider this code, in which the final values of \co{r1}
@@ -926,7 +955,7 @@ so if \co{r1a} and \co{r1b} differ then one of them must be equal to \co{r2}.
 In executions where this happens---because another thread writes to \co{x}
 between the two loads---the implementation can choose at runtime to use
 for \co{r1} whichever value agrees with \co{r2}, as shown on line~6.
-Then the value stored to \co{z} on line~7 will always be one,
+Then the value stored to \co{z} on line~7 will simply be one,
 with no dependence on the value loaded from \co{y}.
 
 Therefore we should rule out transformations like these by insisting
@@ -1003,9 +1032,9 @@ Lastly, the requirement for order preservation is weakened; it applies
 only to pairs of accesses to the same quasi-volatile object.
 Accesses to different objects may be reordered relative to each other.
 
-Applying these requirements to specific examples results in prohibiting
+These requirements prohibit
 invention or duplication of atomic loads and stores.
-However, in the absence of ordering constraints, it permits omitting
+However, they do permit omitting
 redundant non-volatile atomic stores and fusing of non-volatile atomic
 accesses to adjacent objects.
 
@@ -1016,9 +1045,9 @@ Fundamental Property}
 
 \emph{Tagline: ``How to think about semantic dependencies.'' }
 
-This section examines dependencies at the machine-instruction level,
-then combines this with mapping from the previous section to define the
-fundamental property of semantic dependencies.
+This section examines dependencies at the level of machine instructions
+and then uses the mapping from the previous section to define the
+Fundamental Property of semantic dependencies.
 
 \subsection{Dependencies at the Hardware Level}
 \label{sec:Dependencies at the Hardware Level}
@@ -1050,9 +1079,10 @@ to store and the address at which to store it; there are no outputs.
 Using this scheme, we say that an instruction $J$ is dependent on
 another instruction $I$ when any of $I$'s outputs flow into $J$'s inputs,
 perhaps via intermediate instructions.
-Any hardware dependency ultimately emanates from register initial values,
+Tracing back, you can see that
+any hardware dependency ultimately emanates from initial register values,
 load instructions, immediate values, or I/O accesses.
-We set aside I/O, so that load instructions are the only sources
+We are setting I/O aside, which leaves load instructions as the only sources
 of truly new information in a thread.
 
 \subsection{Instruction Ordering}
@@ -1065,7 +1095,7 @@ A CPU is clearly not permitted to commit an instruction until its inputs
 have been committed, unless the remaining uncommitted inputs cannot
 affect that instruction's outputs.
 For instance, a conditional-move instruction needn't wait for the source
-input to commit if it knows that the condition is definitely false.
+input to commit once it knows that the condition is definitely false.
 
 The overall effect of these hardware dependencies is that if a change to an
 output of instruction $I$ would lead to a change in the action or outputs of
@@ -1084,8 +1114,8 @@ As mentioned in Section~\ref{sec:Brief OOTA Overview}, a CPU does
 not make the value of a store instruction available to other CPUs
 until after the store commits.
 It then takes additional time for the stored value to travel to other
-CPUs, owing to finite speed of light and non-zero size of computing
-hardware.
+CPUs, owing to the finite speed of light and the non-zero size of
+processor hardware.
 Since a load instruction cannot commit until its output (the value
 read) is fully determined, it must commit after the store it reads
 from.
@@ -1175,7 +1205,7 @@ Section~\ref{sec:Volatile and Quasi Volatile Accesses}.
 The key insight is that this allows us to consider semantic
 dependencies at the level of the machine code, where they are much
 more tractable.
-This insight allows us to demonstrate that OOTA cycles cannot form
+This allows us to demonstrate that OOTA cycles cannot form
 in the C++ implementations addressed by this paper.
 
 \subsection{For Compilers Using Per-Thread Analysis}
@@ -1226,8 +1256,8 @@ of ``all else being equal'').
 It follows that the two abstract executions of $T$ will be identical
 up to the first of the $R_i$ loads.
 
-Let $W'$ and $\{R'_i\}$ be the accesses in $H$ that $W$ and the
-non-omitted $\{R_i\}$ loads map to.
+Let $W'$ and $R'_i$ be the accesses in $H$ that $W$ and the
+non-omitted $R_i$ loads map to.
 We then require that the hardware executions of $T$ in $H$ and $G$ be
 identical for an initial period lasting up to the first of the $R'_i$.
 Following this initial period there will be a common period, during
@@ -1300,14 +1330,14 @@ We must show that some $R_i$ is not omitted and $R'_i$ is ordered
 before $W'$ in $H$.
 The proof splits into three cases.
 
-First case: $W'$ lies in the initial period of $H$.
+First case: $W'$ lies in the initial period of $T$ in $H$.
 During the initial period of the hardware executions, $H$ and $G$
 behave identically and therefore $W'$ performs the same write in
 both.
 This contradicts the fact that $B$ and $G$ witness the semantic
 dependency.
 
-Second case: $W'$ lies in the common period of $H$.
+Second case: $W'$ lies in the common period of $T$ in $H$.
 Since the action of $W'$ in $H$ is different from its action in $G$,
 at least one of its inputs must differ between the two hardware
 executions.
@@ -1321,7 +1351,7 @@ $R'_i$ or be ordered after one of them.
 Therefore $W'$ is ordered after one of the $R'_i$ in $H$,
 which certainly means that $R_i$ is not omitted.
 
-Third case: $W'$ lies in the divergent part of $H$.
+Third case: $W'$ lies in the divergent part of $T$ in $H$.
 This happens when $W'$ comes after the conditional or computed branch
 which marks the end of the common period by going different ways in
 $H$ and $G$.
@@ -1460,7 +1490,8 @@ may be merged with an earlier load in one execution and with a
 later load in another.
 This is demonstrated in the following, which is a variant of
 the example in
-Section~\ref{sec:Inventing Atomic Loads Can Destroy Semantic Dependencies}:
+Section~\ref{sec:Inventing Atomic Loads Can Cause Errors and
+Destroy Semantic Dependencies}:
 \begin{quote}
 \begin{verbatim}
 int r1 = (x != 0);
