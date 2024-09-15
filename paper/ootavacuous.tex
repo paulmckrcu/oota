@@ -202,33 +202,7 @@ all of \co{x}, \co{y}, \co{r1}, and \co{r2} might end up with the value 42,
 as indicated by the ``sometimes satisfied'' in the figure.
 
 \begin{listing}[tbp]
-% Constructed by litmus2table.sh and modified by hand
-{
-\small
-\begin{tabular}{r|l|l}
-& \multicolumn{1}{c}{T0} & \multicolumn{1}{c}{T1} \\
-\hline
-1. &
-\texttt{~int r0 = y} &
-	\texttt{~int r1 = x} \\
-2. &
-\texttt{~if (r0 == 42)} &
-	\texttt{~if (r1 == 42)} \\
-3. &
-\texttt{\qquad x = 42} &
-	\texttt{\qquad y = 42} \\
-4. &
-\texttt{~else} &
-	\texttt{~else} \\
-5. &
-\texttt{\qquad x = r0} &
-	\texttt{\qquad y = r1} \\
-\end{tabular}
-
-\vspace{0.1in}
-Condition (0:r0=42 $\wedge$ 1:r1=42)
-sometimes satisfied.
-}
+@@ DisplayRunLitmus litmus/oota-ctrl.litmus @@
 \caption{OOTA Cycle}
 \label{lst:OOTA Cycle}
 \end{listing}

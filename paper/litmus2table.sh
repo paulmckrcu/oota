@@ -6,7 +6,7 @@
 
 sed -e 's/&/\\&/' | sed -e 's/	}/	\\}/' | sed -e 's/{/\\{/' |
 sed -e 's,\\/,$\\vee$,g' | sed -e 's,/\\,$\\wedge$,g' |
-sed -e 's/	/\~/g' |
+sed -e 's/	//' | sed -e 's/	/\\qquad /g' |
 awk -v amp='&' -v bs='\\' -v dq='"' '
 BEGIN {
 	ininit = 0;
