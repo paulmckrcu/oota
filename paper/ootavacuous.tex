@@ -495,25 +495,25 @@ store.
 This opens up the door to greater complexity:
 \begin{quote}
 \begin{verbatim}
-if (x > 0) {
-    L1: y = 42;
-} else {
-    y = 53;
-    y = 42;
-}
+ 1 if (x > 0) {
+ 2     y = 42;
+ 3 } else {
+ 4     y = 53;
+ 5     y = 42;
+ 6 }
 \end{verbatim}
 \end{quote}
-Consider an execution in which \co{x} is greater than zero, so the
-statement labeled \co{L1} runs.
+Consider an execution in which \co{x} is greater than zero, so line~2
+runs.
 Is it semantically dependent on \co{x}?
 The answer isn't immediately clear.
 If the other arm of the \co{if} is taken then a store of the same value 42 to
 \co{y} occurs, but 53 is written before it.
-Which of these two stores should be compared with the store in \co{L1}?
+Which of these two stores should be compared with the store on line~2?
 
 One way to cut the Gordian knot is to match up the stores by the order
 they occur:
-Since \co{L1} is the first store to \co{y} in its arm of the \co{if}
+Since line~2 is the first store to \co{y} in its arm of the \co{if}
 statement, it should be matched up with the first store to \co{y} in
 the other arm.
 Those two stores write different values so there is a semantic
@@ -526,7 +526,7 @@ to \co{y} to execute in such quick succession that no other thread
 manages to read the value 53 before it gets overwritten with 42.
 If the compiler does this then the first store to \co{y} in that
 arm of the \co{if} statement \emph{would} agree with the store in
-\co{L1}, and so there would not be a semantic dependency.
+line~2, and so there would not be a semantic dependency.
 Once again, the decision is up to the implementation.
 
 We have seen several examples showing that semantic dependencies may vary
