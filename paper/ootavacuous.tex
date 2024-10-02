@@ -274,8 +274,6 @@ real-world C++ implementations from exhibiting OOTA behavior.
 \section{OOTA and Semantic Dependencies (sdep)}
 \label{sec:OOTA and Semantic Dependencies (sdep)}
 
-\emph{Tagline: ``Semantic dependencies are more complicated than you think.''}
-
 This section analyzes the main components of OOTA cycles, namely
 semantic dependencies and reads-from links.
 
@@ -310,11 +308,11 @@ as exemplified by the following code: \\
 % & \multicolumn{1}{c}{T0} \\
 % \hline
 1. &
-\texttt{~~int r2 = x} \\
+\texttt{~~int r2 = y} \\
 2. &
-\texttt{~~y = r2} \\
+\texttt{~~x = r2} \\
 3. &
-\texttt{~~int r3 = y} \\
+\texttt{~~int r3 = x} \\
 4. &
 \texttt{~~z = r3} \\
 \end{tabular}
@@ -325,13 +323,13 @@ Listing~\ref{lst:Simple OOTA}
 that adds \co{z} along with lines~3 and~4.
 The problem is that a C++ implementation may
 note that line~3 could well execute immediately after line~2, giving
-other threads no chance to modify \co{y} in between.
+other threads no chance to modify \co{x} in between.
 Such an implementation might therefore behave as if line~3 had been
 removed from the source code and line~4's \co{r3} had been replaced by
 \co{r2},
 causing line~4 always to store the same value to \co{z} as was stored
-to \co{y} by line~2.
-And since the load from \co{y} has been removed, it cannot possibly
+to \co{x} by line~2.
+And since the load from \co{x} has been removed, it cannot possibly
 act as a temporal constraint.
 
 To avoid this issue, we will substitute rfe
