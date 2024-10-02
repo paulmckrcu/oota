@@ -1332,11 +1332,9 @@ QED.
 
 A corollary of this result is that if an implementation's compiler
 either
-\begin{itemize}
-\item	uses per-thread analysis and treats atomic objects as
-	quasi volatile, or
-\item	uses global analysis and treats atomic objects as volatile,
-\end{itemize}
+(1)~uses per-thread analysis and treats atomic objects as quasi
+volatile, or
+(2)~uses global analysis and treats atomic objects as volatile,
 then programs produced by that implementation will never exhibit OOTA.
 Thus the implementation will automatically comply with full C++, even
 though it may be been designed only to comply with loose C++.
