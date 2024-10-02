@@ -139,13 +139,14 @@ by T0's line~1.
 Because nothing else in the C++ memory model rules out such OOTA cycles
 (as indicated by the ``sometimes satisfied'' in the figure), the C++
 standard explicitly prohibits them in 33.5.4p8
-(\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}
-(which prevents misapplication of the as-if rule in oracular C++
-implementations):
+(\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
 \begin{quote}
 	Implementations should ensure that no “out-of-thin-air” values
 	are computed that circularly depend on their own computation.
 \end{quote}
+This prohibition prevents misapplication of the as-if rule in oracular
+C++ implementations.
+
 This paper uses \emph{full C++} to denote the standard including this
 prohibition of OOTA and \emph{loose C++} to denote a hypothetical standard
 that excludes this prohibition but is otherwise identical to full C++.
