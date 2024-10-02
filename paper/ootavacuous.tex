@@ -538,8 +538,6 @@ What exactly is an execution?
 \section{What is an Execution?}
 \label{sec:What is an Execution?}
 
-\emph{Tagline: ``Need to look at both source code and machine code.''}
-
 This section looks more carefully at executions from the viewpoints of
 the abstract machine and the computer hardware, and then reconciles
 these two viewpoints.
@@ -615,9 +613,9 @@ C++ abstract machine.
 The hardware's behavior is typically specified with great precision by
 the designer or manufacturer, and there are formal, executable memory models
 describing exactly what patterns of loads and stores can occur.
-Thus, leaving aside questions of asynchronous interrupts and system
+Thus, leaving aside asynchronous interrupts and system
 calls, the behavior of a CPU executing a particular thread within a
-program is entirely determined by the values obtained by the various
+program is entirely determined by the values obtained by its
 memory-load instructions.\footnote{
 	We regard read-modify-write instructions as consisting of both a
 	memory load and a memory store.}
