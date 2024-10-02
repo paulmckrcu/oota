@@ -1514,24 +1514,10 @@ variable are present.
 % Can we instead say that transforming the code might require that the
 % witness also be transformed?
 
-\section{Conclusions and Future Directions}
-\label{sec:Conclusions and Future Directions}
+\subsection{Other Potential Refinements}
+\label{sec:Other Potential Refinements}
 
-This paper focused solely on compilers, primarily those that do only
-per-thread analysis and optimization.
-It introduced the notion of quasi-volatile object accesses and gave
-a definition for semantic dependency that is relative to a particular
-C++ implementation.
-It formulated a Fundamental Property of semantic dependency and proved
-that implementations subject to some very mild restrictions on how
-they treat atomic object accesses do have this property.
-Finally, it demonstrated that satisfying the Fundamental Property
-guarantees an implementation cannot give rise to OOTA executions.
-
-The conclusion to be drawn from this work is that in this context,
-avoiding OOTA cycles requires no changes to the standard,
-to current implementions, or to user practices for portable code.
-Further explorations could:
+Additional future work could:
 \begin{itemize}
 \item	Extend these results to some classes of interpreters and JITs
 	on one hand, and to link-time optimizations (LTO) on the other.
@@ -1547,6 +1533,24 @@ Further explorations could:
 \item	Delineate more precisely the limits of permissible behavior
 	for quasi-volatile object accesses.
 \end{itemize}
+
+\section{Summary and Conclusions}
+\label{sec:Summary and Conclusions}
+
+This paper focused solely on compilers, primarily those that do only
+per-thread analysis and optimization.
+It introduced the notion of quasi-volatile object accesses and gave
+a definition for semantic dependency that is relative to a particular
+C++ implementation.
+It formulated a Fundamental Property of semantic dependency and proved
+that implementations subject to some very mild restrictions on how
+they treat atomic object accesses do have this property.
+Finally, it demonstrated that satisfying the Fundamental Property
+guarantees an implementation cannot give rise to OOTA executions.
+
+The conclusion to be drawn from this work is that in this context,
+avoiding OOTA cycles requires no changes to the standard,
+to current implementions, or to user practices for portable code.
 
 % \clearpage
 % \appendix
