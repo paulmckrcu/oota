@@ -621,9 +621,6 @@ operations of a source program in great, but not complete, detail:
 In addition to these points, the standard does not specify which store
 an atomic load must read from, beyond requiring that the overall
 pattern of loads and stores be consistent with the C++ memory model.
-(We assume that programs will not indulge in any computations that
-could vary spontaneously from one execution to another,
-such as basing a dependency on the time of day or a process ID.)
 In short, the standard grants C++ implementations considerable freedom,
 as detailed in
 Section~\ref{sec:C++ Compilers}.
@@ -656,6 +653,9 @@ A consequence of this is that if two abstract executions of the same
 thread under the same implementation agree on the values obtained by
 the load operations during their first $N$ steps then they will agree
 in every respect during those steps, although they may diverge later.
+(We assume that programs will not indulge in any computations that
+could vary spontaneously from one execution to another,
+such as basing a dependency on the time of day or a process ID.)
 
 \subsection{Hardware Executions}
 \label{sec:Hardware Executions}
