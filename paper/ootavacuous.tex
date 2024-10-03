@@ -671,7 +671,7 @@ At this level, the fact that the original program was in C++ is
 irrelevant; the same concepts apply to the execution of a program in
 any compiled language.
 
-A computer may execute a thread's instructions out of order.
+A CPU may execute a thread's instructions out of order.
 The architecture specifies the extent to which this may happen, and it
 also specifies circumstances under which instructions
 must be executed in order.
@@ -855,7 +855,8 @@ Destroy Semantic Dependencies}
 \label{sec:Inventing Atomic Loads Can Cause Errors and
 Destroy Semantic Dependencies}
 
-Invented atomic loads are problematic:
+Invented atomic loads are problematic.
+Consider this code:
 \begin{quote}
 \begin{verbatim}
 int r0 = x;
@@ -870,20 +871,19 @@ might transform this code as follows:
 \begin{quote}
 \begin{verbatim}
 int r0 = x;
-int invented = x;
-int r1 = r0 * r0 + 2 * invented + 1;
+int rinvented = x;
+int r1 = r0 * r0 + 2 * rinvented + 1;
 \end{verbatim}
 \end{quote}
 If the load into \co{r0} happened when the value of \co{x}
-was zero and the load into \co{invented} happened when the value of
-\co{x} was 10, then the value of \co{r1} will be 21, which is not
+was zero and the load into \co{rinvented} happened when the value of
+\co{x} was 10, then the value of \co{r1} would be 21, which is not
 a perfect square.
 This fails to satisfy the abstract machine's guarantee
 and therefore is an invalid transformation.
 
 Inventing atomic loads can also result in OOTA-like behavior.
-For example, consider this code, in which the final values of \co{r1}
-and~\co{r2} are observable:
+For example, consider this code:
 \begin{quote}
 \begin{verbatim}
    int r1 = (x != 0);
@@ -1018,7 +1018,7 @@ Fundamental Property of semantic dependencies.
 \subsection{Dependencies at the Hardware Level}
 \label{sec:Dependencies at the Hardware Level}
 
-Dependencies between machine instructions correspond to the flow of
+Dependencies between machine instructions are determined by the flow of
 information within a CPU.
 Each instruction takes a set of inputs and provides a set of outputs,
 some of which flow to inputs of later instructions.
@@ -1116,7 +1116,7 @@ instruction it maps to is ordered before the instruction $W$ maps to.
 \end{quote}
 
 No implementation in which semantic dependencies satisfy the Fundamental
-Property has a nontrivial OOTA cycle.
+Property can realize a nontrivial OOTA cycle.
 To see this, suppose that abstract execution $A$ having an OOTA cycle
 is realized by hardware execution $H$.
 This means there are atomic stores $W_i$ in $A$,
@@ -1334,7 +1334,7 @@ volatile, or
 (2)~uses global analysis and treats atomic objects as volatile,
 then programs produced by that implementation will never exhibit OOTA.
 Thus the implementation will automatically comply with full C++, even
-though it may be been designed only to comply with loose C++.
+though it may have been designed only to comply with loose C++.
 
 \section{Issues and Refinements}
 \label{sec:Issues and Refinements}
@@ -1351,7 +1351,7 @@ which is not cited in order to maintain anonymity.
 
 One drawback of our definition of semantic dependency is that it is only
 relative to a specific compiler or implementation.
-This may strike some people as wishy-washy and avoiding the real
+This may strike some readers as wishy-washy and avoiding the real
 problem, in that a given piece of code should either contain or not
 contain a semantic dependency, independent of the implementation used to
 run it.
