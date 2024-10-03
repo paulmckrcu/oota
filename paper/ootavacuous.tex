@@ -529,12 +529,12 @@ store.
 This opens up the door to greater complexity:
 \begin{quote}
 \begin{verbatim}
- 1 if (x > 0) {
- 2     y = 42;
- 3 } else {
- 4     y = 53;
- 5     y = 42;
- 6 }
+ 1. if (x > 0) {
+ 2.     y = 42;
+ 3. } else {
+ 4.     y = 53;
+ 5.     y = 42;
+ 6. }
 \end{verbatim}
 \end{quote}
 Consider an execution in which \co{x} is greater than zero, so line~2
@@ -909,17 +909,17 @@ However, an especially devious compiler might transform the source into
 the following form before translating it to machine code:
 \begin{quote}
 \begin{verbatim}
- 1  int r1;
- 2  int r1a = (x != 0);
- 3  int r1b = (x != 0);
- 4  int r2 = (y != 0);
- 5  if (r1a != r1b) {
- 6      r1 = r2;
- 7      z = 1;
- 8  } else {
- 9      r1 = r1b;
-10      z = (r1 == r2);
-11  }
+ 1. int r1;
+ 2. int r1a = (x != 0);
+ 3. int r1b = (x != 0);
+ 4. int r2 = (y != 0);
+ 5. if (r1a != r1b) {
+ 6.     r1 = r2;
+ 7.     z = 1;
+ 8. } else {
+ 9.     r1 = r1b;
+10.     z = (r1 == r2);
+11. }
 \end{verbatim}
 \end{quote}
 The idea is that \co{r1a}, \co{r1b}, and \co{r2} can each be only zero or one,
