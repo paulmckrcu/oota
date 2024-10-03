@@ -299,25 +299,15 @@ within a thread (rfi) or externally between threads (rfe).
 
 This is a fine definition and is consistent with the words in the C++
 standard, but it has a problem with intrathread rfi links
-as exemplified by the following code: \\
-% \begin{quote}
-% Constructed by hand.
-{
-\small
-\begin{tabular}{rl}
-% & \multicolumn{1}{c}{T0} \\
-% \hline
-1. &
-\texttt{~~int r2 = y} \\
-2. &
-\texttt{~~x = r2} \\
-3. &
-\texttt{~~int r3 = x} \\
-4. &
-\texttt{~~z = r3} \\
-\end{tabular}
-} \\
-% \end{quote}
+as exemplified by the following code:
+\begin{quote}
+\begin{verbatim}
+1. int r2 = y;
+2. x = r2;
+3. int r3 = x;
+4. z = r3;
+\end{verbatim}
+\end{quote}
 This is an elaboration of T1 from
 Listing~\ref{lst:Simple OOTA}
 that adds \co{z} along with lines~3 and~4.
