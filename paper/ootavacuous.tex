@@ -416,40 +416,6 @@ we will continue to refer to ``OOTA cycles'' out of habit.
 Note that this new definition includes and generalizes the earlier
 ``cycle in sdep $\cup$ rfe'' definition.
 
-\subsubsection{Non-Deterministic Semantic Dependencies}
-\label{sec:Non-Deterministic Semantic Dependencies}
-
-Compiler optimizers also exploit the nondeterministic aspects of an
-execution.
-Consider this example, with \co{i} initially zero:
-\begin{quote}
-\begin{verbatim}
-int foo(int a, int b)
-{
-   return a / b;
-}
-
-r1 = foo(++i, ++i);
-x = r1 * z;
-\end{verbatim}
-\end{quote}
-Because early C~implementers could not come to agreement, the standard
-does not specify the order of evaluation of function arguments, so
-the value calculated for \co{r1} might be zero ($1/2$ truncated) or two
-($2/1$).
-In the former case there is no semantic dependency from \co{z} to \co{x},
-but in the latter case there is.\footnote{
-	Thanks to Peter Sewell for pointing out this possibility.}
-
-(According to the current version of the standard, conflicting side effects
-in unsequenced subexpressions constitute undefined behavior,
-although there are proposals to make them defined in both
-C++~\cite{GabrielDosReis2016P0145r3}
-and C~\cite{AlexCeleste2023N3203}.
-Nevertheless, the example above is allowed because the order of evaluation
-of arguments to a function call is ``indeterminately sequenced''
-(7.6.1.3p7 \co{[expr.call]}) rather than unsequenced, a subtle distinction.)
-
 \subsubsection{Semantic Dependencies Affected by Cross-Thread Optimizations}
 \label{sec:Semantic Dependencies Affected by Cross-Thread Optimizations}
 
@@ -553,11 +519,43 @@ arm of the \co{if} statement \emph{would} agree with the store in
 line~2, and so there would not be a semantic dependency.
 Once again, the decision is up to the implementation.
 
-\subsubsection{Per-Architecture Dependent Semantic Dependencies}
-\label{sec:Per-Architecture Dependent Semantic Dependencies}
+\subsubsection{Semantic Dependencies and Free Choices}
+\label{sec:Semantic Dependencies and Free Choices}
 
-The implementation-defined aspects of the standard permit architectures to
-differ as to whether an abstract execution contains a semantic dependency.
+Consider the following example, with variable \co{i} initially zero:
+\begin{quote}
+\begin{verbatim}
+int foo(int a, int b)
+{
+   return a / b;
+}
+
+r1 = foo(++i, ++i);
+x = r1 * z;
+\end{verbatim}
+\end{quote}
+Because early C~implementers could not come to agreement, the standard
+does not specify the order of evaluation of function arguments, so
+the value calculated for \co{r1} might be zero ($1/2$ truncated) or two
+($2/1$).
+In the former case there is no semantic dependency from \co{z} to \co{x},
+but in the latter case there is.\footnote{
+	Thanks to Peter Sewell for pointing out this possibility.}
+
+(According to the current version of the standard, conflicting side effects
+in unsequenced subexpressions constitute undefined behavior,
+although there are proposals to make them defined in both
+C++~\cite{GabrielDosReis2016P0145r3}
+and C~\cite{AlexCeleste2023N3203}.
+Nevertheless, the example above is allowed because the order of evaluation
+of arguments to a function call is ``indeterminately sequenced''
+(7.6.1.3p7 \co{[expr.call]}) rather than unsequenced, a subtle distinction.)
+
+\subsubsection{Semantic Dependencies and Architectural Variations}
+\label{sec:Semantic Dependencies and Architectural Variations}
+
+In some cases, the standard permits architectures to differ as to whether
+an abstract execution contains a semantic dependency.
 For example, consider the following, where the type of \co{c} is \co{char}:
 \begin{quote}
 \begin{verbatim}
@@ -595,13 +593,13 @@ operations of a source program in great, but not complete, detail:
 	implementation defined, including things like the number of
 	bits in the various integer types
 	or whether the \co{char} type is signed (see
-	Section~\ref{sec:Per-Architecture Dependent Semantic Dependencies}).
+	Section~\ref{sec:Semantic Dependencies and Architectural Variations}).
 \item	Some aspects of an execution are unspecified or nondeterministic,
 	including things like the order of evaluation of the operands
 	of most binary operators or of the arguments in a function call.
 	Implementations may choose from a set of allowed behaviors
 	(see
-	Section~\ref{sec:Non-Deterministic Semantic Dependencies}).
+	Section~\ref{sec:Semantic Dependencies and Free Choices}).
 \item	Some actions are deemed to have undefined results; the standard
 	says essentially nothing about programs that can give rise to
 	undefined behavior.
