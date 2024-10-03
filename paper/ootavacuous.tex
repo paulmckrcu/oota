@@ -907,11 +907,14 @@ the following form before translating it to machine code:
  6.     r1 = r2;
  7.     z = 1;
  8. } else {
- 9.     r1 = r1b;
+ 9.     r1 = r1a;
 10.     z = (r1 == r2);
 11. }
 \end{verbatim}
 \end{quote}
+Here \co{r1a} represents the original load from \co{x} while the \co{r1b}
+load is invented by the compiler.
+
 The idea is that \co{r1a}, \co{r1b}, and \co{r2} can each be only zero or one,
 so if \co{r1a} and \co{r1b} differ then one of them must be equal to \co{r2}.
 In executions where this happens---because another thread writes to \co{x}
@@ -920,7 +923,8 @@ for \co{r1} whichever value agrees with \co{r2}, as shown on line~6.
 Then the value stored to \co{z} on line~7 will simply be one,
 with no dependence on the value loaded from \co{y}.
 
-Therefore we should rule out transformations like these by insisting
+Because invented loads can cause errors and break dependencies,
+as we have just seen, we should insist that
 the compiler not invent (or duplicate) atomic loads.
 In fact, we will require that atomic accesses be treated as
 ``quasi volatile'', in that the compiler is allowed to omit,
