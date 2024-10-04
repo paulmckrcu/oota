@@ -155,10 +155,10 @@ Unqualified \emph{C++} means full C++.
 In Listing~\ref{lst:Simple OOTA}
 there is a \emph{semantic dependency} from line~1 to line~2 in both
 T0 and T1.
-(Roughly speaking, there is a semantic dependency from a given load
-to a given store when \emph{all other things being equal, a change in the
-value loaded can change the value stored or prevent the store from
-occurring at all.}
+(Roughly speaking, there is a semantic dependency from a given load to
+a given store when \emph{all other things being equal, a change in the
+value loaded can change the value stored, change the target address of
+the store, or prevent the store from occurring at all.}
 Here the dependencies are trivial because the values stored simply
 \emph{are} the values that were loaded.)
 Since real-world CPUs cannot store something
