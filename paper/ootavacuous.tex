@@ -1469,10 +1469,10 @@ of \co{x} between two of the loads).
 We would expect that the store to \co{z} would be semantically
 dependent on the load of \co{y} in this execution.
 
-Although one would expect an optimizing compiler to discard the unused
-loads into \co{r1} and \co{r3}, one could imagine a perverse compiler
-instead using per-thread analysis to translate this into the machine-code
-equivalent of:
+Although many optimizing compilers would omit the loads into \co{r1}
+and \co{r3}, or merge them with \co{r2} if they are used later, one
+could imagine a perverse compiler instead using per-thread analysis to
+translate this into the machine-code equivalent of:
 \begin{quote}
 \begin{verbatim}
 int r1 = (x != 0);
