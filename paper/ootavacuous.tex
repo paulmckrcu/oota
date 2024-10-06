@@ -1469,8 +1469,10 @@ of \co{x} between two of the loads).
 We would expect that the store to \co{z} would be semantically
 dependent on the load of \co{y} in this execution.
 
-However, a per-thread analysis compiler can translate this into the
-machine-code equivalent of:
+Although one would expect an optimizing compiler to discard the unused
+loads into \co{r1} and \co{r3}, one could imagine a perverse compiler
+instead using per-thread analysis to translate this into the machine-code
+equivalent of:
 \begin{quote}
 \begin{verbatim}
 int r1 = (x != 0);
