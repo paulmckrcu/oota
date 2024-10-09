@@ -1253,6 +1253,9 @@ Our last requirement for being a witness to a semantic dependency
 is that $X'$ act differently from $W'$: it doesn't exist, it stores
 a different value, or it stores to an object other than $y$.
 
+These witnesses generalize the notion of
+perturbations~\cite{PaulEMcKenney2016OOTA}.
+
 \subsection{For Compilers Using Global Analysis}
 \label{sec:For Compilers Using Global Analysis}
 
@@ -1330,7 +1333,7 @@ volatile, or
 (2)~uses global analysis and treats atomic objects as volatile,
 then programs produced by that implementation will never exhibit OOTA.
 Thus the implementation will automatically comply with full C++, even
-though it may have been designed only to comply with loose C++.
+if it was designed only to comply with loose C++.
 
 \section{Issues and Refinements}
 \label{sec:Issues and Refinements}
