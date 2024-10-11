@@ -1525,9 +1525,14 @@ not relative to any particular compiler;
 can vary from one execution to another; and
 (6)~Delineate more precisely the limits of permissible behavior for
 quasi-volatile object accesses.
+This last item may well shed additional light on the dangers of
+optimizations involving non-volatile atomic operations beyond the cautions
+outlined in
+Section~\ref{sec:Inventing Atomic Loads Can Cause Errors and
+Destroy Semantic Dependencies}.
 
-\section{Summary and Conclusions}
-\label{sec:Summary and Conclusions}
+\section{Summary and Conclusion}
+\label{sec:Summary and Conclusion}
 
 This paper focused solely on compilers, primarily those that do only
 per-thread analysis and optimization.
@@ -1543,8 +1548,8 @@ guarantees an implementation cannot give rise to OOTA executions.
 One conclusion to be drawn from this work is that in this context,
 avoiding OOTA cycles requires no changes to the standard,
 to current implementions, or to user practices for portable code.
-This work also demonstrates the need for caution when optimizing
-atomic operations.
+% This work also demonstrates the need for caution when optimizing
+% atomic operations.
 
 % \clearpage
 % \appendix
