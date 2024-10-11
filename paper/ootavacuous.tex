@@ -123,9 +123,9 @@ Here, all of \co{x}, \co{y}, \co{r1}, and \co{r2} might have final
 values of 42, despite there being no instances of 42 in the default-zero
 initial values or in the executable
 code~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.\footnote{
-	Throughout this paper, variables whose names begin with ``\co{r}''
-	denote private per-thread variables (``registers''),
-	and other names denote shared variables.
+	Throughout this paper, we use names beginning with ``\co{r}''
+	for private per-thread variables (``registers''); other names
+	denote shared variables.
 	All shared-variable accesses are relaxed atomic.}
 First, thread T0's line~1 does a load from \co{x} into \co{r1},
 reading the value of T1's line-2 store rather than \co{x}'s initial
