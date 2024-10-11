@@ -881,7 +881,7 @@ a perfect square.
 This fails to satisfy the abstract machine's guarantee
 and therefore is an invalid transformation.
 
-Inventing atomic loads can also result in OOTA-like behavior.
+Inventing atomic loads can also destroy dependencies.
 For example, consider this code:
 \begin{quote}
 \begin{verbatim}
@@ -890,7 +890,7 @@ For example, consider this code:
    z = (r1 == r2);
 \end{verbatim}
 \end{quote}
-It is clear that the store to \co{z} semantically depends on the load
+It seems clear that the store to \co{z} semantically depends on the load
 from \co{y}, because the value of \co{z} will change whenever \co{y}
 changes between zero and nonzero (all else being equal).
 
