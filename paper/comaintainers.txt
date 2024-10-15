@@ -1,0 +1,17 @@
+Frederic Weisbecker (SUSE)
+Andrea Parri
+Will Deacon (Google)
+Peter Zijlstra (Intel)
+Boqun Feng (Microsoft)
+Nicholas Piggin (IBM)
+David Howells (Red Hat)
+Jade Alglave (ARM)
+Luc Maranget (INRIA)
+Mathieu Desnoyers (Efficios)
+Josh Triplett (Self)
+Steven Rostedt (Google)
+Lai Jiangshan
+Neeraj Upadhyay (AMD)
+Uladzislau Rezki (Sony)
+Zhang Qiang
+Davidlohr Bueso
