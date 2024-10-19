@@ -135,7 +135,7 @@ Third, T1's line~1 loads 42 from \co{y} to \co{r2}.
 Finally, T1's line~2 stores 42 to \co{x}, justifying the value loaded
 by T0's line~1.
 
-Because nothing else in the C++ memory model rules out such OOTA cycles
+Because nothing in the C++ memory model rules out such OOTA cycles
 (as indicated by the ``sometimes satisfied'' in the figure), the C++
 standard explicitly prohibits them in 33.5.4p8
 (\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
@@ -146,9 +146,9 @@ standard explicitly prohibits them in 33.5.4p8
 This prohibition prevents misapplication of the as-if rule in oracular
 C++ implementations.
 
-This paper uses \emph{full C++} to denote the standard including this
+We will use \emph{full C++} to denote the standard including this
 prohibition of OOTA and \emph{loose C++} to denote a hypothetical standard
-that excludes this prohibition but is otherwise identical to full C++.
+that excludes the prohibition but is otherwise identical to full C++.
 Unqualified \emph{C++} means full C++.
 
 In Listing~\ref{lst:Simple OOTA}
@@ -564,7 +564,7 @@ y = (c >= 0);
 \end{quote}
 Here \co{y} is semantically dependent on \co{c} in executions
 running on implementations in
-which \co{char} is a signed type,
+which \co{char} is architecturally a signed type,
 but not those for which it is unsigned.
 
 We have seen several examples showing that semantic dependencies are more
@@ -693,8 +693,8 @@ This means:
 (1)~The program's output must be the same as that of the abstract execution;
 (2)~Volatile accesses ``are evaluated strictly according to the
 rules of the abstract machine'' (4.1.2p6.1 \co{[intro.abstract]}); and
-(3)~(A condition on the timing and interleaving of input and output,
-which does not matter for our purposes).
+(3)~[A condition on the timing and interleaving of input and output,
+which does not matter for our purposes].
 We will say that the abstract execution is \emph{realized by} the
 hardware execution.
 
@@ -1093,8 +1093,8 @@ Therefore instructions following a conditional- or computed-branch
 instruction must commit after the branch, and hence after the source
 for the branch's condition and/or destination
 input.\footnote{
-	One exception is a branch that conditionally jumps to the
-	next instruction.
+	A branch that conditionally jumps to the
+	next instruction would be an exception.
 	We ignore this possibility by treating such branches as no-ops.}
 
 \subsection{The Fundamental Property of Semantic Dependencies}
@@ -1188,7 +1188,7 @@ according to the details of the execution in question and the
 machine code produced by the compiler.
 For this reason we will characterize semantic dependencies in a given
 abstract execution realized by a given hardware execution.
-(While it possible to argue about semantic dependencies in abstract
+(While it is possible to argue about semantic dependencies in abstract
 executions that have no hardware realizations, doing so seems pointless.)
 
 Let $A$ be an abstract execution of some program $P$ containing a
@@ -1231,8 +1231,8 @@ ends, whichever comes first.
 Past this point $H$ and $G$ diverge and are no longer directly
 comparable, as they execute different instructions.
 Our third requirement for being a witness is that each load in the
-common period either must obtain the same value in $H$ and $G$, or
-must itself be one of the $R'_i$ loads, or must be ordered in $H$
+common period must either obtain the same value in $H$ and $G$, or
+itself be one of the $R'_i$ loads, or be ordered in $H$
 after one of the $R'_i$ loads (this is the remaining part of our
 interpretation of ``all else being equal''.)
 
@@ -1385,7 +1385,8 @@ Listing~\ref{lst:Simple OOTA}.
 A loose C++ compiler using global analysis and treating \co{x} and \co{y} as
 quasi-volatile objects could omit the two loads, replacing them in the
 machine code with simple assignments ``\co{r1 = 42}'' and
-``\co{r2 = 42}''.
+``\co{r2 = 42}'', as shown in
+Section~\ref{sec:Global Optimization Can Destroy Dependencies}.
 This would be a valid transformation, and the resulting behavior would
 not count as OOTA according to our definition because the
 dependencies in T0 and T1 would not be semantic.
@@ -1512,8 +1513,9 @@ cases where multiple loads of the same variable are present.
 \label{sec:Other Potential Refinements}
 
 Additional future work could:
-(1)~Extend these results to some classes of interpreters and JITs on
-one hand, and to link-time optimizations (LTO) on the other;
+(1)~Extend these results to some classes of interpreters and just-in-time
+compilers (JITs) on
+one hand, and to link-time optimization (LTO) on the other;
 (2)~Consider various classes of global analysis, such as
 demonstrating that a given expression will always evaluate to a constant;
 (3)~Examine the possibility of ``flattening'' optimizations that combine
