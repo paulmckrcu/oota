@@ -1,0 +1,116 @@
+First, we thank all the reviewers for their time, their careful reviews,
+and their thoughtful feedback.
+
+Several reviewers suggested citations that we are happy to add.
+
+Other reviewers asked how we handle various litmus tests.  Our submission
+describes how we rely on a compiler to translate the litmus test to object
+code, then relate dependencies in that object code to the corresponding
+source code.  Section 1.2 ("Prior Work") notes that we are not trying
+to identify when OOTA cycles can form, but rather that OOTA cycles
+cannot form.
+
+Several reviewers seemed uncomfortable with informal proofs.  However,
+ASPLOS has published papers with informal proofs, so we suspect that the
+real discomfort was augmenting the C++ abstract machine with hardware
+properties.  20 years of equivocal progress is more than sufficient to
+justify trying a new approach.  We are not advocating the old approaches
+be abandoned.  In fact, should someone succeed with those approaches,
+we will endeavor to be the first to offer congratulations.
+
+Others were uncomfortable with our reliance on object code, which
+varies across systems.  However, these systems are underpinned by laws
+of physics, namely causality, the finite speed of light, and the atomic
+nature of matter.  Our definition of OOTA cycles as cycles in (rfe U
+sdep) permits us to examine rfe and sdep separately.  These laws of
+physics guarantee that each rfe link goes forward in time.  Because an
+OOTA cycle must return to the starting time, there must be at least
+one sdep link that goes backwards in time.  Correct compilers guarantee
+that sdep links correspond to sequences of machine instructions, which
+cannot execute backwards in time, even given speculative execution.
+Thus, the OOTA cycle cannot form.
+
+Please note that correct implementations are not required to break
+non-semantic dependencies.  An unbroken non-semantic dependency will
+correspond to a sequence of machine instructions that cannot go backwards
+in time, and thus cannot form an OOTA cycle.
+
+Reviewer 72F asks about three litmus tests in Section 5 of the
+submission's citation [5], as do a couple of other reviewers:
+
+o	The first example has a dependency only if the implementation
+	does not hoist the i++ out of the “if” statement, and this
+	is the implementation’s choice, similar to the example in
+	Section 2.2.5 of the submission.
+
+o	The second example is handled by examining f() and the functions
+	that it invokes, along with the implementation’s optimization
+	choices.  Note that at one extreme, f() might ignore its
+	parameter and at the other extreme it might simply return
+	its parameter.  Note further that f() might be a pointer to a
+	function, and that function might come from a dynamically linked
+	library that has not yet been written at the time the call to
+	f() is compiled.  Although the submission does not contain
+	this particular example, all of these issues are addressed by
+	the submission’s Section 3, which discusses executions (as
+	opposed to source-code syntactic dependencies).
+
+o	An instructive elaboration of the third example is discussed in
+	Section 2.2.1 of the submission.
+
+Reviewer 72F also asks if our approach implicitly enforces the
+load-to-store ordering advocated by Boehm and Demsky.  The answer is
+"no".  First, although instructions commit in some order, they do not
+necessarily commit in program order, which on some systems allows prior
+loads to be reordered with later stores.  Even on hardware that does
+commit instructions in program order, there is no guarantee that this
+commit order will constrain the visibility of the corresponding memory
+references, for example, due to the effects of hardware store buffers.
+
+Reviewer 72F also asks (in two questions) if freezing of nondeterministic
+choices into machine code is realistic.  The answer is "yes", but on the
+per-execution basis used in our submission.  For example, specialization
+optimizations might cause a given function to be compiled differently
+for different combinations of arguments.  But any given execution would
+correspond to a particular combination of arguments, and that execution
+would be frozen into machine code.  Please note that programs that
+modify their own code are outside of the standard, and thus out of our
+submission's scope.
+
+We especially thank Reviewer 72F for noting (correctly!) that Section 7.4
+("Merging Quasi-Volatile Loads") poses a challenge, as this helped refine
+our thinking. The refinement is to note that this challenge is not to our
+technique, but rather to those implementing optimizations.  Although we
+believe (one of us strongly, the rest less so) that the "optimization"
+described in this section is in fact a pessimization that also degrades
+ease of use, the question of whether or not this optmization is legitimate
+will be decided by community processes, not by fiat and not by pure
+mathematics.  Nevertheless, should an abstract-machine mathematical
+treatment of OOTA appear, we would expect that this mathematics would
+have a prominent seat at the community-process table.  Either way,
+if this optimization is rejected the litmus test in Section 7.4 has a
+semantic dependency, otherwise it does not.  And correct implementations
+will reflect that decision, though again, optimizations are permitted
+to refrain from breaking non-semantic dependencies.
+
+Reviewer 72F suggested that rf links must impose restrictions.
+Please note our Section 2.1 ("OOTA: rf vs. rfe") where we show that
+those restrictions can be extremely loose, hence our use of rfe.
+But note also that C++ modification order provides very weak guarantees,
+in fact, a later-in-time store might precede an earlier-in-time store
+in modification order, even on x86.  Memory models are at best loosely
+connected to the passage of time.
+
+Reviwer 72F also questions how the original C++ code can be irrelevant.
+The C++ code is relevant, but only at the source-code level and to the
+connections between the source-code and object-code levels.  However,
+for analysis confined to the object-code level, the origial C++ code
+can indeed be irrelevant.
+
+Reviewer 72F asks what we mean by "these models are atemporal".  We
+mean that typical memory models do not make use of the passage of
+physical time.  The provide partial orderings, but as noted earlier,
+the modification order can in fact go backwards in time.
+
+Responses to individual reviewer feedback items is in the accompanying
+PDF.
