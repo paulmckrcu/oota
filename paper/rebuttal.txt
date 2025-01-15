@@ -1,14 +1,18 @@
 First, we thank all the reviewers for their careful reviews and thoughtful
 feedback.
 
+Responses to individual reviewer feedback items may be found in the
+accompanying PDF.
+
 We are happy to add the suggested citations.
 
-There was discomfort with informal proofs.  However, ASPLOS has published
-such papers, so we suspect that the real discomfort was augmenting the
-C++ abstract machine with hardware properties.  20 years of equivocal
-progress justifies trying a new approach.  We are not advocating the old
-approaches be abandoned.  In fact, we will endeavor to be the first to
-offer congratulations should someone succeed.
+There was discomfort with informal proofs.  However, our proofs are
+straightforward and ASPLOS has published such proofs.  We therefore
+suspect that the real discomfort was augmenting the C++ abstract machine
+with hardware properties.  20 years of equivocal progress justifies trying
+a new approach.  We are not advocating the old approaches be abandoned.
+In fact, we will endeavor to be the first to offer congratulations should
+someone succeed.
 
 Various litmus tests were put forward.  Our submission describes how
 we rely on a compiler to translate the litmus test to object code, then
@@ -31,8 +35,9 @@ Please note that correct implementations are not required to break
 non-semantic dependencies.  Regardless, a non-semantic dependency cannot
 form an OOTA cycle.
 
-Reviewer 72F asks about three litmus tests in Section 5 of the
-submission's citation [5], as do a couple of other reviewers:
+Responses specifically requested by Reviewer 72F for the rebuttal:
+
+How do we handle the three litmus tests in Section 5 of citation [5]?
 
 o	The first example has a dependency only if the implementation
 	does not hoist the i++ out of the “if” statement, and this is
@@ -49,19 +54,17 @@ o	The second example is handled by examining f() and the
 o	An instructive elaboration of the third example is discussed in
 	Section 2.2.1 of the submission.
 
-Reviewer 72F also asks if we implicitly enforce the load-to-store
-ordering advocated by Boehm and Demsky.  We do not.  Instructions do
-not necessarily commit in program order.  Furthermore, commit order
-might not constrain the order of the corresponding memory references.
+Do we implicitly enforce the load-to-store ordering advocated by Boehm
+and Demsky?  (Two questions.)  We do not.  Instructions do not necessarily
+commit in program order.  Furthermore, commit order might not constrain
+the order of the corresponding memory references.
 
-Reviewer 72F also asks (in two questions) if freezing of nondeterministic
-choices into machine code is realistic.  The answer is "yes", but on the
-per-execution basis used in our submission.  For example, specialization
-optimizations might cause a given function to be compiled differently
-for different combinations of arguments.  But any given execution would
-correspond to a particular combination of arguments, and that execution
-would be frozen into machine code.  Please note that self-modifying
-programs are outside of the standard, and thus out of our scope.
+Is freezing of nondeterministic choices into machine code realistic?
+Yes, but on the per-execution basis used in our submission.  For example,
+specialization optimizations might cause a given function to be compiled
+differently for different combinations of arguments.  But any given
+execution would correspond to a particular combination of arguments,
+and that execution would be frozen into machine code.
 
 We thank Reviewer 72F for noting that Section 7.4 ("Merging Quasi-Volatile
 Loads") poses a challenge.  However, please note that this challenge
@@ -73,23 +76,22 @@ challenge is instead to OOTA analysis techniques not accounting for these
 community processes.  Nevertheless, any abstract-machine mathematical
 OOTA solution should have a prominent seat at the community-process table.
 
-Reviewer 72F suggested that rf links must impose restrictions.
-Please note our Section 2.1 ("OOTA: rf vs. rfe") where we show that
-those restrictions can be extremely loose, hence our use of rfe.
-But note also that C++ modification order provides very weak guarantees,
-in fact, a later-in-time store might precede an earlier-in-time store
-in modification order, even on x86.
+Don't rf links must impose restrictions?  Yes, they do in the C++ memory
+mode, but only when they involve release-stores and acquire-loads or
+consume-loads.  These restrictions do not apply to OOTA cycles, which
+involve only relaxed accesses.  Note further that C++ modification
+order provides very weak guarantees, in fact, a later-in-time store
+might precede an earlier-in-time store in modification order, even on x86.
 
-Reviwer 72F also questions how the original C++ code can be irrelevant.
-The C++ code is relevant, but only at the source-code level and to the
-connections between the source-code and object-code levels.  However,
-for analysis confined to the object-code level, the origial C++ code
-can indeed be irrelevant.
+How the original C++ code can be irrelevant?  The C++ code is relevant,
+but only at the source-code level and to the connections between the
+source-code and object-code levels.  However, for analysis confined to
+the object-code level, the original C++ code can indeed be irrelevant.
+For example, if a program in C++ and another in Rust generated the same
+machine code, the behavior of that machine code would be independent of
+the source language.
 
-Reviewer 72F asks what we mean by "these models are atemporal".
-We mean that typical memory models do not make use of the passage of
-physical time.  The provide partial orderings, but as noted earlier,
-some orderings can go backwards in time.
-
-Responses to individual reviewer feedback items is in the accompanying
-PDF.
+What is meant by "these models are atemporal"?  We mean that typical
+memory models do not make use of the passage of physical time.
+The provide partial orderings, but as noted earlier, some orderings can
+go backwards in time.
