@@ -1,0 +1,43 @@
+The "o" items assume a venue (such as a tech report) that have relaxed
+page limits.  
+
+O	Detailed feedback from Review #72C.
+
+O	s/We would be happy to change "explicitly prohibits"/"explicitly recommends against"/
+	This is prior to the quote from the C++ standard.
+
+O	s/Workers/Researcher/ in Section 1.2.
+
+O	Add citations to Section 1.2 ("Prior Work").
+
+O	Be less condescending towards Mark Batty.  Maybe
+	s/is persisting with/is working on/.
+
+o	Add a Section 1.3 ("Our Approach"?) that summarizes the
+	rfe/sdep/non-sdep-dep approach and emphasizes proving
+	OOTA cannot happen as opposed to an exact delineation
+	between sdep and non-sdep.
+
+o	Add citations to later sections that discuss similar litmus tests.
+
+o	Consider adding a 2.2.x section that discusses the difficulties
+	inherent in computing sdep for function calls, especially when
+	the function will be part of a dynamic library that has not yet
+	been written.
+
+O	In section 6.1, define "witness" informally as "another execution
+	in which the store acts differently".
+
+O	On page 9, "While it possible".  [ Since fixed by Alan. ]
+
+O	In Section 7.4 ("Merging Quasi-Volatile Loads"), change focus
+	from intuitive notions to a community-process approach for
+	determining what optimizations are legitimate.  Math cannot
+	handle this.  We avoid the problem by looking at the compiler
+	implementation, which is downstream of the community process.
+
+	Also in Section 7.4 change "our intuitive notions" to "one's
+	intuitive notions".
+
+o	Possible future work: Relax quasi-volatile semantics to permit
+	additional uses of the cmov instruction.
