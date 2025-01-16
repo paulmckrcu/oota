@@ -93,5 +93,5 @@ the source language.
 
 What is meant by "these models are atemporal"?  We mean that typical
 memory models do not make use of the passage of physical time.
-The provide partial orderings, but as noted earlier, some orderings can
+They provide partial orderings, but as noted earlier, some orderings can
 go backwards in time.
