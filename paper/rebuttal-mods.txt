@@ -3,6 +3,10 @@ page limits.
 
 O	Detailed feedback from Review #72C.
 
+o	Early in the paper, consider explicitly stating that our approach
+	enables us to avoid the need to precisely delineate between sdep
+	and non-sdep dependencies.
+
 O	s/We would be happy to change "explicitly prohibits"/"explicitly recommends against"/
 	This is prior to the quote from the C++ standard.
 
@@ -28,6 +32,9 @@ o	Consider adding a 2.2.x section that discusses the difficulties
 O	In section 6.1, define "witness" informally as "another execution
 	in which the store acts differently".
 
+o	Add diagrams illustrating what the various components of sections
+	6.1 and 6.3 refer to.
+
 O	On page 9, "While it possible".  [ Since fixed by Alan. ]
 
 O	In Section 7.4 ("Merging Quasi-Volatile Loads"), change focus
@@ -39,5 +46,13 @@ O	In Section 7.4 ("Merging Quasi-Volatile Loads"), change focus
 	Also in Section 7.4 change "our intuitive notions" to "one's
 	intuitive notions".
 
+o	Add a section before Section 7 ("Issues and Refinements") that
+	shows how our approach handles a few well-known examples of OOTA.
+	This needs to be in greater detail than in the "Causality Test
+	Cases" discussions in P3064R2 ("How to Avoid OOTA Without Really
+	Trying").
+
 o	Possible future work: Relax quasi-volatile semantics to permit
-	additional uses of the cmov instruction.
+	load speculation, for example, use of the cmov instruction in
+	cases where the source code conditionally executes the atomic
+	load.
