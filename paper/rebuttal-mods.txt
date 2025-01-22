@@ -3,9 +3,11 @@ page limits.
 
 O	Detailed feedback from Review #72C.
 
-o	Early in the paper, consider explicitly stating that our approach
-	enables us to avoid the need to precisely delineate between sdep
-	and non-sdep dependencies.
+o	Early in the paper, consider explicitly stating that after 20
+	years it appears that the problem of characterizing semantic
+	dependency is too difficult to solve in the context provided by
+	the C++ standard (i.e., the abstract machine) and therefore we
+	expand the context by considering actual machine-level executions.
 
 O	s/We would be happy to change "explicitly prohibits"/"explicitly recommends against"/
 	This is prior to the quote from the C++ standard.
@@ -13,6 +15,10 @@ O	s/We would be happy to change "explicitly prohibits"/"explicitly recommends ag
 O	s/Workers/Researcher/ in Section 1.2.
 
 O	Add citations to Section 1.2 ("Prior Work").
+
+	Add a forward reference to Section 4.2 ("Global Optimization
+	Can Destroy Dependencies") and the fact that this defeats the
+	approach of ordering relaxed loads before relaxed stores.
 
 O	Be less condescending towards Mark Batty.  Maybe
 	s/is persisting with/is working on/.
@@ -29,8 +35,13 @@ o	Consider adding a 2.2.x section that discusses the difficulties
 	the function will be part of a dynamic library that has not yet
 	been written.
 
+o	In Section 4.2 ("Global Optimization Can Destroy Dependencies"),
+	note that this optimization breaks the approach of ordering
+	relaxed loads before relaxed stores.
+
 O	In section 6.1, define "witness" informally as "another execution
-	in which the store acts differently".
+	in which the load(s) obtain a different value but all else is
+	the same as far as possible, and yet the store acts differently".
 
 o	Add diagrams illustrating what the various components of sections
 	6.1 and 6.3 refer to.
