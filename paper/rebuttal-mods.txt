@@ -9,18 +9,18 @@ o	Early in the paper, consider explicitly stating that after 20
 	the C++ standard (i.e., the abstract machine) and therefore we
 	expand the context by considering actual machine-level executions.
 
-O	s/We would be happy to change "explicitly prohibits"/"explicitly recommends against"/
+x	s/We would be happy to change "explicitly prohibits"/"explicitly recommends against"/
 	This is prior to the quote from the C++ standard.
 
-O	s/Workers/Researcher/ in Section 1.2.
+x	s/Workers/Researcher/ in Section 1.2.
 
 O	Add citations to Section 1.2 ("Prior Work").
 
-	Add a forward reference to Section 4.2 ("Global Optimization
+x	Add a forward reference to Section 4.2 ("Global Optimization
 	Can Destroy Dependencies") and the fact that this defeats the
 	approach of ordering relaxed loads before relaxed stores.
 
-O	Be less condescending towards Mark Batty.  Maybe
+x	Be less condescending towards Mark Batty.  Maybe
 	s/is persisting with/is working on/.
 
 o	Add a Section 1.3 ("Our Approach"?) that summarizes the
@@ -28,7 +28,8 @@ o	Add a Section 1.3 ("Our Approach"?) that summarizes the
 	OOTA cannot happen as opposed to an exact delineation
 	between sdep and non-sdep.
 
-o	Add citations to later sections that discuss similar litmus tests.
+o	Add citations to later sections that discuss litmus tests
+	that are similar to those in the literature.
 
 o	Consider adding a 2.2.x section that discusses the difficulties
 	inherent in computing sdep for function calls, especially when
@@ -42,18 +43,18 @@ o	In section 2.2 where we start to talk about semantic dependencies
 	[5]) is not always careful to distinguish clearly between the
 	two forms.  Maybe have an entire subsection on this topic.
 
-o	In Section 4.2 ("Global Optimization Can Destroy Dependencies"),
+x	In Section 4.2 ("Global Optimization Can Destroy Dependencies"),
 	note that this optimization breaks the approach of ordering
 	relaxed loads before relaxed stores.
 
-O	In section 6.1, define "witness" informally as "another execution
+x	In section 6.1, define "witness" informally as "another execution
 	in which the load(s) obtain a different value but all else is
 	the same as far as possible, and yet the store acts differently".
 
 o	Add diagrams illustrating what the various components of sections
 	6.1 and 6.3 refer to.
 
-O	On page 9, "While it possible".  [ Since fixed by Alan. ]
+x	On page 9, "While it possible".  [ Since fixed by Alan. ]
 
 O	In Section 7.4 ("Merging Quasi-Volatile Loads"), change focus
 	from intuitive notions to a community-process approach for

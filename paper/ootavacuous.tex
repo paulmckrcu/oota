@@ -135,7 +135,7 @@ by T0's line~1.
 
 Because nothing in the C++ memory model rules out such OOTA cycles
 (as indicated by the ``sometimes satisfied'' in the figure), the C++
-standard explicitly prohibits them in 33.5.4p8
+standard explicitly recommends against them in 33.5.4p8
 (\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
 \begin{quote}
 	Implementations should ensure that no “out-of-thin-air” values
@@ -217,7 +217,7 @@ Section~\ref{sec:Hardware Dependencies, Instruction Ordering, and the Fundamenta
 \subsection{Prior Work}
 \label{sec:Prior Work}
 
-All OOTA workers owe a debt of gratitude to the foundational work led
+All OOTA researchers owe a debt of gratitude to the foundational work led
 by William Pugh, represented by the infamous Java-language
 ``Causality Test Cases''.\footnote{
 	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
@@ -246,11 +246,14 @@ consuming real time and real electrical power to solve a strictly
 theoretical problem.
 % This might have been acceptable in the 1960s of some of the authors'
 % youths, but it is now the year 2024.
+Furthermore, as discussed in
+Section~\ref{sec:Global Optimization Can Destroy Dependencies},
+cross-thread optimizations can defeat this ordering constraint.
 
 Other workers recommend various procedures to identify and avoid OOTA
 cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA},
 but none of these have been accepted by C++ implementers.
-As of 2024, Mark Batty is persisting with modular relaxed dependencies,
+As of 2024, Mark Batty is working on modular relaxed dependencies,
 which may have the added ability of checking compiler
 optimizations~\cite{JayRichards2024SymbolicMrder}.
 
@@ -816,7 +819,8 @@ machine code:
 The loads previously on line~1 have been replaced by constants.
 Such a transformation complies with the loose C++ standard,
 even though the resulting executable file would produce an unintuitive
-OOTA outcome every time it runs!
+OOTA outcome every time it runs, even if relaxed loads are ordered
+before relaxed stores!
 
 The only justification a compiler could have for generating output like
 this is that it knows exactly what accesses will be performed by both
@@ -1205,6 +1209,10 @@ relative to the compiler used to produce $H$, if there is another
 abstract execution $B$ realized by hardware execution $G$ under the
 same compiler that together \emph{witness the semantic dependency}.
 \end{quote}
+
+We informally define a \emph{witness} to be another execution in which
+at least one of the loads obtains a different value but all else is the
+same as far as possible, and yet the store acts differently.
 
 To be a proper witness, $B$ must be an execution of some program $Q$,
 not necessarily the same as $P$ but which contains the same thread $T$.
