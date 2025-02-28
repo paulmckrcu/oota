@@ -35,6 +35,13 @@ o	Consider adding a 2.2.x section that discusses the difficulties
 	the function will be part of a dynamic library that has not yet
 	been written.
 
+o	In section 2.2 where we start to talk about semantic dependencies
+	in detail, we could mention syntactic dependencies too.  Explain
+	what they are and how they differ from semantic dependencies.
+	Then mention that some work in the literature (such as parts of
+	[5]) is not always careful to distinguish clearly between the
+	two forms.  Maybe have an entire subsection on this topic.
+
 o	In Section 4.2 ("Global Optimization Can Destroy Dependencies"),
 	note that this optimization breaks the approach of ordering
 	relaxed loads before relaxed stores.
