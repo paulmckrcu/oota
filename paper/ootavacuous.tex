@@ -67,10 +67,10 @@ Michael Wong (fraggamuffin@gmail.com)
 	such implementations, provided the cycles involve only volatile
 	atomics.
 	We accommodate nonvolatile atomics by defining ``quasi-volatile''
-	behavior that enables implementations doing per-thread analysis
-	and optimization not only to avoid OOTA, but also to avoid 
-	incorrectly evaluating arithmetic expressions involving atomic
-	accesses.
+	behavior which enables existing implementations that do per-thread
+	analysis and optimization not only to avoid OOTA, but also to
+	avoid incorrectly evaluating arithmetic expressions involving
+	atomic accesses.
 
 	It follows that enforcing OOTA avoidance requires no special
 	action from implementations and no changes to user code or
@@ -143,6 +143,8 @@ standard explicitly recommends against them in 33.5.4p8
 \end{quote}
 This prohibition prevents misapplication of the as-if rule in oracular
 C++ implementations.
+(The as-if rule permits those optimizations where the optimized code's
+observable behavior is the same as if it were unoptimized.)
 
 We will use \emph{full C++} to denote the standard including this
 prohibition of OOTA and \emph{loose C++} to denote a hypothetical standard
@@ -235,7 +237,9 @@ which some in fact do in at least some cases.
 P0442R0 (``Out-of-Thin-Air Execution is Vacuous'')~\cite{PaulEMcKenney2016OOTA}
 provided a decision procedure for distinguishing between reordering and
 OOTA, using a perturbation method based on the insight that OOTA cycles
-are fixed-point computations.
+are fixed-point computations
+In other words, an OOTA cycle must produce the same value that it
+consumes.
 
 Some workers recommend avoiding OOTA by forcing prior relaxed
 loads to be ordered before subsequent relaxed
@@ -568,9 +572,9 @@ running on implementations in
 which \co{char} is architecturally a signed type,
 but not those for which it is unsigned.
 
-We have seen several examples showing that semantic dependencies are more
-complicated than might first appear, varying according to the execution
-and even the implementation.
+We have seen several examples showing that semantic dependencies can
+be more complicated than might first appear, varying according to the
+execution and even the implementation.
 This raises several questions, of which the first is:
 What exactly is an execution?
 
@@ -578,7 +582,7 @@ What exactly is an execution?
 \label{sec:What is an Execution?}
 
 This section looks more carefully at executions from the viewpoints of
-the abstract machine and the computer hardware, and then reconciles
+an abstract machine and the computer hardware, and then reconciles
 these two viewpoints.
 
 \subsection{Abstract Executions}
@@ -688,16 +692,17 @@ later.
 The C++ standard requires that for any valid implementation, when a
 program runs its observable behavior must be the same as that of some
 abstract execution of the source code given the same input (in the
-absence of any abstract executions containing undefined behavior).\footnote{
-	This requirement is the standard's ``as-if'' rule.}
+absence of any abstract executions containing undefined behavior)
+This requirement is the standard's ``as-if'' rule.
 This means:
 (1)~The program's output must be the same as that of the abstract execution;
 (2)~Volatile accesses ``are evaluated strictly according to the
 rules of the abstract machine'' (4.1.2p6.1 \co{[intro.abstract]}); and
 (3)~[A condition on the timing and interleaving of input and output,
 which does not matter for our purposes].
-We will say that the abstract execution is \emph{realized by} the
-hardware execution.
+We will say that the hardware execution realizes the abstract execution,
+or, equivalently, that the abstract execution is \emph{realized by}
+the hardware execution.
 
 Under any particular implementation,
 a single program can have many different abstract executions,
@@ -749,7 +754,8 @@ properly in either kind of environment.
 Therefore the compiler must generally treat accesses to volatile objects
 as a form of I/O, and it may not
 invent, omit, merge, or reorder these accesses, as we will discuss in
-Section~\ref{sec:Volatile and Quasi Volatile Accesses} below.
+Sections~\ref{sec:Inventing Atomic Loads Can Cause Errors and Destroy Semantic Dependencies}
+and~\ref{sec:Volatile and Quasi Volatile Accesses} below.
 
 Given this relation between abstract and hardware executions, it is time
 to turn our attention to the tools that manage hardware executions so as
