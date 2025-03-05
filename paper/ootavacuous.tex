@@ -243,7 +243,7 @@ consumes.
 
 Some workers recommend avoiding OOTA by forcing prior relaxed
 loads to be ordered before subsequent relaxed
-stores~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352},
+stores~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352,PiezhaoOu2018OOTApapl},
 but this can require executing real
 instructions~\cite[Section 7.1]{Maranget2012TutorialARMPower},
 consuming real time and real electrical power to solve a strictly
@@ -273,7 +273,8 @@ implementations to avoid it.
 None applied real-world hardware ordering constraints to the problem
 of avoiding OOTA cycles.
 This paper's contribution is to show how these constraints prevent
-real-world C++ implementations from exhibiting OOTA behavior.
+real-world C++ implementations from exhibiting OOTA behavior, and not with
+minimal cost~\cite{PiezhaoOu2018OOTApapl}, but rather with no cost at all.
 
 \section{OOTA and Semantic Dependencies (sdep)}
 \label{sec:OOTA and Semantic Dependencies (sdep)}
