@@ -241,7 +241,7 @@ are fixed-point computations
 In other words, an OOTA cycle must produce the same value that it
 consumes.
 
-Some workers recommend avoiding OOTA by forcing prior relaxed
+Some researchers recommend avoiding OOTA by forcing prior relaxed
 loads to be ordered before subsequent relaxed
 stores~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352,PiezhaoOu2018OOTApapl},
 but this can require executing real
@@ -254,7 +254,7 @@ Furthermore, as discussed in
 Section~\ref{sec:Global Optimization Can Destroy Dependencies},
 cross-thread optimizations can defeat this ordering constraint.
 
-Other workers recommend various procedures to identify and avoid OOTA
+Other researchers recommend various procedures to identify and avoid OOTA
 cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA},
 but none of these have been accepted by C++ implementers.
 As of 2024, Mark Batty is working on modular relaxed dependencies,
@@ -270,11 +270,24 @@ We consider only UB-free examples.
 
 All this work focused on either identifying OOTA or helping C++
 implementations to avoid it.
-None applied real-world hardware ordering constraints to the problem
-of avoiding OOTA cycles.
-This paper's contribution is to show how these constraints prevent
-real-world C++ implementations from exhibiting OOTA behavior, and not with
-minimal cost~\cite{PiezhaoOu2018OOTApapl}, but rather with no cost at all.
+None applied real-world hardware ordering constraints (based on
+long-standing laws of physics) to the problem of avoiding OOTA cycles.
+
+Augmenting C++ abstractions with these constraints would of course
+limit applicability of this paper's results to C++ programs running
+on real-world computer systems.
+However, a quarter century of OOTA research based on pure C++ abstractions
+has resulted in incremental progress at best, and real-world computer
+systems comprise an exceedingly important part of the overall OOTA
+problem.
+In the wise words of Peter J.~Denning, ``Maybe we need to occasionally
+descend from the high clouds of our abstractions to the concrete earthy
+concerns of everyday life.''~\cite{PeterJDenning2025Abstraction}.
+
+Therefore, this paper's contribution is to show how these constraints
+prevent real-world C++ implementations from exhibiting OOTA behavior,
+and not with minimal cost~\cite{PiezhaoOu2018OOTApapl}, but rather with
+no cost at all.
 
 \section{OOTA and Semantic Dependencies (sdep)}
 \label{sec:OOTA and Semantic Dependencies (sdep)}
