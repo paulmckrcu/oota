@@ -258,8 +258,10 @@ Other researchers recommend various procedures to identify and avoid OOTA
 cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA},
 but none of these have been accepted by C++ implementers.
 As of 2024, Mark Batty is working on modular relaxed dependencies,
-which may have the added ability of checking compiler
-optimizations~\cite{JayRichards2024SymbolicMrder}.
+which may have the added benefit of checking compiler
+optimizations~\cite{JayRichards2024SymbolicMrder}, which is a portion
+of the OOTA problem that is out of scope for this paper.\footnote{
+	But please see Section~\ref{sec:Merging Quasi-Volatile Loads}.}
 
 Goldblatt looked at interactions between OOTA and
 undefined behavior (UB)~\cite{DavidGoldblatt2019NoElegantOOTAfix}.
