@@ -228,6 +228,25 @@ International Workshop on Exploiting Concurrency Efficiently and Correctly },
  year = 2015,
 }
 
+@article{JeanPichonPharabod2016OOTA,
+ author = {Pichon-Pharabod, Jean and Sewell, Peter},
+ title = {A concurrency semantics for relaxed atomics that permits optimisation and avoids thin-air executions},
+ year = {2016},
+ issue_date = {January 2016},
+ publisher = {Association for Computing Machinery},
+ address = {New York, NY, USA},
+ volume = {51},
+ number = {1},
+ issn = {0362-1340},
+ url = {https://doi.org/10.1145/2914770.2837616},
+ doi = {10.1145/2914770.2837616},
+ journal = {SIGPLAN Not.},
+ month = jan,
+ pages = {622–633},
+ numpages = {12},
+ keywords = {Relaxed memory models, Concurrency, C/C++}
+}
+
 @unpublished{PaulEMcKenney2016P0124R2-LKMM,
  Author="Paul E. McKenney and Ulrich Weigand and Andrea Parri and Boqun Feng",
  Title="Linux-Kernel Memory Model",
@@ -303,6 +322,25 @@ International Workshop on Exploiting Concurrency Efficiently and Correctly },
  day="20",
  year="2017",
  note="\url{https://lwn.net/Articles/720550/}",
+}
+
+@article{JeehoonKang2017PromisingSemantics,
+ author = {Kang, Jeehoon and Hur, Chung-Kil and Lahav, Ori and Vafeiadis, Viktor and Dreyer, Derek},
+ title = {A promising semantics for relaxed-memory concurrency},
+ year = {2017},
+ issue_date = {January 2017},
+ publisher = {Association for Computing Machinery},
+ address = {New York, NY, USA},
+ volume = {52},
+ number = {1},
+ issn = {0362-1340},
+ url = {https://doi.org/10.1145/3093333.3009850},
+ doi = {10.1145/3093333.3009850},
+ journal = {SIGPLAN Not.},
+ month = jan,
+ pages = {175–189},
+ numpages = {15},
+ keywords = {C++11, Weak memory models, operational semantics}
 }
 
 @unpublished{JadeAlglave2017LWN-LKMM-N,
@@ -497,10 +535,28 @@ International Workshop on Exploiting Concurrency Efficiently and Correctly },
  url = {https://doi.org/10.1145/3276506},
  doi = {10.1145/3276506},
  journal = {Proc. ACM Program. Lang.},
- month = oct,
+ month = Oct,
  articleno = {136},
  numpages = {29},
  keywords = {compilers, concurrency, memory models}
+}
+
+@article{SohamChakraborty2019OOTAeventStructure,
+ author = {Chakraborty, Soham and Vafeiadis, Viktor},
+ title = {Grounding thin-air reads with event structures},
+ year = {2019},
+ issue_date = {January 2019},
+ publisher = {Association for Computing Machinery},
+ address = {New York, NY, USA},
+ volume = {3},
+ number = {POPL},
+ url = {https://doi.org/10.1145/3290383},
+ doi = {10.1145/3290383},
+ journal = {Proc. ACM Program. Lang.},
+ month = jan,
+ articleno = {70},
+ numpages = {28},
+ keywords = {C/C++11, Weak memory consistency, concurrency, promising semantics}
 }
 
 @unpublished{MarkBatty2019ModularRelaxedDependenciesOOTA,
@@ -628,6 +684,41 @@ International Workshop on Exploiting Concurrency Efficiently and Correctly },
  series = {PLDI 2020}
 }
 
+@inproceedings{MinkiCho2021PromisingSemantics,
+ author = {Cho, Minki and Lee, Sung-Hwan and Hur, Chung-Kil and Lahav, Ori},
+ title = {Modular data-race-freedom guarantees in the promising semantics},
+ year = {2021},
+ isbn = {9781450383912},
+ publisher = {Association for Computing Machinery},
+ address = {New York, NY, USA},
+ url = {https://doi.org/10.1145/3453483.3454082},
+ doi = {10.1145/3453483.3454082},
+ booktitle = {Proceedings of the 42nd ACM SIGPLAN International Conference on Programming Language Design and Implementation},
+ pages = {867–882},
+ numpages = {16},
+ keywords = {Compiler Optimizations, Data Race Freedom, Operational Semantics, Relaxed Memory Concurrency},
+ location = {Virtual, Canada},
+ series = {PLDI 2021}
+}
+
+@article{SungHwanLee2023WeakMemoryPromising,
+ author = {Lee, Sung-Hwan and Cho, Minki and Margalit, Roy and Hur, Chung-Kil and Lahav, Ori},
+ title = {Putting Weak Memory in Order via a Promising Intermediate Representation},
+ year = {2023},
+ issue_date = {June 2023},
+ publisher = {Association for Computing Machinery},
+ address = {New York, NY, USA},
+ volume = {7},
+ number = {PLDI},
+ url = {https://doi.org/10.1145/3591297},
+ doi = {10.1145/3591297},
+ journal = {Proc. ACM Program. Lang.},
+ month = jun,
+ articleno = {183},
+ numpages = {24},
+ keywords = {Compiler Optimizations, Intermediate Representation, Operational Semantics, Relaxed Memory Concurrency}
+}
+
 @unpublished{PaulEMcKenney2023P0124R8-LKMM,
  Author="Paul E. McKenney and Ulrich Weigand and Andrea Parri and Boqun Feng",
  Title="Linux-Kernel Memory Model",
@@ -653,4 +744,22 @@ International Workshop on Exploiting Concurrency Efficiently and Correctly },
  day="3",
  year="2023",
  note="\url{https://community.arm.com/arm-community-blogs/b/architectures-and-processors-blog/posts/arm-technical-view-on-relaxed-atomics}",
+}
+
+@article{EvgeniiMoiseenko2025reexecution,
+ author = {Moiseenko, Evgenii and Meluzzi, Matteo and Meleshchenko, Innokentii and Kabashnyi, Ivan and Podkopaev, Anton and Chakraborty, Soham},
+ title = {Relaxed Memory Concurrency Re-executed},
+ year = {2025},
+ issue_date = {January 2025},
+ publisher = {Association for Computing Machinery},
+ address = {New York, NY, USA},
+ volume = {9},
+ number = {POPL},
+ url = {https://doi.org/10.1145/3704908},
+ doi = {10.1145/3704908},
+ journal = {Proc. ACM Program. Lang.},
+ month = jan,
+ articleno = {72},
+ numpages = {27},
+ keywords = {C/C++ memory model, Weak memory models, model checking}
 }

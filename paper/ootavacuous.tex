@@ -243,7 +243,7 @@ consumes.
 
 Some researchers recommend avoiding OOTA by forcing prior relaxed
 loads to be ordered before subsequent relaxed
-stores~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352,PiezhaoOu2018OOTApapl},
+stores~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352,PiezhaoOu2018OOTApapl,SungHwanLee2023WeakMemoryPromising},
 but this can require executing real
 instructions~\cite[Section 7.1]{Maranget2012TutorialARMPower},
 consuming real time and real electrical power to solve a strictly
@@ -255,13 +255,28 @@ Section~\ref{sec:Global Optimization Can Destroy Dependencies},
 cross-thread optimizations can defeat this ordering constraint.
 
 Other researchers recommend various procedures to identify and avoid OOTA
-cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA},
-but none of these have been accepted by C++ implementers.
+cycles~\cite{Lahav:2017:RSC:3062341.3062352,Sinclair:2017:CAR:3079856.3080206,Lee:10.1145/3385412.3386010,MarkBatty2019ModularRelaxedDependenciesOOTA,MinkiCho2021PromisingSemantics,SohamChakraborty2019OOTAeventStructure,JeehoonKang2017PromisingSemantics,JeanPichonPharabod2016OOTA},
+but none of these have been accepted by C++ implementers, in part due
+to these models requiring consideration of multiple executions.
 As of 2024, Mark Batty is working on modular relaxed dependencies,
 which may have the added benefit of checking compiler
 optimizations~\cite{JayRichards2024SymbolicMrder}, which is a portion
 of the OOTA problem that is out of scope for this paper.\footnote{
 	But please see Section~\ref{sec:Merging Quasi-Volatile Loads}.}
+
+Moiseenko et al.~avoid cycles in po $\cup$
+rf~\cite{EvgeniiMoiseenko2025reexecution}, which might permit
+more optimizations than forcing prior relaxed loads to be ordered
+before subsequent relaxed stores, but which the authors characterize
+as ``(almost) a per-execution model''.
+It remains to be seen whether this is close enough to a per-execution
+model to be accepted by C++ implmenters.
+\emph{I am not fully confident of my characterization of this paper.}
+
+Jagadeesan et al.~combine preconditions and
+pomsets~\cite{RadhaJagadeesan2020OOTApomsetsPreconditions}, putting forward
+a memory model with attractive properties, but which does not support
+ARMv7 or PowerPC.
 
 Goldblatt looked at interactions between OOTA and
 undefined behavior (UB)~\cite{DavidGoldblatt2019NoElegantOOTAfix}.
