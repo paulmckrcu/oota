@@ -221,9 +221,11 @@ Section~\ref{sec:Hardware Dependencies, Instruction Ordering, and the Fundamenta
 
 All OOTA researchers owe a debt of gratitude to the foundational work led
 by William Pugh, represented by the infamous Java-language
-``Causality Test Cases''.\footnote{
-	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
-% %%% Eventually cite P3064.
+``Causality Test Cases''\footnote{
+	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}~\cite{JeremyManson2005JavaMemoryModel}.
+The OOTA problem has been open for more than 20~years and has been shown
+to be quite difficult~\cite{MarkBatty2015OOTAisHard}.
+% %%% @@@ Eventually cite P3064.
 
 Some executable C++ memory models correctly flag some OOTA
 cycles~\cite{JadeAlglave2014HerdingCats}.\footnote{
@@ -271,7 +273,7 @@ before subsequent relaxed stores, but which the authors characterize
 as ``(almost) a per-execution model''.
 It remains to be seen whether this is close enough to a per-execution
 model to be accepted by C++ implmenters.
-\emph{I am not fully confident of my characterization of this paper.}
+\emph{@@@ I am not fully confident of my characterization of this paper.}
 
 Jagadeesan et al.~combine preconditions and
 pomsets~\cite{RadhaJagadeesan2020OOTApomsetsPreconditions}, putting forward
@@ -301,10 +303,11 @@ In the wise words of Peter J.~Denning, ``Maybe we need to occasionally
 descend from the high clouds of our abstractions to the concrete earthy
 concerns of everyday life.''~\cite{PeterJDenning2025Abstraction}.
 
-Therefore, this paper's contribution is to show how these constraints
-prevent real-world C++ implementations from exhibiting OOTA behavior,
-and not with minimal cost~\cite{PiezhaoOu2018OOTApapl}, but rather with
-no cost at all.
+Therefore, this paper's contribution is to show how these
+constraints prevent real-world C++ implementations doing per-thread
+analysis from exhibiting OOTA behavior, and not with minimal
+cost~\cite{PiezhaoOu2018OOTApapl}, but rather with no cost at all.
+\emph{@@@ Are these the right qualifiers?}
 
 \section{OOTA and Semantic Dependencies (sdep)}
 \label{sec:OOTA and Semantic Dependencies (sdep)}
