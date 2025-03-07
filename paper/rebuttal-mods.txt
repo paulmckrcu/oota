@@ -3,7 +3,7 @@ page limits.
 
 x	Detailed feedback from Review #72C.
 
-o	Early in the paper, consider explicitly stating that after 20
+x	Early in the paper, consider explicitly stating that after 20
 	years it appears that the problem of characterizing semantic
 	dependency is too difficult to solve in the context provided by
 	the C++ standard (i.e., the abstract machine) and therefore we
@@ -14,7 +14,7 @@ x	s/We would be happy to change "explicitly prohibits"/"explicitly recommends ag
 
 x	s/Workers/Researcher/ in Section 1.2.
 
-O	Add citations to Section 1.2 ("Prior Work").
+x	Add citations to Section 1.2 ("Prior Work").
 	x	Ou and Demski PAPL 2018.
 
 x	Add a forward reference to Section 4.2 ("Global Optimization
@@ -24,7 +24,7 @@ x	Add a forward reference to Section 4.2 ("Global Optimization
 x	Be less condescending towards Mark Batty.  Maybe
 	s/is persisting with/is working on/.
 
-o	Add a Section 1.3 ("Our Approach"?) that summarizes the
+x	Add a Section 1.3 ("Our Approach"?) that summarizes the
 	rfe/sdep/non-sdep-dep approach and emphasizes proving
 	OOTA cannot happen as opposed to an exact delineation
 	between sdep and non-sdep.
@@ -55,6 +55,8 @@ x	In section 6.1, define "witness" informally as "another execution
 
 o	Add diagrams illustrating what the various components of sections
 	6.1 and 6.3 refer to. (Reviewer #72B)
+
+o	Review Sections 6.1 and 6.3 for clarity per Reviewer #72F.
 
 x	On page 9, "While it possible".  [ Since fixed by Alan. ]
 
