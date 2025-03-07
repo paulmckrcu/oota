@@ -35,7 +35,8 @@ o	Add citations to later sections that discuss litmus tests
 o	Consider adding a 2.2.x section that discusses the difficulties
 	inherent in computing sdep for function calls, especially when
 	the function will be part of a dynamic library that has not yet
-	been written.
+	been written.  (This addresses Reviewer #72F's call for handling
+	examples in Section 5 of [5].)
 
 o	In section 2.2 where we start to talk about semantic dependencies
 	in detail, we could mention syntactic dependencies too.  Explain
@@ -57,7 +58,7 @@ o	Add diagrams illustrating what the various components of sections
 
 x	On page 9, "While it possible".  [ Since fixed by Alan. ]
 
-O	In Section 7.4 ("Merging Quasi-Volatile Loads"), change focus
+x	In Section 7.4 ("Merging Quasi-Volatile Loads"), change focus
 	from intuitive notions to a community-process approach for
 	determining what optimizations are legitimate.  Math cannot
 	handle this.  We avoid the problem by looking at the compiler
