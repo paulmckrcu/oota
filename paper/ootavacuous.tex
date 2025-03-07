@@ -40,14 +40,15 @@
 \floatname{listing}{Listing}
 
 \begin{document}
-\title{How to Avoid OOTA Without Really Trying}
+\title{DNNNNR0: How to Avoid OOTA Without Really Trying}
 
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
 \author{
-Alan Stern (stern@rowland.harvard.edu) \and
-Paul E.~McKenney (paulmck@kernel.org) \and
-Michael Wong (fraggamuffin@gmail.com)
+Alan Stern \and
+Paul E.~McKenney \and
+Michael Wong \and
+Maged Michael
 }
 
 \begin{abstract}
@@ -75,6 +76,8 @@ Michael Wong (fraggamuffin@gmail.com)
 	It follows that enforcing OOTA avoidance requires no special
 	action from implementations and no changes to user code or
 	to the standard.
+
+	Audience: SG1.
 \end{abstract}
 \maketitle{}
 
@@ -306,7 +309,8 @@ concerns of everyday life.''~\cite{PeterJDenning2025Abstraction}.
 Therefore, this paper's contribution is to show how these
 constraints prevent real-world C++ implementations doing per-thread
 analysis from exhibiting OOTA behavior, and not with minimal
-cost~\cite{PiezhaoOu2018OOTApapl}, but rather with no cost at all.
+cost~\cite{PiezhaoOu2018OOTApapl}, but rather with no cost at
+all~\cite{PaulEMcKenney2023P3046R2/OOTAwithoutTrying}.
 \emph{@@@ Are these the right qualifiers?}
 
 \section{OOTA and Semantic Dependencies (sdep)}
@@ -1604,6 +1608,12 @@ avoiding OOTA cycles requires no changes to the standard,
 to current implementions, or to user practices for portable code.
 % This work also demonstrates the need for caution when optimizing
 % atomic operations.
+
+\section*{History}
+
+This paper is a condensation of P3064R2 ("How to Avoid OOTA Without
+Really Trying")~\cite{PaulEMcKenney2023P3046R2/OOTAwithoutTrying}.
+It also adds citations and clarifications.
 
 % \clearpage
 % \appendix

@@ -86,7 +86,7 @@ do
 	fi
 done
 
-pdflatex asplos.tex || exit
-bibtex asplos.aux || exit
-pdflatex asplos.tex || exit
-pdflatex asplos.tex || exit
+pdflatex ootashort.tex || exit
+bibtex ootashort.aux || exit
+pdflatex ootashort.tex || exit
+pdflatex ootashort.tex || exit
