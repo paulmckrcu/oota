@@ -292,21 +292,48 @@ We consider only UB-free examples.
 
 All this work focused on either identifying OOTA or helping C++
 implementations to avoid it.
-None applied real-world hardware ordering constraints (based on
-long-standing laws of physics) to the problem of avoiding OOTA cycles.
 
-Augmenting C++ abstractions with these constraints would of course
-limit applicability of this paper's results to C++ programs running
-on real-world computer systems.
-However, a quarter century of OOTA research based on pure C++ abstractions
-has resulted in incremental progress at best, and real-world computer
-systems comprise an exceedingly important part of the overall OOTA
-problem.
+\subsection{Our Approach}
+\label{sec:Our Approach}
+
+Our approach applies real-world hardware constraints (which are further
+constrained by long-standing laws of physics) to the problem of avoiding
+OOTA cycles.
+We do this by augmenting the C++ abstract machine with these constraints,
+which of course limits the applicability of our results to C++ programs
+compiled and run on real-world computer systems.
+Given that a quarter century of OOTA research based on pure unaugmented
+C++ abstractions has resulted in (at best) incremental progress on the
+one hand, and that real-world computer systems comprise an exceedingly
+important part of the overall OOTA problem on the other, our results
+are valuable despite these limitations.
 In the wise words of Peter J.~Denning, ``Maybe we need to occasionally
 descend from the high clouds of our abstractions to the concrete earthy
-concerns of everyday life.''~\cite{PeterJDenning2025Abstraction}.
+concerns of everyday life''~\cite{PeterJDenning2025Abstraction}.
 
-Therefore, this paper's contribution is to show how these
+The key observations that enable us to apply these constraints are:
+(1)~Communicating data within a computer system takes time,
+(2)~Executing instructions that compute an output value that semantically
+depends on given input values also takes time,
+and
+(3)~Each link in an OOTA cycle consists of either data communication
+or computation of an output that semantically depends on an input.
+Because closing an OOTA cycle comprising a sequence of commmunications
+and computations requires this sequence to end at the same time as it
+starts, OOTA cycles cannot form in those C++ implementations that are
+within the scope of this paper.
+A great advantage of our approach is that we are \emph{not} required to
+precisely define the boundaries of sdep.
+After all, although compilers are forbidden from breaking semantic
+dependencies, they are by no means required to break non-semantic
+dependencies.
+
+These simple-seeming observations conceal considerable complexity,
+and so much of the remainder of this paper deals with corner cases that
+arise when carefully considering semantic dependencies, executions, C++
+compilers, and hardware properties.
+
+In short, this paper's contribution is to show how these
 constraints prevent real-world C++ implementations doing per-thread
 analysis from exhibiting OOTA behavior, and not with minimal
 cost~\cite{PiezhaoOu2018OOTApapl}, but rather with no cost at
