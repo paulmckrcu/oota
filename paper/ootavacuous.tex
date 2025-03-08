@@ -119,7 +119,9 @@ thread's load.
 The collection of loads and stores forms an \emph{OOTA cycle}.
 In the most extreme cases a nonsensical value can pop up ``out of thin air''
 as shown in
-Listing~\ref{lst:Simple OOTA}.
+Listing~\ref{lst:Simple OOTA} (JMM TC4).\footnote{
+	Java Memory Model Test Case 4 from
+	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}
 Here, all of \co{x}, \co{y}, \co{r1}, and \co{r2} might have final
 values of 42, despite there being no instances of 42 in the default-zero
 initial values or in the executable
