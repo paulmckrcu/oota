@@ -430,14 +430,21 @@ We will see examples of this destruction later on.
 
 Here we consider some of the complexities inherent to semantic
 dependencies.
+It is important to distinguish semantic dependencies from syntactic
+dependencies.
+Although every semantic dependency is also a syntactic dependency, many
+syntactic dependencies can be optimized (or ``broken''), as will be seen
+in the following sections.
+Such syntactic dependencies are not semantic dependencies.
 
 \subsubsection{Semantic Dependencies and Source Code}
 \label{sec:Semantic Dependencies and Source Code}
 
 Some discussions of semantic dependencies assume that they
 are strictly functions of the source code.
-Although there are ways of making this work, many instances of
-semantic dependency must be considered functions of particular executions.
+This assumption is not always valid, in fact, we will see that many
+instances of semantic dependency must be considered functions of
+particular executions.
 Consider for example:
 \begin{quote}
 \begin{verbatim}
