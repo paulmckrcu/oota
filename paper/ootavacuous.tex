@@ -1588,19 +1588,18 @@ necessarily be one, not zero.
 Thus, relative to this compiler the example does not contain a
 semantic dependency.
 
-Although it is unexpected, and while we don't recommend this sort of code
-transformation, we cannot say that this conclusion is definitely wrong,
-because our intuitive notions of semantic dependency are not clear in
-cases where multiple loads of the same variable are present.
+Although this is unexpected, and while we don't recommend this sort of
+code transformation, we cannot say that this conclusion is definitely
+wrong, because one's intuitive notions of semantic dependency are not
+always clear in cases involving multiple loads from the same variable.
 % Can we instead say that transforming the code might require that the
 % witness also be transformed?
-In the unlikely event that this transformation proves useful, there will be
-a community process that determines whether this transformation is valid,
-that is, whether value of the use cases is worth the added conceptual load
-on developers.
-Until that time, it is impossible to say whether or not there is
-a semantic dependency from \co{y} to \co{z} without reference to a
-specific implementation.
+In the unlikely event that this transformation proves useful, there
+will be a community process that determines whether the value of this
+transformation is worth the added conceptual load on developers.
+Until that time, pure mathematics cannot help us because it is simply
+impossible to say whether or not there is a semantic dependency from
+\co{y} to \co{z} without reference to a specific implementation.
 
 \subsection{Other Potential Refinements}
 \label{sec:Other Potential Refinements}
