@@ -201,7 +201,7 @@ sometimes satisfied.
 
 Simple reordering can cause non-OOTA, but OOTA-like, behavior, as
 exemplified by
-Listing~\ref{lst:Simple Reordering}~\cite{PaulEMcKenney2020RelaxedGuideRelaxed}.
+Listing~\ref{lst:Simple Reordering}~\cite{PaulEMcKenney2014OOTA}.
 Either the compiler or the CPU might reorder T1's lines~1 and~2, so that
 all of \co{x}, \co{y}, \co{r1}, and \co{r2} might end up with the value 42,
 as indicated by the ``sometimes satisfied'' in the figure.
@@ -214,7 +214,7 @@ as indicated by the ``sometimes satisfied'' in the figure.
 
 On the other hand, OOTA cycles need not involve nonsensical or
 unmotivated values, as shown in
-Listing~\ref{lst:OOTA Cycle}.
+Listing~\ref{lst:OOTA Cycle}, adapted from~\cite{PaulEMcKenney2014OOTA}.
 Line~3 of both threads stores the value 42 only when line~2 determines
 that the value loaded was 42.
 As with Listing~\ref{lst:Simple OOTA}, hardware ordering prevents the
@@ -229,8 +229,7 @@ by William Pugh, represented by the infamous Java-language
 ``Causality Test Cases''\footnote{
 	\url{http://www.cs.umd.edu/~pugh/java/memoryModel/unifiedProposal/testcases.html}.}~\cite{JeremyManson2005JavaMemoryModel}.
 The OOTA problem has been open for more than 20~years and has been shown
-to be quite difficult~\cite{MarkBatty2015OOTAisHard}.
-% %%% @@@ Eventually cite P3064.
+to be quite difficult~\cite{MarkBatty2015OOTAisHard,PaulEMcKenney2023P3046R2/OOTAwithoutTrying}.
 
 Some executable C++ memory models correctly flag some OOTA
 cycles~\cite{JadeAlglave2014HerdingCats}.\footnote{
@@ -365,8 +364,9 @@ in sdep $\cup$ rf~\cite{PaulEMcKenney2014OOTA},
 % of N4323 ("Out-of-Thin-Air Execution is Vacuous").
 where sdep is the set of semantic dependencies within each thread and
 rf is the set of store-to-load ``reads-from'' links, whether internally
-within a thread (rfi) or externally between threads (rfe).
-% @@@ Consider adding citation defining rf, rfi, and rfe.
+within a thread (rfi) or externally between threads (rfe).\footnote{
+	Additional background on temporal distinctions between coe, fre,
+	and rfe maybe found elsewhere~\cite[Appendix A]{PaulEMcKenney2023P3046R2/OOTAwithoutTrying}.}
 
 This is a fine definition and is consistent with the words in the C++
 standard, but it has a problem with intrathread rfi links
@@ -539,7 +539,7 @@ a given store, but also whether or not that store is executed at all.
 \subsubsection{Semantic Dependencies Not Affected by \co{if} Statements}
 \label{sec:Semantic Dependencies Not Affected by if Statements}
 
-Compare this example to the previous one:
+Compare this example~\cite{Howells2009membartxt} to the previous one:
 \begin{quote}
 \begin{verbatim}
 if (x > 0)
@@ -602,6 +602,7 @@ Once again, the decision is up to the implementation.
 \label{sec:Semantic Dependencies and Free Choices}
 
 Consider the following example, with variable \co{i} initially zero:
+% @@@ Citation?
 \begin{quote}
 \begin{verbatim}
 int foo(int a, int b)
@@ -937,7 +938,7 @@ Destroy Semantic Dependencies}
 Destroy Semantic Dependencies}
 
 Invented atomic loads are problematic.
-Consider this code:
+Consider this code~\cite{PaulEMcKenney2023P3046R2/OOTAwithoutTrying}:
 \begin{quote}
 \begin{verbatim}
 int r0 = x;
@@ -964,7 +965,7 @@ This fails to satisfy the abstract machine's guarantee
 and therefore is an invalid transformation.
 
 Inventing atomic loads can also destroy dependencies.
-For example, consider this code:
+For example, consider this code~\cite{PaulEMcKenney2023P3046R2/OOTAwithoutTrying}:
 \begin{quote}
 \begin{verbatim}
    int r1 = (x != 0);
