@@ -1609,15 +1609,18 @@ Additional future work could:
 (1)~Extend these results to some classes of interpreters and just-in-time
 compilers (JITs) on
 one hand, and to link-time optimization (LTO) on the other;
-(2)~Consider various classes of global analysis, such as
+(2)~Relax quasi-volatile semantics to permit limited load speculation,
+for example, use of conditional-move instructions in cases where the
+source code conditionally consumes the results of the atomic load;
+(3)~Consider various classes of global analysis, such as
 demonstrating that a given expression will always evaluate to a constant;
-(3)~Examine the possibility of ``flattening'' optimizations that combine
+(4)~Examine the possibility of ``flattening'' optimizations that combine
 multiple threads into one;
-(4)~Explore cases in which semantic dependencies must be absolute,
+(5)~Explore cases in which semantic dependencies must be absolute,
 not relative to any particular compiler;
-(5)~Include the effects of input and output or other operations which
+(6)~Include the effects of input and output or other operations which
 can vary from one execution to another; and
-(6)~Delineate more precisely the limits of permissible behavior for
+(7)~Delineate more precisely the limits of permissible behavior for
 quasi-volatile object accesses.
 This last item may well shed additional light on the dangers of
 optimizations involving non-volatile atomic operations beyond the cautions
