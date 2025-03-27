@@ -143,7 +143,7 @@ Because nothing in the C++ memory model rules out such OOTA cycles
 standard explicitly recommends against them in 33.5.4p8
 (\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
 \begin{quote}
-	Implementations should ensure that no “out-of-thin-air” values
+	Implementations should ensure that no ``out-of-thin-air'' values
 	are computed that circularly depend on their own computation.
 \end{quote}
 This prohibition prevents misapplication of the as-if rule in oracular
@@ -1624,6 +1624,31 @@ optimizations involving non-volatile atomic operations beyond the cautions
 outlined in
 Section~\ref{sec:Inventing Atomic Loads Can Cause Errors and
 Destroy Semantic Dependencies}.
+
+\subsection{Possible Change to the Standard}
+\label{sec:Possible Change to the Standard}
+
+As noted in Section~\ref{sec:Brief OOTA Overview}, the C++
+standard explicitly recommends against them in 33.5.4p8
+(\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
+\begin{quote}
+	Implementations should ensure that no ``out-of-thin-air'' values
+	are computed that circularly depend on their own computation.
+\end{quote}
+
+Sensible though this recommendation might be, it can unnecessarily raise
+anxiety levels of C++ implementers.
+After all, what exactly do they need to do in order to follow that
+recommendation?
+One way to reduce their anxiety levels would be to add something like
+the following sentence to this recommendation:
+\begin{quote}
+	Compiler-based implementations whose binaries run on conventional
+	hardware are guaranteed not to compute out-of-thin-air values as
+	long as they restrict themselves to thread-at-a-time analysis,
+	valid optimizations, and user programs that are free of undefined
+	behavior.
+\end{quote}
 
 \section{Summary and Conclusion}
 \label{sec:Summary and Conclusion}
