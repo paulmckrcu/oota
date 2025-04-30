@@ -598,6 +598,28 @@ arm of the \co{if} statement \emph{would} agree with the store in
 line~2, and so there would not be a semantic dependency.
 Once again, the decision is up to the implementation.
 
+\subsubsection{Semantic Dependencies and Function Calls}
+\label{sec:Semantic Dependencies and Function Calls}
+
+Boehm and Dempsky~\cite[Section 5]{Boehm:2014:OGA:2618128.2618134}
+point out that arbitrary function calls can pose challenges for any
+attempt to determine semantic dependencies based solely on analysis
+of the source code, using the following example:
+\begin{quote}
+\begin{verbatim}
+y = f(x);
+\end{verbatim}
+\end{quote}
+And it is indeed impossible to determine whether or not there is a
+semantic dependency from \co{x} to \co{y} without reference to the
+definition of \co{f()}.
+For some definitions of \co{f()}, a semantic dependency exists, and for
+others it does not.
+
+Note that \co{f} might well be a pointer to a function, in which case
+the existence of that semantic dependency might well vary at runtime as
+the value of function pointer \co{f} changes.
+
 \subsubsection{Semantic Dependencies and Free Choices}
 \label{sec:Semantic Dependencies and Free Choices}
 
