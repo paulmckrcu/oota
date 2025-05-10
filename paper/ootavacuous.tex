@@ -452,7 +452,8 @@ x = y * z;
 \end{verbatim}
 \end{quote}
 
-As long as \co{z} is zero, changes in the
+Expanding on earlier discussions~\cite{Boehm:2014:OGA:2618128.2618134},
+as long as \co{z} is zero, changes in the
 value of \co{y} will not cause a change in the value stored to \co{x}.
 As a result, the semantic dependency from \co{y} to \co{x} exists only
 in executions where \co{z} is nonzero,
@@ -1442,6 +1443,144 @@ volatile, or
 then programs produced by that implementation will never exhibit OOTA.
 Thus the implementation will automatically comply with full C++, even
 if it was designed only to comply with loose C++.
+
+\subsection{Exercising the Definition}
+\label{sec:Exercising the Definition}
+
+This section exercises the definition of ``semantic dependency''
+presented in the previous section on selected examples.
+These exercises use the following steps:
+
+\begin{enumerate}
+\item	Identify the potential semantic dependencies of interest.
+\item	Compile the code to assembly language, either using a
+	real compiler or conceptually.
+\item	Check for an assembly level syntactic dependency between
+	the loads and stores making of the potential semantic
+	dependency.
+	\begin{enumerate}
+	\item	If there is no assembly level syntactic dependency,
+		then there can be no semantic
+		dependency.\label{item:No assembly level syntactic dependency}
+	\item	Otherwise, if there is no execution having a witness,
+		then there can be no semantic
+		dependency.\label{item:No witness}
+	\item	Otherwise, there is a semantic
+		dependency.\label{item:No sdep}
+	\end{enumerate}
+\end{enumerate}
+
+In cases~\ref{item:No assembly level syntactic dependency}
+and~\ref{item:No witness}
+there is no semantic dependency.
+In case~\ref{item:No sdep},
+there might or might not be a semantic dependency, but
+time will definitely be consumed executing the resulting code.
+Either way, the candidate dependency cannot be part of an OOTA
+cycle.
+
+The following sections apply these steps to two of the examples in
+this paper.
+% Should we call out the relationship to the perturbation method of P0422r0?
+
+\subsubsection{Exercising Function Calls}
+\label{sec:Exercising Function Calls}
+
+Section~\ref{sec:Semantic Dependencies and Function Calls}
+provides the following example:
+\begin{quote}
+\begin{verbatim}
+y = f(x);
+\end{verbatim}
+\end{quote}
+If the compiler knows nothing about the function \co{f()} and the variable
+\co{y}, it must emit code that loads from \co{x}, passes this value to
+\co{f()}, and finally stores the return value to \co{y}.
+Is there a semantic dependency from the load of \co{x} to the store of
+\co{y}?
+To determine this, it is necessary to apply this same analysis to the
+definition of \co{f()}, treating its argument as a load and each of its
+\co{return} statements as a store.
+If and only if this analysis shows that, for a given execution, there
+is a semantic dependency within \co{f()}, then there must also be a
+semantic dependency from the load of \co{x} to the store of \co{y}.
+Of course, if the compiler cannot prove that there is no such semantic
+dependency, it must assume than there is one.
+
+If \co{f} is a pointer to a function, then the compiler must also
+generate load from \co{f}, so that there might be a semantic dependency
+from either or both of \co{f} and \co{y} to the store to \co{y}.
+This is straightforward:
+A given execution will load a pointer to a particular function from
+\co{f}, so if there is another execution that loads a pointer to a
+different function, and the two functions return different values for
+that execution's value from \co{y}, then there is a semantic dependency
+from \co{f} to \co{y}.
+
+Situations where the compiler knows about \co{f} more often result in
+inlining, in which case there is no function call, allowing the semantic
+dependencies (or lack thereof) to be determined with respect to the
+inlined code.
+
+\subsubsection{Exercising Multiplication}
+\label{sec:Exercising Multiplication}
+
+Sections~\ref{sec:Semantic Dependencies and Source Code}
+and~\ref{sec:Semantic Dependencies Can Be Many-To-One}
+provide the following example:
+\begin{quote}
+\begin{verbatim}
+x = y * z;
+\end{verbatim}
+\end{quote}
+This has potential semantic dependencies between the loads from \co{x}
+and \co{y} to the store to \co{z}.
+The corresponding assembly code can vary depending on what the compiler
+knows about the values of \co{x} and \co{y}.
+
+If it knows nothing, then it must load from both, multiply the values
+loaded, and then store the resulting product to \co{z}.
+There is an assembly-level syntactic dependency, and if we start
+with the execution in which the value 1 is loaded from both variables
+(resulting in the value 1 being stored to \co{z}),
+then the execution in which the value 2 is loaded from \co{x} witnesses
+a semantic dependency from \co{x} to \co{z}.
+Similarly, the execution in which the value 2 is loaded from \co{y}
+witnesses a semantic dependency from \co{y} to \co{z}.
+Both witnesses result in the value 2 being stored to \co{z}.
+
+But suppose we instead start with the execution where the value 0
+is loaded from \co{x} and the value 1 is loaded from \co{y}.
+In this case, there is no witness execution that varies only the value
+of \co{y}, as all such executions will result in the value 0 being stored
+to \co{z}.
+However, the execution where the value -1 is loaded from \co{x}
+witnesses a semantic dependency from \co{x} to \co{y}, resulting in
+the value -1 being stored to \co{z}.
+Furthermore, the execution where the value -1 is loaded from \co{x}
+and the value -2 is loaded from \co{y} witnesses a semantic dependency
+from the set \{\co{x}, \co{y}\} to \co{z}, resulting in the value 2 being
+stored to \co{z}.
+
+But suppose we instead start with the execution where the value 0
+is loaded from both \co{x} and \co{y}.
+There is again no witness execution that varies only the value of \co{y},
+but there is also no witness execution that varies only the value of \co{x},
+all such executions resulting in the value 0 stil being stored to \co{z}.
+However, the execution where the value 2 is loaded from both \co{x} and
+\co{y} witnesses a semantic dependency from the set \{\co{x}, \co{y}\}
+to \co{z}, resulting in the value 4 being stored to \co{z}.
+
+Alternatively, if the compiler knows that the value loaded from \co{x}
+is guaranteed to be zero, then it can omit the loads from both \co{x}
+and \co{y} (assuming that the value from \co{y} is not otherwise used),
+storing the constant 0 to \co{z}.
+There can be no semantic dependencies from these now-nonexistent loads
+to the store to \co{z}.
+And then any execution that witnessed a semantic dependency from
+either or both of \co{x} and \co{y} would indicate a bug in the
+compiler, which would have been wrong in its assumption of the
+guarantee that \co{x} was zero.
 
 \section{Issues and Refinements}
 \label{sec:Issues and Refinements}
