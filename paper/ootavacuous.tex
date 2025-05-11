@@ -1451,8 +1451,8 @@ if it was designed only to comply with loose C++.
 \subsection{Exercising the Definition}
 \label{sec:Exercising the Definition}
 
-This section exercises the definition of ``semantic dependency''
-presented in the previous section on selected examples.
+This section exercises the definition of ``semantic dependency'' on
+selected examples.
 These exercises use the following steps:
 
 \begin{enumerate}
@@ -1498,7 +1498,7 @@ y = f(x);
 \end{verbatim}
 \end{quote}
 If the compiler knows nothing about the function \co{f()} and the variable
-\co{y}, it must emit code that loads from \co{x}, passes this value to
+\co{x}, it must emit code that loads from \co{x}, passes this value to
 \co{f()}, and finally stores the return value to \co{y}.
 Is there a semantic dependency from the load of \co{x} to the store of
 \co{y}?
@@ -1508,20 +1508,22 @@ definition of \co{f()}, treating its argument as a load and each of its
 If and only if this analysis shows that, for a given execution, there
 is a semantic dependency within \co{f()}, then there must also be a
 semantic dependency from the load of \co{x} to the store of \co{y}.
-Of course, if the compiler cannot prove that there is no such semantic
+As always, if the compiler cannot prove that there is no such semantic
 dependency, it must assume than there is one.
 
-If \co{f} is a pointer to a function, then the compiler must also
-generate load from \co{f}, so that there might be a semantic dependency
-from either or both of \co{f} and \co{y} to the store to \co{y}.
-This is straightforward:
+If \co{f} is a pointer to a function, then the compiler must also emit
+a load from \co{f}, so that there might also be a semantic dependency
+from the load from \co{f} to the store to \co{y}.
+In the context of C++, this is straightforward:
 A given execution will load a pointer to a particular function from
 \co{f}, so if there is another execution that loads a pointer to a
 different function, and the two functions return different values for
-that execution's value from \co{y}, then there is a semantic dependency
-from \co{f} to \co{y}.
+the value loaded from \co{x}, then there is a semantic dependency from
+\co{f} to \co{y}.
+Languages that permit functions to be generated at runtime must use
+more complicated analysis.
 
-Situations where the compiler knows about \co{f} more often result in
+Situations where the compiler knows about \co{f} often result in
 inlining, in which case there is no function call, allowing the semantic
 dependencies (or lack thereof) to be determined with respect to the
 inlined code.
