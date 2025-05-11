@@ -1536,7 +1536,7 @@ and~\ref{sec:Semantic Dependencies Can Be Many-To-One}
 provide the following example:
 \begin{quote}
 \begin{verbatim}
-x = y * z;
+z = x * z;
 \end{verbatim}
 \end{quote}
 This has potential semantic dependencies between the loads from \co{x}
@@ -1553,7 +1553,6 @@ then the execution in which the value 2 is loaded from \co{x} witnesses
 a semantic dependency from \co{x} to \co{z}.
 Similarly, the execution in which the value 2 is loaded from \co{y}
 witnesses a semantic dependency from \co{y} to \co{z}.
-Both witnesses result in the value 2 being stored to \co{z}.
 
 But suppose we instead start with the execution where the value 0
 is loaded from \co{x} and the value 1 is loaded from \co{y}.
@@ -1561,32 +1560,25 @@ In this case, there is no witness execution that varies only the value
 of \co{y}, as all such executions will result in the value 0 being stored
 to \co{z}.
 However, the execution where the value -1 is loaded from \co{x}
-witnesses a semantic dependency from \co{x} to \co{y}, resulting in
+witnesses a semantic dependency from \co{x} to \co{z}, resulting in
 the value -1 being stored to \co{z}.
-Furthermore, the execution where the value -1 is loaded from \co{x}
-and the value -2 is loaded from \co{y} witnesses a semantic dependency
-from the set \{\co{x}, \co{y}\} to \co{z}, resulting in the value 2 being
-stored to \co{z}.
 
 But suppose we instead start with the execution where the value 0
 is loaded from both \co{x} and \co{y}.
 There is again no witness execution that varies only the value of \co{y},
 but there is also no witness execution that varies only the value of \co{x},
-all such executions resulting in the value 0 stil being stored to \co{z}.
-However, the execution where the value 2 is loaded from both \co{x} and
-\co{y} witnesses a semantic dependency from the set \{\co{x}, \co{y}\}
-to \co{z}, resulting in the value 4 being stored to \co{z}.
+all such executions still resulting in the value 0 being stored to \co{z}.
+However, the execution where the value 2 is loaded from \co{x} and the
+value 3 is loaded from \co{y} witnesses a semantic dependency from the
+set \{\co{x}, \co{y}\} to \co{z}, resulting in the value 6 being stored
+to \co{z}.
 
 Alternatively, if the compiler knows that the value loaded from \co{x}
 is guaranteed to be zero, then it can omit the loads from both \co{x}
-and \co{y} (assuming that the value from \co{y} is not otherwise used),
-storing the constant 0 to \co{z}.
-There can be no semantic dependencies from these now-nonexistent loads
-to the store to \co{z}.
-And then any execution that witnessed a semantic dependency from
-either or both of \co{x} and \co{y} would indicate a bug in the
-compiler, which would have been wrong in its assumption of the
-guarantee that \co{x} was zero.
+and \co{y} (assuming that these values are not otherwise used), and
+then simply store the constant 0 to \co{z}.
+There clearly can be no semantic dependencies from these now-nonexistent
+loads to the store to \co{z}.
 
 \section{Issues and Refinements}
 \label{sec:Issues and Refinements}
