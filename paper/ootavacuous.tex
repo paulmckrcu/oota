@@ -621,12 +621,9 @@ y = f(x);
 And it is indeed impossible to determine whether or not there is a
 semantic dependency from \co{x} to \co{y} without reference to the
 definition of \co{f()}.
-For some definitions of \co{f()}, a semantic dependency exists, and for
-others it does not.
-
-Note that \co{f} might well be a pointer to a function, in which case
-the existence of that semantic dependency might well vary at runtime as
-the value of function pointer \co{f} changes.
+In addition, \co{f} might well be a pointer to a function, in which case
+the existence of a semantic dependency from \co{x} to \co{y} might well
+vary at runtime as the value of function pointer \co{f} changes.
 
 \subsubsection{Semantic Dependencies and Free Choices}
 \label{sec:Semantic Dependencies and Free Choices}
