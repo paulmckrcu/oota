@@ -68,10 +68,10 @@ Maged Michael
 	such implementations, provided the cycles involve only volatile
 	atomics.
 	We accommodate nonvolatile atomics by defining ``quasi-volatile''
-	behavior which enables existing implementations that do per-thread
-	analysis and optimization not only to avoid OOTA, but also to
-	avoid incorrectly evaluating arithmetic expressions involving
-	atomic accesses.
+	behavior and show that existing implementations doing per-thread
+	analysis and optimization not only avoid OOTA, but also avoid
+	incorrectly evaluating arithmetic expressions involving atomic
+	accesses.
 
 	It follows that enforcing OOTA avoidance requires no special
 	action from implementations and no changes to user code or
@@ -85,7 +85,7 @@ Maged Michael
 
 This paper is a condensation of P3064R2 ("How to Avoid OOTA Without
 Really Trying")~\cite{PaulEMcKenney2023P3046R2/OOTAwithoutTrying},
-which was criticized as being too long.
+which was criticized as being overly long.
 It also adds citations and clarifications.
 
 \section{Introduction and Background}
