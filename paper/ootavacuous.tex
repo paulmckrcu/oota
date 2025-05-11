@@ -455,30 +455,30 @@ particular executions.
 Consider for example:
 \begin{quote}
 \begin{verbatim}
-x = y * z;
+z = x * y;
 \end{verbatim}
 \end{quote}
 
 Expanding on earlier discussions~\cite{Boehm:2014:OGA:2618128.2618134},
-as long as \co{z} is zero, changes in the
-value of \co{y} will not cause a change in the value stored to \co{x}.
-As a result, the semantic dependency from \co{y} to \co{x} exists only
-in executions where \co{z} is nonzero,
+as long as \co{y} is zero, changes in the
+value of \co{x} will not cause a change in the value stored to \co{z}.
+As a result, the semantic dependency from \co{x} to \co{z} exists only
+in executions where \co{y} is nonzero,
 which shows it is a property of the execution, not just of the source code.
 
 \subsubsection{Semantic Dependencies Can Be Many-To-One}
 \label{sec:Semantic Dependencies Can Be Many-To-One}
 
 Suppose that in some execution of the previous example,
-both \co{y} and \co{z} are zero.
-Then changes to either \co{y} or \co{z}
-will not cause a change in the value stored to \co{x}.
+both \co{x} and \co{y} are zero.
+Then changes to either \co{x} or \co{y}
+will not cause a change in the value stored to \co{z}.
 In other words, in this execution there is no semantic dependency
-from either \co{y} or \co{z} to \co{x}.
+from either \co{x} or \co{y} to \co{z}.
 But there \emph{is} a semantic dependency from the \emph{pair}
-\{\co{y},~\co{z}\} to \co{x},
-because changes to both \co{y} and \co{z}
-can cause the value stored in \co{x} to change.
+\{\co{x},~\co{y}\} to \co{z},
+because changes to both \co{x} and \co{y}
+can cause the value stored in \co{z} to change.
 This means that, prior work~\cite{PaulEMcKenney2016OOTA}
 notwithstanding, accurate definitions of sdep cannot always rely on
 single-variable perturbations;
