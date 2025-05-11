@@ -1581,6 +1581,15 @@ then simply store the constant 0 to \co{z}.
 There clearly can be no semantic dependencies from these now-nonexistent
 loads to the store to \co{z}.
 
+\subsubsection{Discussion}
+\label{sec:Discussion}
+
+Allowing the compiler to transform the source code to assembly code
+prior to analysis provides great simplifications.
+This enables us to show the main result, namely that current compiler-based
+C++ implementations do not produce OOTA cycles.
+Note well that these compilers' current analysis suffices.
+
 \section{Issues and Refinements}
 \label{sec:Issues and Refinements}
 
