@@ -1506,8 +1506,9 @@ To determine this, it is necessary to apply this same analysis to the
 definition of \co{f()}, treating its argument as a load and each of its
 \co{return} statements as a store.
 If and only if this analysis shows that, for a given execution, there
-is a semantic dependency within \co{f()}, then there must also be a
-semantic dependency from the load of \co{x} to the store of \co{y}.
+is an assembly level syntactic dependency within \co{f()}, then there
+must also be a semantic dependency from the load of \co{x} to the store
+of \co{y}.
 As always, if the compiler cannot prove that there is no such semantic
 dependency, it must assume than there is one.
 
