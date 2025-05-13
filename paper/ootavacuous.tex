@@ -40,7 +40,7 @@
 \floatname{listing}{Listing}
 
 \begin{document}
-\title{DNNNNR0: How to Avoid OOTA Without Really Trying}
+\title{P3692R0: How to Avoid OOTA Without Really Trying}
 
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
@@ -83,8 +83,8 @@ Maged Michael
 
 \section*{History}
 
-This paper is a condensation of P3064R2 ("How to Avoid OOTA Without
-Really Trying")~\cite{PaulEMcKenney2023P3046R2/OOTAwithoutTrying},
+This paper is a condensation of P3064R2 (``How to Avoid OOTA Without
+Really Trying'')~\cite{PaulEMcKenney2023P3046R2/OOTAwithoutTrying},
 which was criticized as being overly long.
 It also adds citations and clarifications.
 
@@ -368,7 +368,7 @@ This combination suggests that OOTA cycles cannot occur.
 The idea has been formalized by defining an OOTA cycle as a cycle
 in sdep $\cup$ rf~\cite{PaulEMcKenney2014OOTA},
 % This citation credits the formulation to Ali Sezgin, third author
-% of N4323 ("Out-of-Thin-Air Execution is Vacuous").
+% of N4323 (``Out-of-Thin-Air Execution is Vacuous'').
 where sdep is the set of semantic dependencies within each thread and
 rf is the set of store-to-load ``reads-from'' links, whether internally
 within a thread (rfi) or externally between threads (rfe).\footnote{
@@ -1597,7 +1597,7 @@ Here we consider some general questions related to our definition of
 semantic dependency.
 Additional information is available in a companion technical report,
 which is not cited in order to maintain anonymity.
-% P3064R2 ("How to Avoid OOTA Without Really Trying")
+% P3064R2 (``How to Avoid OOTA Without Really Trying'')
 % https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3064r2.pdf
 
 \subsection{Relative vs.\ Absolute Dependency}
