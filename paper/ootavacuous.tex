@@ -155,7 +155,7 @@ standard explicitly recommends against them in 33.5.4p8
 \end{quote}
 This prohibition prevents misapplication of the as-if rule in oracular
 C++ implementations.
-(The as-if rule permits those optimizations where the optimized code's
+(The as-if rule permits optimizations where the optimized code's
 observable behavior is the same as if it were unoptimized.)
 
 We will use \emph{full C++} to denote the standard including this
@@ -166,12 +166,17 @@ Unqualified \emph{C++} means full C++.
 In Listing~\ref{lst:Simple OOTA}
 there is a \emph{semantic dependency} from line~1 to line~2 in both
 T0 and T1.
-(Roughly speaking, there is a semantic dependency from a given load to
+Roughly speaking, there is a semantic dependency from a given load to
 a given store when \emph{all other things being equal, a change in the
 value loaded can change the value stored, change the target address of
 the store, or prevent the store from occurring at all.}
-Here the dependencies are trivial because the values stored simply
-\emph{are} the values that were loaded.)
+(A \emph{syntactic} dependency, by contrast, exists whenever the value
+of the load appears in the source code as part of the computation
+leading up to the store, whether it affects the store or not.
+Only semantic dependencies are relevant to OOTA.)
+Here the semantic dependencies are trivial because the values stored simply
+\emph{are} the values that were loaded.
+
 Since real-world CPUs cannot store something
 until they have determined its value,\footnote{
 	Another way of saying this is that real-world CPUs do not
@@ -251,8 +256,7 @@ P0442R0 (``Out-of-Thin-Air Execution is Vacuous'')~\cite{PaulEMcKenney2016OOTA}
 provided a decision procedure for distinguishing between reordering and
 OOTA, using a perturbation method based on the insight that OOTA cycles
 are fixed-point computations
-In other words, an OOTA cycle must produce the same value that it
-consumes.
+(in other words, an OOTA cycle must produce the same value that it consumes).
 
 Some researchers recommend avoiding OOTA by forcing prior relaxed
 loads to be ordered before subsequent relaxed
@@ -273,7 +277,7 @@ but none of these have been accepted by C++ implementers, in part due
 to these models requiring consideration of multiple executions.
 As of 2024, Mark Batty is working on modular relaxed dependencies,
 which may have the added benefit of checking compiler
-optimizations~\cite{JayRichards2024SymbolicMrder}, which is a portion
+optimizations~\cite{JayRichards2024SymbolicMrder}, a portion
 of the OOTA problem that is out of scope for this paper.\footnote{
 	But please see Section~\ref{sec:Merging Quasi-Volatile Loads}.}
 
@@ -283,7 +287,7 @@ more optimizations than forcing prior relaxed loads to be ordered
 before subsequent relaxed stores, but which the authors characterize
 as ``(almost) a per-execution model''.
 It remains to be seen whether this is close enough to a per-execution
-model to be accepted by C++ implmenters.
+model to be accepted by C++ implementers.
 \emph{@@@ I am not fully confident of my characterization of this paper.}
 
 Jagadeesan et al.~combine preconditions and
@@ -304,52 +308,52 @@ implementations to avoid it.
 \subsection{Our Approach}
 \label{sec:Our Approach}
 
-Our approach applies real-world hardware constraints (which are further
-constrained by long-standing laws of physics) to the problem of avoiding
+Our approach applies real-world hardware constraints (including some
+imposed by long-standing laws of physics) to the problem of avoiding
 OOTA cycles.
-We do this by augmenting the C++ abstract machine with these constraints,
+We do this by relating the C++ abstract machine to hardware executions,
 which of course limits the applicability of our results to C++ programs
 compiled and run on real-world computer systems.
 Given that a quarter century of OOTA research based on pure unaugmented
 C++ abstractions has resulted in (at best) incremental progress on the
-one hand, and that real-world computer systems comprise an exceedingly
+one hand, and that
+compiler-based real-world computer systems comprise an exceedingly
 important part of the overall OOTA problem on the other, our results
 are valuable despite these limitations.
 In the wise words of Peter J.~Denning, ``Maybe we need to occasionally
 descend from the high clouds of our abstractions to the concrete earthy
 concerns of everyday life''~\cite{PeterJDenning2025Abstraction}.
 
-The key observations that enable us to apply these constraints are:
-(1)~Communicating data within a computer system takes time,
+The key constraints mentioned above are:
+(1)~Communicating data within a computer system takes time, and
 (2)~Executing instructions that compute an output value that semantically
-depends on given input values also takes time,
-and
-(3)~Each link in an OOTA cycle consists of either data communication
-or computation of an output that semantically depends on an input.
-Because closing an OOTA cycle comprising a sequence of commmunications
+depends on given input values also takes time.
+Because each link in an OOTA cycle consists of either data communication
+or computation of an output that semantically depends on an input,
+and because closing an OOTA cycle comprising a sequence of commmunications
 and computations requires this sequence to end at the same time as it
 starts, OOTA cycles cannot form in those C++ implementations that are
 within the scope of this paper.
-A great advantage of our approach is that we are \emph{not} required to
-precisely define the boundaries of sdep.
-After all, although compilers are forbidden from breaking semantic
-dependencies, they are by no means required to break non-semantic
-dependencies.
+A great advantage of our approach is that we do \emph{not} need to define
+semantic dependency purely at the level of C++ source code;
+rather, we are able to utilize information already provided by existing
+hardware execution models.
 
-These simple-seeming observations conceal considerable complexity,
-and so much of the remainder of this paper deals with corner cases that
+These simple-seeming ideas conceal considerable complexity,
+and much of the remainder of this paper deals with corner cases that
 arise when carefully considering semantic dependencies, executions, C++
 compilers, and hardware properties.
 
 In short, this paper's contribution is to show how these
-constraints prevent real-world C++ implementations doing per-thread
-analysis from exhibiting OOTA behavior, and not with minimal
-cost~\cite{PiezhaoOu2018OOTApapl}, but rather with no cost at
+constraints allow real-world C++ implementations doing per-thread
+analysis to avoid OOTA behavior easily,
+%and not with minimal cost~\cite{PiezhaoOu2018OOTApapl},
+in many cases with no cost at
 all~\cite{PaulEMcKenney2023P3046R2/OOTAwithoutTrying}.
 \emph{@@@ Are these the right qualifiers?}
 
-\section{OOTA and Semantic Dependencies (sdep)}
-\label{sec:OOTA and Semantic Dependencies (sdep)}
+\section{OOTA, Semantic Dependencies, and Reads-From}
+\label{sec:OOTA, Semantic Dependencies, and Reads-From}
 
 This section analyzes the main components of OOTA cycles, namely
 semantic dependencies and reads-from links.
@@ -357,15 +361,12 @@ semantic dependencies and reads-from links.
 \subsection{OOTA: rf vs.\ rfe}
 \label{sec:OOTA: rf vs. rfe}
 
-Semantic dependencies form only one type of link in an OOTA cycle.
-The other type extends from a given store to a load that returns the
+Semantic dependencies form only one type of link in an OOTA cycle;
+the other type extends from a given store to a load that returns the
 value stored.
-It is tempting to argue that the store must precede
-the load in global time and combine this with the intuitive notion that
-any real C++ implementation must consume global time when computing a
-semantic dependency.
-This combination suggests that OOTA cycles cannot occur.
-The idea has been formalized by defining an OOTA cycle as a cycle
+In principle, the time required by each of these links should prevent
+OOTA cycles from occurring.
+This idea has been formalized by defining an OOTA cycle as a cycle
 in sdep $\cup$ rf~\cite{PaulEMcKenney2014OOTA},
 % This citation credits the formulation to Ali Sezgin, third author
 % of N4323 (``Out-of-Thin-Air Execution is Vacuous'').
@@ -419,7 +420,7 @@ the interthread and intrathread portions of any given OOTA cycle.
 % of both ``OOTA cycle'' and ``semantic dependency''.
 
 The inability of rfi links to act as temporal constraints is not the
-only, or even the main, weakness in the intuitive argument against
+only, or even the main, weakness in the naive argument against
 OOTA cycles.
 The primary difficulty lies in the fact that the code transformations
 performed by optimizing compilers can destroy dependencies, including
@@ -428,7 +429,7 @@ That is, even when the potential for a dependency exists in the
 source code for a thread, there might be no dependency in the machine
 code produced by a compiler.
 There would then be no constraint forcing the implementation to execute
-the thread's store later in global time than the load it supposedly depends on,
+the thread's store later than the load it supposedly depends on,
 and thus no impediment to the occurrence of an OOTA cycle.
 We will see examples of this destruction later on.
 
@@ -437,20 +438,14 @@ We will see examples of this destruction later on.
 
 Here we consider some of the complexities inherent to semantic
 dependencies.
-It is important to distinguish semantic dependencies from syntactic
-dependencies.
-Although every semantic dependency is also a syntactic dependency, many
-syntactic dependencies can be optimized (or ``broken''), as will be seen
-in the following sections.
-Such syntactic dependencies are not semantic dependencies.
 
 \subsubsection{Semantic Dependencies and Source Code}
 \label{sec:Semantic Dependencies and Source Code}
 
 Some discussions of semantic dependencies assume that they
-are strictly functions of the source code.
-This assumption is not always valid, in fact, we will see that many
-instances of semantic dependency must be considered functions of
+are strictly properties of the source code.
+This assumption is not always valid; in fact, many
+instances of semantic dependency vary according to the details of
 particular executions.
 Consider for example:
 \begin{quote}
@@ -489,7 +484,7 @@ they must at times consider changes to multiple variables.
 
 Since we can no longer regard sdep as always relating a single load to a store,
 the notion of a cycle involving sdep appears problematic.
-We are forced to change our definition of an OOTA cycle again;
+We are forced to change our definition of OOTA again;
 we will say that an execution is an instance of OOTA if in that execution:
 \begin{quote}
 	There are stores $W_0,$ \ldots,~$W_m$,
@@ -677,11 +672,12 @@ running on implementations in
 which \co{char} is architecturally a signed type,
 but not those for which it is unsigned.
 
+\medskip
+
 We have seen several examples showing that semantic dependencies can
 be more complicated than might first appear, varying according to the
 execution and even the implementation.
-This raises several questions, of which the first is:
-What exactly is an execution?
+This raises several questions, of which the first is\dots
 
 \section{What is an Execution?}
 \label{sec:What is an Execution?}
@@ -797,15 +793,15 @@ later.
 The C++ standard requires that for any valid implementation, when a
 program runs its observable behavior must be the same as that of some
 abstract execution of the source code given the same input (in the
-absence of any abstract executions containing undefined behavior)
+absence of any abstract executions containing undefined behavior).
 This requirement is the standard's ``as-if'' rule.
-This means:
+It means:
 (1)~The program's output must be the same as that of the abstract execution;
 (2)~Volatile accesses ``are evaluated strictly according to the
 rules of the abstract machine'' (4.1.2p6.1 \co{[intro.abstract]}); and
 (3)~[A condition on the timing and interleaving of input and output,
 which does not matter for our purposes].
-We will say that the hardware execution realizes the abstract execution,
+We will say that the hardware execution \emph{realizes} the abstract execution,
 or, equivalently, that the abstract execution is \emph{realized by}
 the hardware execution.
 
@@ -932,6 +928,7 @@ Such a transformation complies with the loose C++ standard,
 even though the resulting executable file would produce an unintuitive
 OOTA outcome every time it runs, even if relaxed loads are ordered
 before relaxed stores!
+(In fact, the transformed program has no loads at all, relaxed or otherwise.)
 
 The only justification a compiler could have for generating output like
 this is that it knows exactly what accesses will be performed by both
@@ -1246,7 +1243,8 @@ and finally
 (3)~$W_k'$ commits no earlier than $W_0'$.
 
 If all the stores in the OOTA cycle are omitted then all the reads must
-also be omitted, meaning that the entire cycle has been optimized away.
+also be omitted, meaning that the entire cycle has been optimized
+out of existence.
 We conjecture that in this situation there must be another abstract
 execution which has the same observable effects as $A$ and is also
 realized by $H$, but in which the OOTA cycle does not occur.
@@ -1321,9 +1319,9 @@ abstract execution $B$ realized by hardware execution $G$ under the
 same compiler that together \emph{witness the semantic dependency}.
 \end{quote}
 
-We informally define a \emph{witness} to be another execution in which
-at least one of the loads obtains a different value but all else is the
-same as far as possible, and yet the store acts differently.
+Informally, a \emph{witness} is another execution in which
+at least one of the $R_i$ loads obtains a different value but all else is the
+same as far as possible, and yet the store $W$ acts differently.
 
 To be a proper witness, $B$ must be an execution of some program $Q$,
 not necessarily the same as $P$ but which contains the same thread $T$.
@@ -1595,10 +1593,8 @@ Note well that these compilers' current analysis suffices.
 
 Here we consider some general questions related to our definition of
 semantic dependency.
-Additional information is available in a companion technical report,
-which is not cited in order to maintain anonymity.
-% P3064R2 (``How to Avoid OOTA Without Really Trying'')
-% https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p3064r2.pdf
+Additional information is available in P3064R2 (``How to Avoid OOTA Without
+Really Trying'')~\cite{PaulEMcKenney2023P3046R2/OOTAwithoutTrying}.
 
 \subsection{Relative vs.\ Absolute Dependency}
 \label{sec:Relative vs. Absolute Dependency}
@@ -1770,7 +1766,7 @@ always clear in cases involving multiple loads from the same variable.
 In the unlikely event that this transformation proves useful, there
 will be a community process that determines whether the value of this
 transformation is worth the added conceptual load on developers.
-Until that time, pure mathematics cannot help us because it is simply
+Until that time, pure mathematics cannot help us simply because it is
 impossible to say whether or not there is a semantic dependency from
 \co{y} to \co{z} without reference to a specific implementation.
 
@@ -1781,9 +1777,8 @@ Additional future work could:
 (1)~Extend these results to some classes of interpreters and just-in-time
 compilers (JITs) on
 one hand, and to link-time optimization (LTO) on the other;
-(2)~Relax quasi-volatile semantics to permit limited load speculation,
-for example, use of conditional-move instructions in cases where the
-source code conditionally consumes the results of the atomic load;
+(2)~Relax quasi-volatile semantics to permit limited load speculation
+(for example, hoisting loads out of the bodies of conditionals);
 (3)~Consider various classes of global analysis, such as
 demonstrating that a given expression will always evaluate to a constant;
 (4)~Examine the possibility of ``flattening'' optimizations that combine
@@ -1819,10 +1814,10 @@ One way to reduce their anxiety levels would be to add something like
 the following sentence to this recommendation:
 \begin{quote}
 	Compiler-based implementations whose binaries run on conventional
-	hardware are guaranteed not to compute out-of-thin-air values as
-	long as they restrict themselves to thread-at-a-time analysis,
-	valid optimizations, and user programs that are free of undefined
-	behavior.
+	hardware are guaranteed not to compute out-of-thin-air values in
+	programs that are free of undefined behavior,
+	as long as they restrict themselves to thread-at-a-time analysis
+	and do not invent or duplicate atomic accesses.
 \end{quote}
 
 \section{Summary and Conclusion}
@@ -1840,8 +1835,9 @@ Finally, it demonstrated that satisfying the Fundamental Property
 guarantees an implementation cannot give rise to OOTA executions.
 
 The conclusion to be drawn from this work is that in this context,
-avoiding OOTA cycles requires no changes to the standard,
-to current implementions, or to user practices for portable code.
+avoiding OOTA cycles requires no changes to the standard
+or to user practices for portable code, and only minimal changes to
+implementations.
 % This work also demonstrates the need for caution when optimizing
 % atomic operations.
 
