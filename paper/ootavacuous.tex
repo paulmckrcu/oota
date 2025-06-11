@@ -68,14 +68,14 @@ Maged Michael
 	such implementations, provided the cycles involve only volatile
 	atomics.
 	We accommodate nonvolatile atomics by defining ``quasi-volatile''
-	behavior and show that existing implementations doing per-thread
-	analysis and optimization not only avoid OOTA, but also avoid
+	behavior and show that for existing implementations doing per-thread
+	analysis and optimization, this behavior not only avoids OOTA
+	but also is necessary to avoid
 	incorrectly evaluating arithmetic expressions involving atomic
 	accesses.
 
 	It follows that enforcing OOTA avoidance requires no special
-	action from implementations and no changes to user code or
-	to the standard.
+	action from implementations and no changes to user code.
 
 	Audience: SG1.
 \end{abstract}
@@ -176,11 +176,17 @@ In Listing~\ref{lst:Simple OOTA}, for example,
 there is a semantic dependency from line~1 to line~2 in both T0 and T1.
 The semantic dependencies here are trivial,
 because the values stored simply \emph{are} the values that were loaded.
-(A \emph{syntactic} dependency, by contrast, exists whenever the value
+
+A \emph{syntactic} dependency, by contrast, exists whenever the value
 of the load appears in the source code as part of the computation
 leading up to the store, whether it affects the store or not.
 \emph{@@@ Reference?}
-Only semantic dependencies contribute to OOTA.)
+Although we will not give a precise definition of syntactic dependency
+here, doing so presents no fundamental difficulties.
+In fact, the C++ standard covers much of the same ground in its definition
+of ``carries a dependency'' in 6.9.2.2p7 (\co{[Data races]}).
+Of course, all semantic dependencies are also syntactic.
+Note, however, that only semantic dependencies contribute to OOTA.
 
 Since real-world CPUs cannot store something
 until they have determined its value,\footnote{
@@ -188,7 +194,8 @@ until they have determined its value,\footnote{
 	make their stores visible to other CPUs until those stores
 	are no longer speculative.
 	A similar restriction applies to compiler-based speculation.}
-the stores on line~2 cannot take place until T0's and T1's CPUs
+the stores on line~2 of Listing~\ref{lst:Simple OOTA}
+cannot take place until T0's and T1's CPUs
 know what values are returned by the loads on line~1.
 Thus the hardware orders these stores after their corresponding loads,
 and this ordering prevents the OOTA result.
@@ -428,9 +435,9 @@ The inability of rfi links to act as temporal constraints is not the
 only, or even the main, weakness in the naive argument against
 OOTA cycles.
 The primary difficulty lies in the fact that the code transformations
-performed by optimizing compilers can destroy dependencies, including
-semantic ones (depending on one's definition).
-That is, even when the potential for a dependency exists in the
+performed by optimizing compilers can destroy syntactic dependencies,
+possibly even semantic ones (depending on one's definition).
+That is, even when a syntactic dependency exists in the
 source code for a thread, there might be no dependency in the machine
 code produced by a compiler.
 There would then be no constraint forcing the implementation to execute
@@ -1258,18 +1265,30 @@ $H$, whether or not there was an OOTA cycle.
 We therefore declare OOTA cycles in which all accesses are omitted to
 be \emph{trivial}.
 
-\section{A Definition of Semantic Dependency}
-\label{sec:A Definition of Semantic Dependency}
+\section{Preservation of Dependencies}
+\label{sec:Preservation of Dependencies}
 
 Semantic dependency is a notoriously difficult concept to define
 rigorously and precisely.
 A large part of the reason is because it was never a completely clear
 concept to begin with, especially when there are multiple accesses to
 the variables involved.
-In this section we will stick our necks out by offering just such a
-definition.
-No doubt many people will object to it for various reasons, but we
-nevertheless hope it will help move the discussion forward.
+In this section we will bypass the difficulty by instead defining
+when an execution of compiled code \emph{preserves a syntactic dependency}.
+
+In addition, we propose the following Dependency Preservation (DP) thesis:
+\begin{quote}
+	If a syntactic dependency is semantic then it is preserved
+	by all compilers for which the definition below applies.
+\end{quote}
+As with the Church-Turing thesis in computability theory,
+our DP thesis is not susceptible of formal proof because
+the main concept it deals with (semantic dependency)
+does not have a formal definition.
+Nevertheless, we hope that readers will agree our definition of
+dependency preservation captures the informal notion of
+semantic dependency sufficiently well to justify the thesis.
+It will be all we need to rule out the possibility of OOTA.
 
 The definition given below is applicable only to C++ implementations
 that treat all atomic objects as though they are volatile or
@@ -1279,11 +1298,9 @@ analysis, quasi volatile is sufficient.)
 In this setting we can relate abstract and hardware executions by
 means of the map of accesses described in
 Section~\ref{sec:Volatile and Quasi Volatile Accesses}.
-The key insight is that this allows us to consider semantic
+The key insight is that this allows us to consider
 dependencies at the level of the machine code, where they are much
 more tractable.
-Using this approach, we demonstrate that OOTA cycles cannot form in the
-C++ implementations addressed by this paper.
 
 \subsection{For Compilers Using Per-Thread Analysis}
 \label{sec:For Compilers Using Per-Thread Analysis}
@@ -1296,32 +1313,33 @@ This implies that if two different programs contain the same thread
 machine code generated by the compiler for the thread will be the
 same in the two programs.
 
-We begin by recognizing that semantic dependencies are relative to a
-particular execution and a particular implementation,
+We begin by recognizing that preservation of dependencies is relative to a
+particular execution,
 as described in Section~\ref{sec:Properties of Semantic Dependencies}.
-The same source code may or may not contain a semantic dependency,
-according to the details of the execution in question and the
-machine code produced by the compiler.
-For this reason we will characterize semantic dependencies in a given
+A syntactic dependency present in the source code may or may not be
+preserved in the machine code produced by a compiler,
+according to the details of the execution in question.
+For this reason we will characterize preservation of dependencies in a given
 abstract execution realized by a given hardware execution.
-(While it is possible to argue about semantic dependencies in abstract
+(While it is possible to argue about preservation of dependencies in abstract
 executions that have no hardware realizations, doing so seems pointless.)
 
 Let $A$ be an abstract execution of some program $P$ containing a
 thread $T$, and let $H$ be a hardware execution realizing $A$.
 Let $W$ in $T$ be a store to an atomic object, and let $\{R_0,$
 \ldots,~$R_n\}$ in $T$ be a set of loads from atomic objects on which
-$W$ might or might not depend.
+$W$ has a syntactic dependency.
 We can dispose of one case immediately: If $W$ is omitted in $H$ then
-the issue of semantic dependency is moot.
+the issue of dependency preservation is moot.
 You can give either answer since it will have no effect.
 Therefore we'll assume that $W$ is not omitted.
 Then:
 \begin{quote}
-There is a semantic dependency from $\{R_i\}$ to $W$ in $A$ and $H$,
-relative to the compiler used to produce $H$, if there is another
-abstract execution $B$ realized by hardware execution $G$ under the
-same compiler that together \emph{witness the semantic dependency}.
+The dependency from $\{R_i\}$ to $W$ in $A$ is preserved in $H$
+if there is another
+abstract execution $B$ realized by hardware execution $G$
+(of machine code produced by the same compiler as $H$)
+that together \emph{witness the dependency}.
 \end{quote}
 
 Informally, a \emph{witness} is another execution in which
@@ -1383,7 +1401,7 @@ Equivalently, the machine code generated by such a compiler must be
 the same for a given program as for a ``volatilized'' form of the
 program in which all the atomic objects are defined to be volatile.
 
-In this context our definition of semantic dependency is essentially
+In this context our definition of dependency preservation is essentially
 the same as before.
 Since we can no longer expect the machine code for a thread to be the
 same regardless of the program it belongs to, the program $Q$ in the
@@ -1396,8 +1414,8 @@ Aside from these minor adjustments, the definition remains unchanged.
 \subsection{Verifying the Fundamental Property}
 \label{sec:Verifying the Fundamental Property}
 
-Of course we want to check that our definition of semantic dependency
-satisfies the Fundamental Property of
+Of course we want to check that whenever a dependency is preserved,
+it satisfies the Fundamental Property of
 Section~\ref{sec:The Fundamental Property of Semantic Dependencies}.
 Given the information we have already presented, the demonstration is
 easy.
@@ -1405,8 +1423,8 @@ easy.
 Suppose we have $W$, $\{R_i\}$, $A$, and $H$ as in the definition.
 The Fundamental Property assumes that $W$ is not omitted in $H$, so
 there is an abstract execution $B$ with hardware realization $G$
-witnessing the semantic dependency of the store $W$ on the loads
-$\{R_i\}$ in $A$ and $H$.
+witnessing that the dependency of the store $W$ on the loads
+$\{R_i\}$ in $A$ is preserved in $H$.
 We must show that some $R_i$ is not omitted and $R'_i$ is ordered
 before $W'$ in $H$.
 The proof splits into three cases.
@@ -1415,8 +1433,8 @@ First case: $W'$ lies in the initial period of $T$ in $H$.
 During the initial period of the hardware executions, $H$ and $G$
 behave identically and therefore $W'$ performs the same write in
 both.
-This contradicts the fact that $B$ and $G$ witness the semantic
-dependency.
+This contradicts the fact that $B$ and $G$ witness the preservation
+of the dependency.
 
 Second case: $W'$ lies in the common period of $T$ in $H$.
 Since the action of $W'$ in $H$ is different from its action in $G$,
@@ -1427,7 +1445,7 @@ differently, and so must one of its sources, going back until we reach
 a load instruction that obtains differing values in $H$ and $G$.
 Then $W'$ depends on this load and so is ordered after it.
 And since the load must lie in the common period of $H$, by the
-definition of semantic dependency it must either be one of the
+definition above it must either be one of the
 $R'_i$ or be ordered after one of them.
 Therefore $W'$ is ordered after one of the $R'_i$ in $H$,
 which certainly means that $R_i$ is not omitted.
@@ -1442,12 +1460,18 @@ And then so must $W'$, because any instruction following a conditional-
 or computed-branch instruction must commit after the branch commits.
 QED.
 
+\medskip
+
 A corollary of this result is that if an implementation's compiler
 either
 (1)~uses per-thread analysis and treats atomic objects as quasi
 volatile, or
 (2)~uses global analysis and treats atomic objects as volatile,
-then programs produced by that implementation will never exhibit OOTA.
+then programs produced by that implementation will never exhibit
+an OOTA cycle in which the semantic dependencies are preserved.
+And since by the DP thesis, programs produced by
+the implementation always preserve semantic dependencies,
+these programs will never exhibit any OOTA cycles at all.
 Thus the implementation will automatically comply with full C++, even
 if it was designed only to comply with loose C++.
 
@@ -1596,62 +1620,57 @@ Note well that these compilers' current analysis suffices.
 \section{Issues and Refinements}
 \label{sec:Issues and Refinements}
 
-Here we consider some general questions related to our definition of
-semantic dependency.
+Here we consider some general questions related to semantic dependency
+and our definition of dependency preservation.
 Additional information is available in P3064R2 (``How to Avoid OOTA Without
 Really Trying'')~\cite{PaulEMcKenney2023P3046R2/OOTAwithoutTrying}.
 
-\subsection{Relative vs.\ Absolute Dependency}
-\label{sec:Relative vs. Absolute Dependency}
+\subsection{Defining Semantic Dependency}
+\label{sec:Defining Semantic Dependency}
 
-One drawback of our definition of semantic dependency is that it is only
-relative to a specific compiler or implementation.
-This may strike some readers (especially those implementing tooling)
-as wishy-washy and avoiding the real problem, in that a given piece
-of code should either contain or not contain a semantic dependency,
-independent of the implementation used to run it.
-
-We can address this drawback by defining an \emph{absolute semantic
-dependency} as one that is present relative to any valid loose C++
+Some readers may object that our approach does not include any
+rigorous definition of semantic dependency itself.
+One could address this drawback by turning our DP thesis around
+and using it instead as a \emph{definition} of semantic dependency.
+In other words, a syntactic dependency could be considered to be semantic
+if it is preserved by any valid loose C++
 implementation, past, present, or future, real or imagined.
 Of course this notion has its own problems, including that it is
 extremely nonconstructive and impossible to apply in practice.
 However it may be the best we can do with our current understanding
 of computing systems.
 
-There is one thing we can definitely state:
-Programs produced by an implementation of the right sort will never
-exhibit absolute OOTA (that is, an OOTA cycle in which all the
-semantic dependencies are absolute).
-This is simply because an absolute semantic dependency is {\it
-a fortiori\/} a semantic dependency relative to the compiler in use.
-
-But in fact we have shown more than this:
-Programs will never exhibit an OOTA cycle relative to the compiler
-used to build them, even when that cycle is not absolute.
-In this sense we have gone beyond the requirement of full C++.
+Either way, regardless of how one wants to define semantic dependency,
+we have shown that as long as the DP thesis continues to hold,
+programs produced by an implementation of the right sort will never
+exihibit OOTA.
 
 \subsection{Global Analysis and Volatile vs.\ Quasi Volatile}
 \label{sec:Global Analysis and Volatile vs. Quasi Volatile}
 
-In principle we don't need to require global-analysis compilers to
-treat atomic objects as volatile; our results would still hold if they
-merely treated them as quasi volatile.
-We chose not to do this because it would violate our intuitions about
-semantic dependencies.
+One can ask if we really need to require global-analysis compilers to
+treat atomic objects as volatile; would our results still hold if they
+merely treated them as quasi volatile?
+Answer: The proof that preserved dependencies obey the Fundamental Property
+would go through as before,
+but the DP thesis would no longer be valid.
+Here's an example showing how it would fail.
 
-For example, consider the Simple OOTA program shown in
+Consider the Simple OOTA program shown in
 Listing~\ref{lst:Simple OOTA}.
 A loose C++ compiler using global analysis and treating \co{x} and \co{y} as
 quasi-volatile objects could omit the two loads, replacing them in the
 machine code with simple assignments ``\co{r1 = 42}'' and
 ``\co{r2 = 42}'', as shown in
 Section~\ref{sec:Global Optimization Can Destroy Dependencies}.
-This would be a valid transformation, and the resulting behavior would
-not count as OOTA according to our definition because the
-dependencies in T0 and T1 would not be semantic.
+This would be a valid transformation,
+but it would destroy the dependencies in T0 and T1 rather than preserving them,
+even though those dependencies are considered to be semantic.
 
-To see why not, recall that a semantic dependency must have a witness,
+This fact is intuitively obvious, but let us describe in detail
+exactly how the preservation definition would fail.
+Recall that according to the definition, in order to be preserved in an execution
+a syntactic dependency must have a witness,
 another execution in which the store acts differently.
 But this transformed program has no other hardware executions; every time it
 runs it will store 42 to both \co{x} and \co{y}.
@@ -1660,17 +1679,18 @@ volatile, they are not subject to unspecified interference when the
 program runs in a nonbenign environment.)
 
 This unintuitive behavior could not occur if the two loads were not
-omitted.
-In fact, the definition of semantic dependency might remain
-perfectly acceptable if the requirement for global-analysis compilers
-were weakened, if the compiler treated atomic objects as quasi
-volatile and in addition was not allowed to omit accesses to them.
+omitted in the transformed program.
+In fact, the definition of dependency preservation might remain
+strong enough to justify the DP thesis
+if the requirement for global-analysis compilers
+were weakened, if the compiler were allowed to treat atomic objects as
+quasi volatile except that it was not allowed to omit accesses to them.
 This is a possible topic for future research.
 
 \subsection{Effect of Memory Layout}
 \label{sec:Effect of Memory Layout}
 
-Part of our demonstration of the Fundamental Property of semantic
+Part of our demonstration of the Fundamental Property for preserved
 dependencies relies on the fact, stated in
 Section~\ref{sec:Abstract Executions},
 that an abstract execution of a thread is entirely determined by the
@@ -1694,7 +1714,7 @@ cycle of length one, in which the store is semantically dependent on
 an empty set of loads!
 
 To rule out such pathological counterexamples we should require that
-in a witness to a semantic dependency, the addresses of all the
+in a witness to a preserved dependency, the addresses of all the
 objects and functions referred to in the thread $T$ are the same as
 in the original execution.
 This is a very technical restriction but there are occasions when
@@ -1750,19 +1770,19 @@ In effect, the \co{r2} load is merged with the \co{r1} load in
 executions where \co{r1} is equal to \co{r3} or to \co{r4}, and it is
 merged with the \co{r3} load in other executions.
 
-To demonstrate the semantic dependency in the original code,
+To demonstrate that the dependency in the original code is preserved,
 a suitable witness would have
-to include a hardware realization of the abstract execution in which
+to include a hardware realization of an abstract execution in which
 \co{r1} and \co{r2} are zero and \co{r3} and \co{r4} are one.
-But there are no hardware realizations of this execution with the
+But there are no such hardware realizations with the
 machine code indicated above!
 Since \co{r1} is different from both \co{r3} and \co{r4}, the \co{r2}
 load will be merged with the \co{r3} load and so \co{r2} will
 necessarily be one, not zero.
-Thus, relative to this compiler the example does not contain a
-semantic dependency.
+Thus the dependency is not preserved, which leads one to question
+whether it really was semantic.
 
-Although this is unexpected, and while we don't recommend this sort of
+Although this result is unexpected, and while we don't recommend this sort of
 code transformation, we cannot say that this conclusion is definitely
 wrong, because one's intuitive notions of semantic dependency are not
 always clear in cases involving multiple loads from the same variable.
@@ -1788,8 +1808,7 @@ one hand, and to link-time optimization (LTO) on the other;
 demonstrating that a given expression will always evaluate to a constant;
 (4)~Examine the possibility of ``flattening'' optimizations that combine
 multiple threads into one;
-(5)~Explore cases in which semantic dependencies must be absolute,
-not relative to any particular compiler;
+(5)~Explore more detailed justifications for the Dependency Preservation thesis;
 (6)~Include the effects of input and output or other operations which
 can vary from one execution to another; and
 (7)~Delineate more precisely the limits of permissible behavior for
@@ -1831,9 +1850,9 @@ the following sentence to this recommendation:
 This paper focused solely on compilers, primarily those that do only
 per-thread analysis and optimization.
 It introduced the notion of quasi-volatile object accesses and gave
-a definition for semantic dependency that is relative to a particular
-C++ implementation.
-It formulated a Fundamental Property of semantic dependency and proved
+a definition for dependency preservation by a C++ implementation.
+It formulated a Fundamental Property of semantic dependency along with
+a Dependency Preservation thesis, and using the thesis proved
 that implementations subject to some very mild restrictions on how
 they treat atomic object accesses do have this property.
 Finally, it demonstrated that satisfying the Fundamental Property
