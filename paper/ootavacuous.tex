@@ -155,7 +155,7 @@ standard explicitly recommends against them in 33.5.4p8
 \end{quote}
 This prohibition prevents misapplication of the as-if rule in oracular
 C++ implementations.
-(The as-if rule permits optimizations where the optimized code's
+(The as-if rule permits optimizations for which the optimized code's
 observable behavior is the same as if it were unoptimized.)
 
 We will use \emph{full C++} to denote the standard including this
@@ -163,19 +163,24 @@ prohibition of OOTA and \emph{loose C++} to denote a hypothetical standard
 that excludes the prohibition but is otherwise identical to full C++.
 Unqualified \emph{C++} means full C++.
 
-In Listing~\ref{lst:Simple OOTA}
-there is a \emph{semantic dependency} from line~1 to line~2 in both
-T0 and T1.
+Unfortunately, the standard does not explain what the phrase ``depend on''
+in the quotation above really means.
+It is generally taken to mean \emph{semantic dependency},
+a somewhat vague concept.
 Roughly speaking, there is a semantic dependency from a given load to
-a given store when \emph{all other things being equal, a change in the
+a given store in the same thread when
+\emph{all other things being equal, a change in the
 value loaded can change the value stored, change the target address of
 the store, or prevent the store from occurring at all.}
+In Listing~\ref{lst:Simple OOTA}, for example,
+there is a semantic dependency from line~1 to line~2 in both T0 and T1.
+The semantic dependencies here are trivial,
+because the values stored simply \emph{are} the values that were loaded.
 (A \emph{syntactic} dependency, by contrast, exists whenever the value
 of the load appears in the source code as part of the computation
 leading up to the store, whether it affects the store or not.
-Only semantic dependencies are relevant to OOTA.)
-Here the semantic dependencies are trivial because the values stored simply
-\emph{are} the values that were loaded.
+\emph{@@@ Reference?}
+Only semantic dependencies contribute to OOTA.)
 
 Since real-world CPUs cannot store something
 until they have determined its value,\footnote{
@@ -330,8 +335,8 @@ The key constraints mentioned above are:
 depends on given input values also takes time.
 Because each link in an OOTA cycle consists of either data communication
 or computation of an output that semantically depends on an input,
-and because closing an OOTA cycle comprising a sequence of commmunications
-and computations requires this sequence to end at the same time as it
+and because closing such a cycle requires the sequence of links
+to end at the same time as it
 starts, OOTA cycles cannot form in those C++ implementations that are
 within the scope of this paper.
 A great advantage of our approach is that we do \emph{not} need to define
@@ -339,7 +344,7 @@ semantic dependency purely at the level of C++ source code;
 rather, we are able to utilize information already provided by existing
 hardware execution models.
 
-These simple-seeming ideas conceal considerable complexity,
+These simple-seeming notions conceal considerable complexity,
 and much of the remainder of this paper deals with corner cases that
 arise when carefully considering semantic dependencies, executions, C++
 compilers, and hardware properties.
