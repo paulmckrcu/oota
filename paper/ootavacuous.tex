@@ -1806,7 +1806,13 @@ will be a community process that determines whether the value of this
 transformation is worth the added conceptual load on developers.
 Until that time, pure mathematics cannot help us because it is
 impossible to say whether or not there is a semantic dependency from
-\co{y} to \co{z} without reference to a specific implementation.
+\co{y} to \co{z} without reference to a specific implementation.\footnote{
+	At the 2025 C++ Standards Committee meeting in Sofia, it was
+	pointed out that the added ``\co{if (r1 != r3)}'' can be argued
+	to be repurposing the first and third relaxed atomic load from
+	\co{x}.
+	At first glance, this is a very reasonable argument that would
+	unambigously rule out this optimization.}
 
 \subsection{Other Potential Refinements}
 \label{sec:Other Potential Refinements}
@@ -1854,7 +1860,7 @@ recommendation:
 	hardware are guaranteed not to compute out-of-thin-air values in
 	programs that are free of undefined behavior,
 	as long as they restrict themselves to thread-at-a-time analysis
-	and do not invent or duplicate atomic accesses.
+	and do not invent, duplicate, or repurpose atomic accesses.
 \end{quote}
 
 \section{Summary and Conclusion}
