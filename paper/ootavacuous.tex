@@ -1865,7 +1865,9 @@ recommendation:
 	hardware are guaranteed not to compute out-of-thin-air values in
 	programs that are free of undefined behavior,
 	as long as they restrict themselves to thread-at-a-time analysis
-	and do not invent, duplicate, or repurpose atomic accesses.
+	and and treat non-volatile atomic accesses as if they were
+	volatile, except that they may merge or omit such accesses when
+	permitted by the as-if rule.
 \end{quote}
 
 \section{Summary and Conclusion}
