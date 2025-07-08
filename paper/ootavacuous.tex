@@ -1866,8 +1866,9 @@ recommendation:
 	programs that are free of undefined behavior,
 	as long as they restrict themselves to thread-at-a-time analysis
 	and and treat non-volatile atomic accesses as if they were
-	volatile, except that they may merge or omit such accesses when
-	permitted by the as-if rule.
+	volatile, except that, when permitted by the as-if rule, they
+	may omit accesses, merge accesses to the same object, or reorder
+	accesses to different objects.
 \end{quote}
 
 \section{Summary and Conclusion}
