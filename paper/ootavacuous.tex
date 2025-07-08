@@ -48,7 +48,8 @@
 Alan Stern (stern@rowland.harvard.edu) \and
 Paul E.~McKenney (paulmckrcu@gmail.com) \and
 Michael Wong \and
-Maged Michael
+Maged Michael \and
+Gonzalo Brito
 }
 
 \begin{abstract}
@@ -371,6 +372,10 @@ analysis to avoid OOTA behavior easily,
 %and not with minimal cost~\cite{PiezhaoOu2018OOTApapl},
 in many cases with no cost at
 all~\cite{PaulEMcKenney2023P3046R2/OOTAwithoutTrying}.
+In addition, for those researchers working on identifying and avoiding
+OOTA cycles, our results accommodate the needs of almost all C++
+implementers, thus removing a key obstacle to the application of
+high-complexity methods to this more general problem.
 % \emph{@@@ Are these the right qualifiers?}
 
 \section{OOTA, Semantic Dependencies, and Reads-From}
