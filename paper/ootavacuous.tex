@@ -40,7 +40,7 @@
 \floatname{listing}{Listing}
 
 \begin{document}
-\title{D3692R1: How to Avoid OOTA Without Really Trying}
+\title{P3692R2: How to Avoid OOTA Without Really Trying}
 
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
@@ -48,7 +48,8 @@
 Alan Stern (stern@rowland.harvard.edu) \and
 Paul E.~McKenney (paulmckrcu@gmail.com) \and
 Michael Wong \and
-Maged Michael
+Maged Michael \and
+Gonzalo Brito
 }
 
 \begin{abstract}
@@ -86,7 +87,12 @@ Maged Michael
 \section*{History}
 
 \begin{itemize}
-\item	D3692R1 adds contact information, defines ``preserved
+\item	P3692R2 applies feedback from the 2025 Sophia meeting,
+	including reworking the requested change to the standard
+	in terms of volatile semantics (courtesy of Olivier Giroux),
+	states this paper's benefits to other OOTA researchers, and
+	updates the author list.
+\item	P3692R1 adds contact information, defines ``preserved
 	dependencies'' that are a subset of syntactic and a superset of
 	semantic dependencies, and makes numerous changes in the name
 	of wordsmithing and clarification.
@@ -371,6 +377,11 @@ analysis to avoid OOTA behavior easily,
 %and not with minimal cost~\cite{PiezhaoOu2018OOTApapl},
 in many cases with no cost at
 all~\cite{PaulEMcKenney2023P3046R2/OOTAwithoutTrying}.
+In addition, our results simplify the job of OOTA researchers seeking
+practical impact by allowing them to ignore C++ implementers' need for
+extreme simplicity and performance.
+This in turn permits such researchers to focus on advanced topics such
+as formal-verification tooling and evaluation of optimizations.
 % \emph{@@@ Are these the right qualifiers?}
 
 \section{OOTA, Semantic Dependencies, and Reads-From}
@@ -1860,7 +1871,10 @@ recommendation:
 	hardware are guaranteed not to compute out-of-thin-air values in
 	programs that are free of undefined behavior,
 	as long as they restrict themselves to thread-at-a-time analysis
-	and do not invent, duplicate, or repurpose atomic accesses.
+	and and treat non-volatile atomic accesses as if they were
+	volatile, except that, when permitted by the as-if rule, they
+	may omit accesses, merge accesses to the same object, or reorder
+	accesses to different objects.
 \end{quote}
 
 \section{Summary and Conclusion}
