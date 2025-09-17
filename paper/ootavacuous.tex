@@ -40,7 +40,7 @@
 \floatname{listing}{Listing}
 
 \begin{document}
-\title{P3692R2: How to Avoid OOTA Without Really Trying}
+\title{P3692R3: How to Avoid OOTA Without Really Trying}
 
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
@@ -87,6 +87,7 @@ Gonzalo Brito
 \section*{History}
 
 \begin{itemize}
+\item	P3692R3 fixes an ``and and'' typo.
 \item	P3692R2 applies feedback from the 2025 Sophia meeting,
 	including reworking the requested change to the standard
 	in terms of volatile semantics (courtesy of Olivier Giroux),
@@ -1871,7 +1872,7 @@ recommendation:
 	hardware are guaranteed not to compute out-of-thin-air values in
 	programs that are free of undefined behavior,
 	as long as they restrict themselves to thread-at-a-time analysis
-	and and treat non-volatile atomic accesses as if they were
+	and treat non-volatile atomic accesses as if they were
 	volatile, except that, when permitted by the as-if rule, they
 	may omit accesses, merge accesses to the same object, or reorder
 	accesses to different objects.
