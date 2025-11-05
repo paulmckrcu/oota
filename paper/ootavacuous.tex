@@ -40,7 +40,7 @@
 \floatname{listing}{Listing}
 
 \begin{document}
-\title{P3692R3: How to Avoid OOTA Without Really Trying}
+\title{D3692R4: How to Avoid OOTA Without Really Trying}
 
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
@@ -87,6 +87,7 @@ Gonzalo Brito
 \section*{History}
 
 \begin{itemize}
+\item	P2692R4 applies wording feedback from the 2025 Kona meeting.
 \item	P3692R3 fixes an ``and and'' typo.
 \item	P3692R2 applies feedback from the 2025 Sophia meeting,
 	including reworking the requested change to the standard
@@ -1868,14 +1869,20 @@ recommendation?
 We therefore advocate adding the following non-normative sentence to this
 recommendation:
 \begin{quote}
+	% Consider moving the parenthesized statement to its own sentence.
 	Compiler-based implementations whose binaries run on conventional
-	hardware are guaranteed not to compute out-of-thin-air values in
-	programs that are free of undefined behavior,
-	as long as they restrict themselves to thread-at-a-time analysis
-	and treat non-volatile atomic accesses as if they were
-	volatile, except that, when permitted by the as-if rule, they
-	may omit accesses, merge accesses to the same object, or reorder
-	accesses to different objects.
+	hardware (for example, hardware that does not expose speculated
+	values to other CPUs or threads) are guaranteed not to compute
+	out-of-thin-air values in programs that are free of undefined
+	behavior, as long as they restrict themselves to thread-at-a-time
+	analysis and treat non-volatile atomic accesses as if they
+	were volatile.
+	Except that, when permitted by the as-if rule, they may omit
+	accesses, merge accesses to the same object, or reorder accesses
+	to different objects.
+	Optimizations that do not meet these criteria are still
+	encouraged, but their out-of-thin-air properties must be carefully
+	evaluated on a case-by-case basis.
 \end{quote}
 
 \section{Summary and Conclusion}
