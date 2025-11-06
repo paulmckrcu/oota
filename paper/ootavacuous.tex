@@ -49,7 +49,8 @@ Alan Stern (stern@rowland.harvard.edu) \and
 Paul E.~McKenney (paulmckrcu@gmail.com) \and
 Michael Wong \and
 Maged Michael \and
-Gonzalo Brito
+Gonzalo Brito \and
+Other contributors: Hans Boehm
 }
 
 \begin{abstract}
@@ -1869,20 +1870,21 @@ recommendation?
 We therefore advocate adding the following non-normative sentence to this
 recommendation:
 \begin{quote}
-	% Consider moving the parenthesized statement to its own sentence.
-	Compiler-based implementations whose binaries run on conventional
-	hardware (for example, hardware that does not expose speculated
-	values to other CPUs or threads) are guaranteed not to compute
-	out-of-thin-air values in programs that are free of undefined
-	behavior, as long as they restrict themselves to thread-at-a-time
-	analysis and treat non-volatile atomic accesses as if they
-	were volatile.
-	Except that, when permitted by the as-if rule, they may omit
-	accesses, merge accesses to the same object, or reorder accesses
-	to different objects.
-	Optimizations that do not meet these criteria are still
-	encouraged, but their out-of-thin-air properties must be carefully
-	evaluated on a case-by-case basis.
+	Given:
+	(1) Conventional hardware that does not expose speculative stores
+	to other threads,
+	(2) A compiler that restricts itself to thread-at-a-time analysis
+	and treats non-volatile atomic accesses as if they were volatile
+	(with the exceptions noted below), and
+	(3) A program that is free of undefined behavior,
+	this program is guaranteed not to compute out-of-thin-air values.
+	The guarantee is also provided by implementations that optimize
+	non-volatile atomics (when permitted by the as-if rule) by
+	omitting accesses, merging accesses to the same object, and/or
+	reordering accesses to different objects.
+	Implementations that optimize more aggressively are still
+	encouraged, but their out-of-thin-air properties should be
+	carefully evaluated on a case-by-case basis.
 \end{quote}
 
 \section{Summary and Conclusion}
