@@ -51,6 +51,8 @@ Michael Wong \and
 Maged Michael \and
 Gonzalo Brito \and
 Simon Cooksey \and
+Simon Cooksey \and
+Mark Batty \and
 Other contributors: Hans Boehm
 }
 
@@ -1868,24 +1870,32 @@ Sensible though this recommendation might be, it can unnecessarily raise
 anxiety levels of C++ implementers.
 After all, what exactly do they need to do in order to follow that
 recommendation?
-We therefore advocate adding the following non-normative sentence to this
-recommendation:
+We therefore advocate adding the following two non-normative notes to this
+recommendation, but following the notes giving examples of OOTA cycles:
 \begin{quote}
-	Given:
-	(1) Conventional hardware that does not expose speculative stores
-	to other threads,
-	(2) A compiler that restricts itself to thread-at-a-time analysis
-	and treats non-volatile atomic accesses as if they were volatile
-	(with the exceptions noted below), and
-	(3) A program that is free of undefined behavior,
-	this program is guaranteed not to compute out-of-thin-air values.
-	The guarantee is also provided by implementations that optimize
-	non-volatile atomics (when permitted by the as-if rule) by
-	omitting accesses, merging accesses to the same object, and/or
-	reordering accesses to different objects.
-	Implementations that optimize more aggressively are still
-	encouraged, but their out-of-thin-air properties should be
-	carefully evaluated on a case-by-case basis.
+	[ Note N --- A compiler-based implementation that runs on
+	real-world hardware and treats non-volatile atomic acesses as
+	though they were volatile will not produce out-of-thin-air values
+	for a program free of undefined behavior.
+	An implementation that performs only thread-at-a-time
+	analysis/optimization and that omits and merges non-volatile
+	atomic accesses to the same object and reorders non-volatile
+	atomic accesses to different objects (when permitted by the as-if
+	rule), but that otherwise treats non-volatile atomic accesses
+	as though they were volatile, will not produce out-of-thin-air
+	values for a program free of undefined behavior.
+	Implementations not meeting these restrictions require extra
+	care to ensure that they do not compute out-of-thin-air values.
+	--- End note.]
+
+	[ Note N+1 --- In this context, real-world hardware is
+	subject to physical limitations on instruction-execution and
+	information-transfer latencies, as opposed to abstract platforms
+	with no such limits.
+	Real-world hardware must also carefully manage any speculative
+	execution so as to avoid generating out-of-thin-air values at
+	the hardware level.
+	--- End note. ]
 \end{quote}
 
 \section{Summary and Conclusion}
