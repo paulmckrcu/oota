@@ -1,0 +1,30 @@
+C oota-data+rel+acq
+(*
+ * Result: @@@
+ *
+ * Three-process OOTA test, with a data dependency, a release-store of a
+ * constant, and an acquire load coupled with a relaxed store of a constant.
+ *)
+{
+	[x] = 0;
+	[y] = 0;
+	[z] = 0;
+}
+
+P0(atomic_int *x, atomic_int *y, atomic_int *z) {
+	int r1 = atomic_load_explicit(x, memory_order_relaxed);
+	atomic_store_explicit(y, r1, memory_order_relaxed);
+}
+
+P1(atomic_int *x, atomic_int *y, atomic_int *z) {
+	int r2 = atomic_load_explicit(y, memory_order_relaxed);
+	atomic_store_explicit(z, 1, memory_order_release);
+}
+
+P2(atomic_int *x, atomic_int *y, atomic_int *z) {
+	int r3 = atomic_load_explicit(z, memory_order_acquire);
+	atomic_store_explicit(x, 42, memory_order_relaxed);
+}
+
+locations [x;y;z]
+exists(0:r1=42 /\ 1:r2=42 /\ 2:r3=1)

@@ -1,0 +1,23 @@
+C oota-jay0
+{
+	[x] = 0;
+	[y] = 0;
+	[z] = 0;
+}
+
+P0(atomic_int *x, atomic_int *y, atomic_int *z) {
+	int r1 = atomic_load_explicit(y, memory_order_relaxed);
+	int r1p = r1 != 0;
+	int r1q = 1 / r1p;
+	atomic_store_explicit(y, r1q, memory_order_relaxed);
+	atomic_store_explicit(z, r1, memory_order_relaxed);
+	int rz = atomic_load_explicit(z, memory_order_relaxed);
+}
+
+P1(atomic_int *x, atomic_int *y, atomic_int *z) {
+	int r2 = atomic_load_explicit(y, memory_order_relaxed);
+	atomic_store_explicit(x, r2, memory_order_relaxed);
+}
+
+locations[0:r1p;0:r1q;1:r2;x;y;z]
+exists(~(0:r1=0:rz))
