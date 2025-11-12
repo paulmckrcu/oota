@@ -879,13 +879,14 @@ In particular, when it runs in a nonbenign environment, a program's
 volatile loads can return unpredictable values.
 They don't necessarily read from stores (in contrast to nonvolatile loads,
 which always must return the value of the store they read from).
-This implies that volatile load-acquires do not synchronize with
+This implies that volatile load-acquires might not synchronize with
 volatile store-releases in the sense of the C++ memory model,\footnote{
-	However, they might instead synchronize with store-releases in
-	device firmware (or vice versa), roughly speaking.}
-so they do not contribute to the happens-before relation.
-Also, in these environments the rfe relation does not apply to volatile
-loads and stores, and hence the accesses in an OOTA cycle must be nonvolatile.
+	For example, they might instead synchronize with store-releases
+	in device firmware (or vice versa), roughly speaking.}
+so they might not contribute to the happens-before relation.
+Also, in these environments the rfe relation does not necessarily apply
+to volatile loads and stores, and hence the concept of an OOTA cycle
+applies only to benign environments.
 
 Of course, the machine-code file produced by a compiler must work
 properly in either kind of environment.
