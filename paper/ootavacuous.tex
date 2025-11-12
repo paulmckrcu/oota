@@ -1708,13 +1708,40 @@ runs it will store 42 to both \co{x} and \co{y}.
 volatile, they are not subject to unspecified interference when the
 program runs in a nonbenign environment.)
 
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-data+lt100.litmus @@
+\caption{OOTA and Value Range Analysis}
+\label{lst:OOTA and Value Range Analysis}
+\end{listing}
+
+A less malicious example is shown in
+Listing~\ref{lst:OOTA and Value Range Analysis},\footnote{
+	Kudos to Hans Boehm for providing this example.}
+in which both \co{x} and \co{y} have initial values of zero.
+Global analysis would show that there are no stores to either \co{x}
+or \co{y} having values greater than 42.
+The compiler could then omit T1's \co{if} statement, thus unconditionally
+storing the value \co{42} to \co{x}.
+This would allow both the compiler and the CPU to reorder T1's load
+and store, which could in turn produce the OOTA-like result of
+\co{x=y=42}.
+
 This unintuitive behavior could not occur if the two loads were not
-omitted in the transformed program.
+omitted in the transformed program derived from
+Listing~\ref{lst:Simple OOTA},
+nor if the compiler was forbidden from assuming that the values returned
+by a load from a variable were restricted to the set of values stored
+to that same variable in
+Listing~\ref{lst:OOTA and Value Range Analysis}.
 In fact, the definition of dependency preservation might remain
 strong enough to justify the DP thesis
 if the requirement for global-analysis compilers
 were weakened, if the compiler were allowed to treat atomic objects as
-quasi volatile except that it was not allowed to omit accesses to them.
+quasi volatile except that: (1)~It was not allowed to omit accesses to them
+and (2)~It was required to assume a non-benign environment.
+% @@@ Does (2) suffice?  After all, in a non-benign environment, the
+% @@@ compiler could not assume that the simple OOTA case would in fact
+% @@@ produce a given OOTA result, right?
 This is a possible topic for future research.
 
 \subsection{Effect of Memory Layout}
