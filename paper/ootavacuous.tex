@@ -1721,6 +1721,15 @@ were weakened, if the compiler were allowed to treat atomic objects as
 quasi volatile except that it was not allowed to omit accesses to them.
 This is a possible topic for future research.
 
+On the other hand, forcing global-analysis compilers to treat all atomic
+accesses as though they were volatile could prevent other behaviors
+which, although they are not OOTA, are nevertheless equally unexpected
+and confounding to
+programmers~\cite[Appendix D.2]{PaulEMcKenney2023P3046R2/OOTAwithoutTrying}.
+% @@@ Update to P3064R3 when available.
+While such considerations are worth pursuing further, they are not within
+the scope of this paper.
+
 \subsection{Effect of Memory Layout}
 \label{sec:Effect of Memory Layout}
 
