@@ -2,7 +2,7 @@ C oota-data+lt100
 (*
  * Result: @@@
  *
- * Three-process OOTA test, with a data dependency, a release-store of a
+ * Three-process OOTA test, with a data dependency, a relaxed-store of a
  * constant, and an acquire load coupled with a relaxed store of a constant.
  *)
 {
@@ -18,9 +18,9 @@ P0(atomic_int *x, atomic_int *y) {
 P1(atomic_int *x, atomic_int *y) {
 	int r2 = atomic_load_explicit(y, memory_order_relaxed);
 	if (r2 < 100)
-		atomic_store_explicit(x, 42, memory_order_release);
+		atomic_store_explicit(x, 42, memory_order_relaxed);
 	else
-		atomic_store_explicit(x, r2, memory_order_release);
+		atomic_store_explicit(x, r2, memory_order_relaxed);
 }
 
 locations [x;y]

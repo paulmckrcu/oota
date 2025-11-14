@@ -8,15 +8,14 @@ C oota-data+lt100+wrlx
 {
 	[x] = 0;
 	[y] = 0;
-	[z] = 0;
 }
 
-P0(atomic_int *x, atomic_int *y, atomic_int *z) {
+P0(atomic_int *x, atomic_int *y) {
 	int r1 = atomic_load_explicit(x, memory_order_relaxed);
 	atomic_store_explicit(y, r1, memory_order_relaxed);
 }
 
-P1(atomic_int *x, atomic_int *y, atomic_int *z) {
+P1(atomic_int *x, atomic_int *y) {
 	int r2 = atomic_load_explicit(y, memory_order_relaxed);
 	if (r2 < 100)
 		atomic_store_explicit(x, 42, memory_order_release);
@@ -24,9 +23,9 @@ P1(atomic_int *x, atomic_int *y, atomic_int *z) {
 		atomic_store_explicit(x, r2, memory_order_release);
 }
 
-P2(atomic_int *x, atomic_int *y, atomic_int *z) {
+P2(atomic_int *x, atomic_int *y) {
 	atomic_store_explicit(y, 142, memory_order_relaxed);
 }
 
-locations [x;y;z]
+locations [x;y]
 exists(0:r1=42 /\ 1:r2=42)
