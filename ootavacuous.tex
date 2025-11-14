@@ -3031,6 +3031,86 @@ different loads.
 Because $x^3 = x$ has three solutions ($\left\{ -1, 0, 1 \right\}$),
 this execution could have up to three OOTA cycles.
 
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/rfub.litmus @@
+\caption{Read From Untaken Branch (RFUB)}
+\label{lst:Read From Untaken Branch (RFUB)}
+\end{listing}
+
+Listing~\ref{lst:Read From Untaken Branch (RFUB)}~\cite{Boehm:2014:OGA:2618128.2618134}
+shows a litmus test that demonstrates how compilers' single-threaded
+value-range analysis can result in optimizations and reorderings that
+give OOTA-like results.
+The compiler could notice that by the time execution reached line~19,
+the value of \co{r2} was always 42, courtesy of value-range analysis
+confined to \co{P1()}.
+This would permit the compiler to substitute 42 for \co{r2} in line~19,
+which would leave the compiler free to reorder this store to precede
+the load on line~13.
+This would permit the lines~19, 8, 9, and~13 to execute in that order,
+so that both \co{r1} and \co{r2} were assigned the value 42.
+This would in turn cause the \co{if} condition on line~15 to always
+evaluate to \co{false}, so that line~16 never executed, thus leaving
+\co{r3} with its initial value of zero, thus satisfying the
+counterintuitive \co{exists} clause on line~23.
+All of these optimizations and reorderings are commonplace and thus
+assumed valid, but the outcome makes it appear that the final values
+of 42 for \co{r1}, \co{r2}, \co{x}, and \co{y} originated at line~17,
+which is in a branch of the \co{if} statement that was not taken
+in the counter-intuitive execution!
+
+It is generally agreed in the C++ Standards Committee's Study Group 1
+(SG1, Concurrency) that RFUB is not an OOTA outcome.
+And as can be seen in the figure, \co{herd7} does not give this outcome,
+and this is due to the fact that it does not model value-range compiler
+optimizations.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-data+lt100.litmus @@
+\caption{NOOTABOGA Value-Range Analysis Destroys sdep}
+\label{lst:NOOTABOGA Value-Range Analysis Destroys sdep}
+\end{listing}
+
+Another class of non-trivial semantic dependencies result in near-OOTA
+based on value-range analysis (NOOTABOGA), for example, as shown
+in Listing~\ref{lst:NOOTABOGA Value-Range Analysis Destroys sdep},
+which sprang from the fertile imagination of Hans Boehm.
+Value-range analysis would conclude that only the values 0 and 42 are
+ever stored to \co{x}, and thus the \co{if} statement on line~14 will
+only ever execute its \co{then} clause on line 15.
+This conclusion would permit the compiler to replace lines~14-17 with
+just line~15.
+Both the compiler and the CPU would then be permitted to reorder the store
+to \co{x} before the load from \co{y}, thus giving the OOTA-like result.
+
+\begin{listing}[tbp]
+@@ DisplayRunLitmus litmus/oota-data+lt100+wrlx.litmus @@
+\caption{NOOTABOGA Value-Range Analysis Disabled}
+\label{lst:NOOTABOGA Value-Range Analysis Disabled}
+\end{listing}
+
+As noted by Alan Stern, this value-range analysis can be defeated by
+adding a store to \co{y} that is greater than 100, as shown in
+Listing~\ref{lst:NOOTABOGA Value-Range Analysis Disabled}.
+Of course this store could of course happen just before \co{P1()}'s
+store to \co{y}, thus giving a superset of the outcomes for
+Listing~\ref{lst:NOOTABOGA Value-Range Analysis Destroys sdep}.
+
+There is some disagreement as to whether the results shown in
+Listings~\ref{lst:NOOTABOGA Value-Range Analysis Destroys sdep}
+and~\ref{lst:NOOTABOGA Value-Range Analysis Disabled}
+are in fact OOTA.
+However, the fact that global analysis is required to determine whether
+or not this result is permitted makes this result even less friendly
+to the developer than the ``mere'' RFUB in
+Listing~\ref{lst:Read From Untaken Branch (RFUB)}.
+This motivates excluding these outcomes, perhaps by requiring compilers
+to treat non-omitted non-volatile atomic loads as though they were
+volatile, at least with respect to the handling of the values that
+they return.
+A more direct and precisely targeted approach would be to forbid applying
+value-range analysis to values returned from atomic loads.
+
 Much more elaborate examples can be constructed,
 which raises the question of how to determine the set of semantic
 dependencies in a given execution of a given fragment of code.
