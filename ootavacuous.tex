@@ -41,7 +41,7 @@
 \floatname{listing}{Listing}
 
 \begin{document}
-\title{P3064R2: How to Avoid OOTA Without Really Trying}
+\title{P3064R3: How to Avoid OOTA Without Really Trying (Informational)}
 
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
@@ -51,10 +51,10 @@ Paul E.~McKenney\\{\small \email{paulmck@kernel.org}} \and
 Michael Wong\\{\small \email{fraggamuffin@gmail.com}} \and
 Maged Michael\\{\small \email{maged.michael@gmail.com}}
 }
-\date{July 12, 2024 (Post-St. Louis)}
+\date{November 15, 2025 (Post-Kona)}
 \maketitle{}
 
-Audience: SG1
+Audience: SG1, informational
 
 \begin{abstract}
 	The out-of-thin-air (OOTA) properties
@@ -83,6 +83,12 @@ Audience: SG1
 	We also extend this work to nonvolatile atomics by defining
 	``quasi-volatile'' behavior that we expect C++ implementations
 	will adhere to if they perform single-thread analysis.
+
+	{ \bf Note}: Much of this paper has been superseded by P3692,
+	so that this paper serves primarily as background material and
+	as a repository for litmus tests.
+	This means that the most important parts of this paper are
+	its appendices.
 \end{abstract}
 
 \pagebreak
@@ -4306,6 +4312,10 @@ not in any way constitute agreement with anything in this paper.
 
 \section{History}
 \label{sec:History}
+
+P3064R3 adds RFUB and NOOTABOGA litmus tests, notes its informational
+status (and the primacy of its appendices), and points at P3692 as
+its non-informational counterpart.
 
 P3064R2 incorporates feedback from the St.~Louis meeting, primarily
 incorporating clear statements that nothing need change to avoid OOTA.
