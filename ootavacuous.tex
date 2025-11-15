@@ -3062,8 +3062,7 @@ in the counter-intuitive execution!
 It is generally agreed in the C++ Standards Committee's Study Group 1
 (SG1, Concurrency) that RFUB is not an OOTA outcome.
 And as can be seen in the figure, \co{herd7} does not give this outcome,
-and this is due to the fact that it does not model value-range compiler
-optimizations.
+and this is due to the fact that it does not model compiler optimizations.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-data+lt100.litmus @@
@@ -3072,7 +3071,7 @@ optimizations.
 \end{listing}
 
 Another class of non-trivial semantic dependencies result in near-OOTA
-based on value-range analysis (NOOTABOGA), for example, as shown
+based on global analysis (NOOTABOGA), for example, as shown
 in Listing~\ref{lst:NOOTABOGA Value-Range Analysis Destroys sdep},
 which sprang from the fertile imagination of Hans Boehm.
 Value-range analysis would conclude that only the values 0 and 42 are
@@ -3081,7 +3080,8 @@ only ever execute its \co{then} clause on line 15.
 This conclusion would permit the compiler to replace lines~14-17 with
 just line~15.
 Both the compiler and the CPU would then be permitted to reorder the store
-to \co{x} before the load from \co{y}, thus giving the OOTA-like result.
+to \co{x} before the load from \co{y}, thus giving the OOTA-like result
+shown on line~21.
 
 \begin{listing}[tbp]
 @@ DisplayRunLitmus litmus/oota-data+lt100+wrlx.litmus @@
@@ -3092,8 +3092,8 @@ to \co{x} before the load from \co{y}, thus giving the OOTA-like result.
 As noted by Alan Stern, this value-range analysis can be defeated by
 adding a store to \co{y} that is greater than 100, as shown in
 Listing~\ref{lst:NOOTABOGA Value-Range Analysis Disabled}.
-Of course this store could of course happen just before \co{P1()}'s
-store to \co{y}, thus giving a superset of the outcomes for
+This store could of course happen just before \co{P1()}'s store to \co{y},
+which means that \co{herd7} shows a superset of the outcomes for
 Listing~\ref{lst:NOOTABOGA Value-Range Analysis Destroys sdep}.
 
 There is some disagreement as to whether the results shown in
@@ -3101,14 +3101,14 @@ Listings~\ref{lst:NOOTABOGA Value-Range Analysis Destroys sdep}
 and~\ref{lst:NOOTABOGA Value-Range Analysis Disabled}
 are in fact OOTA.
 However, the fact that global analysis is required to determine whether
-or not this result is permitted makes this result even less friendly
-to the developer than the ``mere'' RFUB in
+or not this result is permitted makes this result considerably less
+friendly to the developer than the RFUB litmus test shown in
 Listing~\ref{lst:Read From Untaken Branch (RFUB)}.
-This motivates excluding these outcomes, perhaps by requiring compilers
-to treat non-omitted non-volatile atomic loads as though they were
-volatile, at least with respect to the handling of the values that
+This motivates excluding these NOOTABOGA outcomes, perhaps by requiring
+compilers to treat non-omitted non-volatile atomic loads as though they
+were volatile, at least with respect to the handling of the values that
 they return.
-A more direct and precisely targeted approach would be to forbid applying
+A more direct and precisely targeted approach is to forbid applying
 value-range analysis to values returned from atomic loads.
 
 Much more elaborate examples can be constructed,
