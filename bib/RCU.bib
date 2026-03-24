@@ -2322,7 +2322,7 @@ lot of {Linux} into your technology!!!",
  month="February",
  day="28",
  year="2014",
- note="\url{https://www.kernel.org/doc/Documentation/RCU/rcu_dereference.txt}",
+ note="\url{https://www.kernel.org/doc/Documentation/RCU/rcu_dereference.rst}",
 }
 
 @inproceedings{MayaArbel2014RCUtree,
@@ -2714,6 +2714,15 @@ Hans Boehm and Clark Nelson and Olivier Giroux and Lawrence Crowl",
  note="\url{http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/p0098r0.pdf}",
 }
 
+@unpublished{PaulEMcKenney2015rcu-requirements,
+ Author="Paul E. McKenney",
+ Title="A Tour Through RCU's Requirement",
+ month="October",
+ day="17",
+ year="2015",
+ note="\url{https://www.kernel.org/doc/Documentation/RCU/Design/Requirements/Requirements.rst}",
+}
+
 @unpublished{PedroRmalhete2015rwlockRCU,
  Author="Pedro Ramalhete",
  Title="Implementing a Reader-Writer Lock using {RCU}",
@@ -3004,8 +3013,8 @@ optimistic speculation",
  month="January",
  day="14",
  note="URL:
-\url{https://www.spinics.net/lists/kernel/msg2421833.html}",
- lastchecked="June 3, 2017",
+\url{https://lore.kernel.org/all/1484385601-23379-3-git-send-email-paulmck@linux.vnet.ibm.com/}",
+ lastchecked="November 26, 2025",
 }
 
 @techreport{MichalisKokologiannakis2017NidhuggRCU,
@@ -3120,7 +3129,8 @@ Michael Wong",
  month="September",
  day="27",
  year="2017",
- note="\url{https://www.youtube.com/watch?v=rxQ5K9lo034}",
+ note="Abstract: \url{https://cppcon2017.sched.com/event/BgtF/read-copy-update-then-what-rcu-for-non-kernel-programmers}
+       Video: \url{https://www.youtube.com/watch?v=rxQ5K9lo034}",
 }
 
 @unpublished{GeoffRomer2017C++DeferredReclamationP0561R1,
@@ -3463,6 +3473,17 @@ series = {SPAA '20}
  lastchecked="August 2, 2021",
 }
 
+@unpublished{PaulEMcKenney2021NonBlockingRCUGP,
+ Author="Paul E. McKenney",
+ Title="Stupid {RCU} Tricks: Waiting for Grace Periods From NMI Handlers",
+ month="November",
+ year="2021",
+ day="1",
+ note="Available:
+\url{https://paulmck.livejournal.com/65800.html}
+[Viewed March 15, 2026]",
+}
+
 @unpublished{PaulEMcKenney2021RCUMysteriesFundamental,
  Author="Paul E. McKenney",
  Title="Unraveling {RCU}-Usage Mysteries (Fundamentals)",
@@ -3531,6 +3552,15 @@ series = {SPAA '20}
  note="\url{https://arxiv.org/abs/2304.11683}",
 }
 
+@unpublished{BoqunFeng2023RCURust4Linux,
+ Author="Boqun Feng and Paul E. McKenney",
+ Title="If you want to use {RCU} in {Rust} for {Linux} kernel...",
+ year="2023",
+ month="September",
+ day="16",
+ note="\url{https://kangrejos.com/2023/If%20you%20want%20to%20use%20RCU%20in%20Rust%20for%20Linux%20kernel....pdf}",
+}
+
 @unpublished{MattKline2023LockBasedLocklessFresh,
  Author="Matt Kline",
  Title="Garbage Collection for Systems Programmers",
@@ -3538,4 +3568,41 @@ series = {SPAA '20}
  month="September",
  day="27",
  note="\url{https://bitbashing.io/gc-for-systems-programmers.html}",
+}
+
+@unpublished{PaulEMcKenney2024ReclamationInteractionsWithRCU,
+ Author="Paul E. McKenney",
+ Title="Reclamation Interations with {RCU}",
+ month="May",
+ year="2024",
+ day="14",
+ note="\url{https://drive.google.com/file/d/1piN3sUrYJd9CwkY9jXGxPTvbGXwT-qvG/view?usp=sharing}",
+ lastchecked="October 14, 2025",
+}
+
+@unpublished{PaulEMcKenney2024RCUAPI,
+ Author="Paul E. McKenney and Boqun Feng and Frederic Weisbecker and Joel Fernandes and Neeraj Upadhyay and Uladzislau Rezki",
+ Title="The {RCU} {API}, 2024 Edition",
+ month="September",
+ day="13",
+ year="2024",
+ note="\url{https://lwn.net/Articles/988638/}",
+}
+
+@unpublished{20241212180208.274813-1-urezki,
+ Author="Uladzislau Rezki",
+ Title="{[PATCH v2 0/5] Move kvfree\_rcu() into SLAB (v2)}",
+  year="2024",
+ month="December",
+ day="12",
+ note="\url{https://lore.kernel.org/20241212180208.274813-1-urezki@gmail.com/}",
+}
+
+@unpublished{RameshSinha2026RCU,
+ Author="Ramesh Sinha",
+ Title="Read-Copy-Update {RCU} the Secret to Lock-Free Performance",
+ month="March",
+ day="6",
+ year="2026",
+ note="\url{https://www.infoq.com/articles/read-copy-update/}",
 }

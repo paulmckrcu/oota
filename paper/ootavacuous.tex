@@ -295,7 +295,7 @@ Some researchers recommend avoiding OOTA by forcing prior relaxed
 loads to be ordered before subsequent relaxed
 stores~\cite{Boehm:2014:OGA:2618128.2618134,HansBoehm2019OOTArevisitedAgain,Lahav:2017:RSC:3062341.3062352,PiezhaoOu2018OOTApapl,SungHwanLee2023WeakMemoryPromising,LukeGeeson2023TightenRelaxed},
 but this can require executing real
-instructions~\cite[Section 7.1]{Maranget2012TutorialARMPower,RichardGrisenthwaite2023TightenRelaxedJustSayNo},
+instructions~\cite[Section 7.1]{Maranget2012TutorialARMPower}~\cite{RichardGrisenthwaite2023TightenRelaxedJustSayNo}~\cite[Section 8.10.4]{NVIDIA-PTX2026},
 consuming real time and real electrical power to solve a strictly
 theoretical problem.
 % This might have been acceptable in the 1960s of some of the authors'
@@ -325,7 +325,7 @@ model to be accepted by C++ implementers.
 Jagadeesan et al.~combine preconditions and
 pomsets~\cite{RadhaJagadeesan2020OOTApomsetsPreconditions}, putting forward
 a memory model with attractive properties, but which does not support
-ARMv7 or PowerPC.
+ARMv7, PowerPC, or NVIDIA GPGPUs.
 
 Goldblatt looked at interactions between OOTA and
 undefined behavior (UB)~\cite{DavidGoldblatt2019NoElegantOOTAfix}.
