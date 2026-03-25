@@ -168,8 +168,8 @@ by T0's line~1.
 
 Because nothing in the C++ memory model rules out such OOTA cycles
 (as indicated by the ``sometimes satisfied'' in the figure), the C++
-standard explicitly recommends against them in 33.5.4p8
-(\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
+standard explicitly recommends against them in 32.5.4p8
+(\co{[atomics.order]})~\cite{ThomasKoeppe2025N5032}:
 \begin{quote}
 	Implementations should ensure that no ``out-of-thin-air'' values
 	are computed that circularly depend on their own computation.
@@ -1872,8 +1872,8 @@ Destroy Semantic Dependencies}.
 \label{sec:Possible Change to the Standard}
 
 As noted in Section~\ref{sec:Brief OOTA Overview}, the C++
-standard recommends against OOTA cycles in 33.5.4p8
-(\co{[atomics.order]})~\cite{ThomasKoeppe2023N4950}:
+standard recommends against OOTA cycles in 32.5.4p8
+(\co{[atomics.order]})~\cite{ThomasKoeppe2025N5032}:
 \begin{quote}
 	Implementations should ensure that no ``out-of-thin-air'' values
 	are computed that circularly depend on their own computation.
@@ -1883,8 +1883,8 @@ Sensible though this recommendation might be, it can unnecessarily raise
 anxiety levels of C++ implementers.
 After all, what exactly do they need to do in order to follow that
 recommendation?
-We therefore advocate adding the following two non-normative notes to this
-recommendation, but following the notes giving examples of OOTA cycles:
+We therefore advocate adding the two non-normative notes to this
+recommendation after 32.5.4p9 (\co{[atomics.order]}
 \begin{quote}
 	[ Note N --- A compiler-based implementation that runs on
 	real-world hardware and treats non-volatile atomic acesses as
