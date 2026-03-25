@@ -40,7 +40,7 @@
 \floatname{listing}{Listing}
 
 \begin{document}
-\title{P3692R3: How to Avoid OOTA Without Really Trying}
+\title{D3692R4: How to Avoid OOTA Without Really Trying}
 
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
@@ -90,6 +90,8 @@ Other contributors: Hans Boehm
 \section*{History}
 
 \begin{itemize}
+\item	D3692R4 updates the C++ working draft to N5032 and applies
+	feedback from CWG.
 \item	P3692R3 fixes an ``and and'' typo, updates the proposed note
 	to be added to the standard, and adds authors..
 \item	P3692R2 applies feedback from the 2025 Sophia meeting,
@@ -1868,8 +1870,8 @@ outlined in
 Section~\ref{sec:Inventing Atomic Loads Can Cause Errors and
 Destroy Semantic Dependencies}.
 
-\subsection{Possible Change to the Standard}
-\label{sec:Possible Change to the Standard}
+\subsection{Wording Change to the Standard}
+\label{sec:Wording Change to the Standard}
 
 As noted in Section~\ref{sec:Brief OOTA Overview}, the C++
 standard recommends against OOTA cycles in 32.5.4p8
@@ -1883,33 +1885,40 @@ Sensible though this recommendation might be, it can unnecessarily raise
 anxiety levels of C++ implementers.
 After all, what exactly do they need to do in order to follow that
 recommendation?
-We therefore advocate adding the two non-normative notes to this
-recommendation after 32.5.4p9 (\co{[atomics.order]}
-\begin{quote}
-	[ Note N --- A compiler-based implementation that runs on
-	real-world hardware and treats non-volatile atomic acesses as
-	though they were volatile will not produce out-of-thin-air values
-	for a program free of undefined behavior.
-	An implementation that performs only thread-at-a-time
-	analysis/optimization and that omits and merges non-volatile
-	atomic accesses to the same object and reorders non-volatile
-	atomic accesses to different objects (when permitted by the as-if
-	rule), but that otherwise treats non-volatile atomic accesses
-	as though they were volatile, will not produce out-of-thin-air
-	values for a program free of undefined behavior.
-	Implementations not meeting these restrictions require extra
-	care to ensure that they do not compute out-of-thin-air values.
-	--- End note.]
+We therefore advocate adding the two non-normative notes shown in
+Listing~\ref{lst:Wording Additions to the Standard}
+to this recommendation after 32.5.4p9 (\co{[atomics.order]}
+(which begins with ``[Note 6 : The recommendation similarly disallows
+r1 == r2 == 42 in the following example'').
 
-	[ Note N+1 --- In this context, real-world hardware is
-	subject to physical limitations on instruction-execution and
-	information-transfer latencies, as opposed to abstract platforms
-	with no such limits.
-	Real-world hardware must also carefully manage any speculative
-	execution so as to avoid generating out-of-thin-air values at
-	the hardware level.
+\begin{listing*}[tbp]
+\begin{quote}
+	[ Note N --- An implementation that translates to instruction
+	sequences for a physical machine and treats non-volatile
+	atomic acesses as though they were volatile do not produce
+	out-of-thin-air values for a program free of undefined behavior.
+	An implementation that performs only thread-at-a-time analysis
+	in support of optimizations that omit and merge non-volatile
+	atomic accesses to the same object and reorder non-volatile atomic
+	accesses to different objects (when permitted by the as-if rule),
+	but that otherwise treats non-volatile atomic accesses as though
+	they were volatile, does not produce out-of-thin-air values for
+	a program free of undefined behavior.
+	The possibility of out-of-thin-air value remains for
+	implementations not meeting these restrictions.  --- End note.]
+
+	~
+
+	[ Note N+1 --- Unlike abstract machines, physical machines
+	are subject to instruction-execution and information-transfer
+	latencies.
+	Physical machines carefully manage any speculative execution so as
+	to avoid generating out-of-thin-air values at the hardware level.
 	--- End note. ]
 \end{quote}
+\caption{Wording Additions to the Standard}
+\label{lst:Wording Additions to the Standard}
+\end{listing*}
 
 \section{Summary and Conclusion}
 \label{sec:Summary and Conclusion}
