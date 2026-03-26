@@ -49,6 +49,7 @@
 
 \begin{document}
 \title{D3692R4: How to Avoid OOTA Without Really Trying}
+\subtitle{March 26, 2026}
 
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
@@ -60,8 +61,7 @@ Maged Michael,
 Gonzalo Brito,
 Simon Cooksey, and
 Mark Batty \and
-Other contributors: Hans Boehm
-}
+Other contributors: Hans Boehm}
 
 \begin{abstract}
 	Attempts to create memory models that forbid out-of-thin-air
@@ -98,7 +98,7 @@ Other contributors: Hans Boehm
 \section*{History}
 
 \begin{itemize}
-\item	D3692R4 updates the C++ working draft to N5032 and applies
+\item	P3692R4 updates the C++ working draft to N5032 and applies
 	feedback from CWG.
 \item	P3692R3 fixes an ``and and'' typo, updates the proposed note
 	to be added to the standard, and adds authors..
@@ -1908,17 +1908,17 @@ r1 == r2 == 42 in the following example'').
 
 	\hlg{[ Note 7 --- An implementation that translates to instruction
 	sequences for a physical machine and treats non-volatile
-	atomic acesses as though they were volatile do not produce
+	atomic accesses as though they were volatile does not produce
 	out-of-thin-air values for a program free of undefined behavior.
 	An implementation that performs only thread-at-a-time analysis
 	in support of optimizations that omit and merge non-volatile
 	atomic accesses to the same object and reorder non-volatile atomic
-	accesses to different objects (when permitted by the as-if rule),
-	but that otherwise treats non-volatile atomic accesses as though
-	they were volatile, does not produce out-of-thin-air values for
+	accesses to different objects (when permitted by the as-if rule)
+	and otherwise treats non-volatile atomic accesses as though
+	they were volatile does not produce out-of-thin-air values for
 	a program free of undefined behavior.
-	The possibility of out-of-thin-air value remains for
-	implementations not meeting these restrictions.  --- End note.]}
+	The possibility of out-of-thin-air values remains for
+	implementations not meeting these restrictions.  --- end note.]}
 
 	~
 
@@ -1927,7 +1927,7 @@ r1 == r2 == 42 in the following example'').
 	latencies.
 	Physical machines carefully manage any speculative execution so as
 	to avoid generating out-of-thin-air values at the hardware level.
-	--- End note. ]}
+	--- end note. ]}
 \end{quote}
 \caption{Wording Additions to the Standard After 32.5.4p9 (\co{[atomics.order]})}
 \label{lst:Wording Additions to the Standard After 32.5.4p9 ([atomics.order])}
