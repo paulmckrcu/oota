@@ -1,4 +1,4 @@
-% \documentclass[10]{article}
+% \documentclass[10]{article,prologue,table,svgnames}
 
 % standard packages
 
@@ -38,6 +38,14 @@
 
 \newfloat{listing}{tbp}{lol}
 \floatname{listing}{Listing}
+
+% Highlighting
+\usepackage{soul}
+\definecolor{lightgreen}{rgb}{0.4, 1.0, 0.4}
+\newcommand{\hlg}[1]{\sethlcolor{lightgreen}\hl{#1}\sethlcolor{yellow}}
+\newcommand{\hlr}[1]{\sethlcolor{red}\hl{#1}\sethlcolor{yellow}}
+\definecolor{lightblue}{rgb}{0.7, 0.7, 1.0}
+\newcommand{\hlb}[1]{\sethlcolor{lightblue}\hl{#1}\sethlcolor{yellow}}
 
 \begin{document}
 \title{D3692R4: How to Avoid OOTA Without Really Trying}
@@ -83,7 +91,7 @@ Other contributors: Hans Boehm
 	As a consequence, we are asking for only for a small non-normative
 	change to the standard.
 
-	Audience: SG1, EWG.
+	Audience: CWG, LWG
 \end{abstract}
 \maketitle{}
 
@@ -1886,14 +1894,19 @@ anxiety levels of C++ implementers.
 After all, what exactly do they need to do in order to follow that
 recommendation?
 We therefore advocate adding the two non-normative notes shown in
-Listing~\ref{lst:Wording Additions to the Standard}
+Listing~\ref{lst:Wording Additions to the Standard After 32.5.4p9 ([atomics.order])}
 to this recommendation after 32.5.4p9 (\co{[atomics.order]}
 (which begins with ``[Note 6 : The recommendation similarly disallows
 r1 == r2 == 42 in the following example'').
 
 \begin{listing*}[tbp]
 \begin{quote}
-	[ Note N --- An implementation that translates to instruction
+	[Note 6 : The recommendation similarly disallows r1 == r2 ==
+	42 in the following example...
+
+	~
+
+	\hlg{[ Note 7 --- An implementation that translates to instruction
 	sequences for a physical machine and treats non-volatile
 	atomic acesses as though they were volatile do not produce
 	out-of-thin-air values for a program free of undefined behavior.
@@ -1905,19 +1918,19 @@ r1 == r2 == 42 in the following example'').
 	they were volatile, does not produce out-of-thin-air values for
 	a program free of undefined behavior.
 	The possibility of out-of-thin-air value remains for
-	implementations not meeting these restrictions.  --- End note.]
+	implementations not meeting these restrictions.  --- End note.]}
 
 	~
 
-	[ Note N+1 --- Unlike abstract machines, physical machines
+	\hlg{[ Note 8 --- Unlike abstract machines, physical machines
 	are subject to instruction-execution and information-transfer
 	latencies.
 	Physical machines carefully manage any speculative execution so as
 	to avoid generating out-of-thin-air values at the hardware level.
-	--- End note. ]
+	--- End note. ]}
 \end{quote}
-\caption{Wording Additions to the Standard}
-\label{lst:Wording Additions to the Standard}
+\caption{Wording Additions to the Standard After 32.5.4p9 (\co{[atomics.order]})}
+\label{lst:Wording Additions to the Standard After 32.5.4p9 ([atomics.order])}
 \end{listing*}
 
 \section{Summary and Conclusion}
