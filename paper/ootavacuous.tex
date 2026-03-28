@@ -54,8 +54,8 @@
 \newcommand{\co}[1]{\lstinline[breaklines=yes,breakatwhitespace=yes]{#1}}
 
 \author{
-Alan Stern (stern@rowland.harvard.edu), \and
-Paul E.~McKenney (paulmckrcu@gmail.com), \and
+Alan Stern (stern@rowland.harvard.edu) \and
+Paul E.~McKenney (paulmckrcu@gmail.com) \and
 Michael Wong,
 Maged Michael,
 Gonzalo Brito,
@@ -899,9 +899,8 @@ Also, in these environments the rfe relation does not necessarily apply
 to volatile loads and stores, and hence results that appear to indicate
 an OOTA cycle might instead be due to the nonbenign environment causing
 loads to return unpredictable values.
-
-Also, in these environments the rfe relation does not apply to volatile
-loads and stores, and hence the accesses in an OOTA cycle must be nonvolatile.
+Thus the accesses in a {\it bona-fide} OOTA cycle executing in such an
+environment must be nonvolatile.
 
 Of course, the machine-code file produced by a compiler must work
 properly in either kind of environment.
@@ -1648,8 +1647,11 @@ Alternatively, if the compiler knows that the value loaded from \co{x}
 is guaranteed to be zero, then it can omit the loads from both \co{x}
 and \co{y} (assuming that these values are not otherwise used), and
 then simply store the constant 0 to \co{z}.
-There clearly can be no semantic dependencies from these now-nonexistent
-loads to the store to \co{z}.
+But to know that the value of \co{x} will always be \co{0}, the compiler
+must perform a global analysis.
+Our requirement that such compilers treat all atomic accesses as volatile
+would then forbid the compiler from omitting the loads from \co{x}
+and \co{y}, thereby forcing the dependency to be preserved.
 
 \subsubsection{Discussion}
 \label{sec:Discussion}
