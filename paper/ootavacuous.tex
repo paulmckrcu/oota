@@ -996,7 +996,7 @@ Section~\ref{sec:Semantic Dependencies Affected by Cross-Thread Optimizations};
 in principle an analysis of the complete program could lead a compiler
 to conclude that \co{y} will always be equal to \co{z} whenever a
 particular \co{y - z} expression is evaluated, allowing the compiler
-to replace the expression with a constant \co{0}.
+to replace the expression with a constant 0.
 
 By contrast, a compiler that analyzes only one thread at a time when
 performing its optimizations and other code transformations will not
@@ -1647,7 +1647,7 @@ Alternatively, if the compiler knows that the value loaded from \co{x}
 is guaranteed to be zero, then it can omit the loads from both \co{x}
 and \co{y} (assuming that these values are not otherwise used), and
 then simply store the constant 0 to \co{z}.
-But to know that the value of \co{x} will always be \co{0}, the compiler
+But to know that the value of \co{x} will always be 0, the compiler
 must perform a global analysis.
 Our requirement that such compilers treat all atomic accesses as volatile
 would then forbid the compiler from omitting the loads from \co{x}
